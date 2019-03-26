@@ -43,22 +43,19 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, msg: Ping ) -> Pin<Box< dyn Future< Output = <Ping as Message>::Result > + Send + '_> >
+	fn handle( &mut self, msg: Ping ) -> Response<Ping> { Box::pin( async move
 	{
 		trace!( "Ping handler called" );
 
-		Box::pin( async move
-		{
-			self.seed.extend( msg.0.chars() );
+		self.seed.extend( msg.0.chars() );
 
-			self.seed = await!( Self::bla( &mut self.seed ) );
+		self.seed = await!( Self::bla( &mut self.seed ) );
 
-			self.seed += " - after yield";
+		self.seed += " - after yield";
 
-			self.seed.clone()
-		})
-	}
+		self.seed.clone()
 
+	})}
 }
 
 

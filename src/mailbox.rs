@@ -33,13 +33,9 @@ impl<A> Mailbox<A> for ProcLocalMb<A> where A: Actor + 'static
 
 		let mb = Self { handle };
 
-		use futures::executor::ThreadPool;
-		use futures::task::SpawnExt;
-
 		let mut executor = ThreadPool::new().unwrap();
 
 		executor.spawn( Self::start( actor, msgs ) ).unwrap();
-
 
 		mb
 	}

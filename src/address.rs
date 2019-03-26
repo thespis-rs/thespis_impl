@@ -8,16 +8,10 @@ pub struct ProcLocalAddr< A: Actor + Send >
 }
 
 
-impl<A: Actor + Send> ProcLocalAddr<A>
-{
-
-}
-
-
 
 impl< A> Address<A> for ProcLocalAddr<A>
 
-	where A: Actor + Send,
+	where A: Actor + Send + 'static,
 
 
 {
@@ -29,13 +23,24 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 
 
-	fn send<M>( &mut self, _msg: M )
+	fn send<M>( &mut self, msg: M )
 
 		where A: Handler< M >,
-		      M: Message<Result = ()> ,
+		      M: Message<Result = ()> + Send + 'static,
 
 	{
+		let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
 
+		let mut mbb = self.mb.clone();
+
+		let fut = async move
+		{
+			await!( mbb.send( envl ) ).expect( "Failed to send to mailbox" );
+		};
+
+		let mut executor = ThreadPool::new().unwrap();
+
+		executor.spawn( fut ).unwrap();
 	}
 
 
@@ -56,8 +61,6 @@ impl< A> Address<A> for ProcLocalAddr<A>
 			trace!( "Sending envl to mailbox" );
 
 			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
-
-			// let ret : Result<Pin<Box< dyn Future< Output = M::Result > + Send >>, oneshot::Canceled>= ;
 
 			await!( ret_rx ).expect( "Failed to receive response in ProcLocalAddr.call" )
 		})

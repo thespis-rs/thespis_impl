@@ -4,7 +4,6 @@
 
 mod address;
 mod envelope;
-// mod backstage;
 mod mailbox;
 
 pub use
@@ -22,10 +21,9 @@ mod import
 	pub use
 	{
 		std     :: { sync::Arc, pin::Pin, future::Future, marker::PhantomData } ,
-		futures :: { prelude::{ Stream, StreamExt, Sink, SinkExt }, channel::{ oneshot, mpsc } } ,
+		futures :: { prelude::{ Stream, StreamExt, Sink, SinkExt }, channel::{ oneshot, mpsc }, executor::ThreadPool, task::SpawnExt } ,
 
 		thespis :: { *                                   } ,
 		log     :: { *                                   } ,
 	};
 }
-
