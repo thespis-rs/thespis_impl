@@ -1,0 +1,38 @@
+use crate :: { import::*, * };
+
+pub struct ChannelEnvelope<M> where M: Message + Send + 'static
+{
+	msg : M,
+	addr: oneshot::Sender< M::Result >,
+}
+
+impl<M> ChannelEnvelope<M> where M: Message + Send
+{
+	pub fn new( msg: M, addr: oneshot::Sender< M::Result > ) -> Self
+	{
+		Self { msg, addr }
+	}
+}
+
+impl<A, M> Envelope<A> for ChannelEnvelope<M>
+	where A: Actor + Send,
+	      M: Message + Send,
+	      M::Result: Send,
+	      A: Handler<M>,
+{
+	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + Send + '_> >
+	{
+		Box::pin( async move
+		{
+			let result = await!( < A as Handler<M> >::handle( actor, self.msg ) );
+
+			trace!( "Send from envelope" );
+
+			match self.addr.send( result )
+			{
+				Ok(_)      => {},
+				Err( _ ) => { error!( "failed to send from envelope, receiving end dropped" ) },
+			};
+		})
+	}
+}

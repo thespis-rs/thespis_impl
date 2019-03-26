@@ -1,0 +1,14 @@
+package:
+
+  name   : thespis_impl
+  version: 0.1.0
+  authors: [ Naja Melan <najamelan@autistici.org> ]
+  edition: '2018'
+
+dependencies:
+
+  thespis: { path: ../thespis_iface }
+  futures-preview: { version: 0.3.0-alpha.13, features: [ std ], default-features: false }
+  log: 0.4.6
+  simple_logger: ^1
+

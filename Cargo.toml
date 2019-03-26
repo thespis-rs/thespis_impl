@@ -1,0 +1,18 @@
+# Auto-generated from "Cargo.yml"
+[dependencies]
+log = "0.4.6"
+simple_logger = "^1"
+
+[dependencies.futures-preview]
+default-features = false
+features = ["std"]
+version = "0.3.0-alpha.13"
+
+[dependencies.thespis]
+path = "../thespis_iface"
+
+[package]
+authors = ["Naja Melan <najamelan@autistici.org>"]
+edition = "2018"
+name = "thespis_impl"
+version = "0.1.0"
