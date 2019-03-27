@@ -9,6 +9,7 @@ features = ["std"]
 version = "0.3.0-alpha.13"
 
 [dependencies.thespis]
+features = ["derive"]
 path = "../thespis_iface"
 
 [package]

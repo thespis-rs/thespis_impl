@@ -7,8 +7,8 @@ package:
 
 dependencies:
 
-  thespis: { path: ../thespis_iface }
+  thespis        : { path: ../thespis_iface, features: [ derive ] }
   futures-preview: { version: 0.3.0-alpha.13, features: [ std ], default-features: false }
-  log: 0.4.6
-  simple_logger: ^1
+  log            : 0.4.6
+  simple_logger  : ^1
 

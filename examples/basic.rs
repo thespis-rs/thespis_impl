@@ -13,7 +13,8 @@ use
 };
 
 
-
+#[ derive( Actor ) ]
+//
 struct MyActor
 {
 	seed: String,
@@ -27,9 +28,6 @@ impl MyActor
 		x.clone()
 	}
 }
-
-
-impl Actor for MyActor {}
 
 
 struct Ping(String);
