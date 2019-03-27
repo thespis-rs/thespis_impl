@@ -1,4 +1,8 @@
 # Auto-generated from "Cargo.yml"
+[[bench]]
+harness = false
+name = "delivery"
+
 [dependencies]
 log = "0.4.6"
 simple_logger = "^1"
@@ -11,6 +15,26 @@ version = "0.3.0-alpha.13"
 [dependencies.thespis]
 features = ["derive"]
 path = "../thespis_iface"
+
+[dev-dependencies]
+actix = "^0.7.9"
+
+[dev-dependencies.criterion]
+features = ["real_blackbox"]
+version = "^0.2"
+
+[dev-dependencies.futures-preview]
+default-features = false
+features = ["std", "compat"]
+version = "0.3.0-alpha.13"
+
+[dev-dependencies.tokio-async-await]
+default-features = false
+features = ["async-await-preview"]
+version = "^0.1"
+
+[lib]
+bench = false
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]

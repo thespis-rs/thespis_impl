@@ -5,10 +5,27 @@ package:
   authors: [ Naja Melan <najamelan@autistici.org> ]
   edition: '2018'
 
+lib:
+  bench: false
+
 dependencies:
 
-  thespis        : { path: ../thespis_iface, features: [ derive ] }
-  futures-preview: { version: 0.3.0-alpha.13, features: [ std ], default-features: false }
+  thespis        : { path: ../thespis_iface , features: [ derive ]                          }
+  futures-preview: { version: 0.3.0-alpha.13, features: [ std    ], default-features: false }
   log            : 0.4.6
   simple_logger  : ^1
+
+
+dev-dependencies:
+
+  criterion        : { version: ^0.2, features: [ real_blackbox ] }
+  actix            : ^0.7.9
+  futures-preview  : { version: 0.3.0-alpha.13, features: [ std, compat ], default-features: false }
+  tokio-async-await: { version: ^0.1          , features: [ async-await-preview ], default-features: false }
+
+
+bench:
+
+  - name   : delivery
+    harness: false
 
