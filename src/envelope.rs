@@ -15,6 +15,7 @@ impl<M> ChannelEnvelope<M> where M: Message + Send
 }
 
 impl<A, M> Envelope<A> for ChannelEnvelope<M>
+
 	where A: Actor + Send,
 	      M: Message + Send,
 	      M::Result: Send,
@@ -26,7 +27,7 @@ impl<A, M> Envelope<A> for ChannelEnvelope<M>
 		{
 			let result = await!( < A as Handler<M> >::handle( actor, self.msg ) );
 
-			trace!( "Send from envelope" );
+			// trace!( "Send from envelope" );
 
 			match self.addr.send( result )
 			{
@@ -53,6 +54,7 @@ impl<M> SendEnvelope<M> where M: Message + Send
 }
 
 impl<A, M> Envelope<A> for SendEnvelope<M>
+
 	where A: Actor + Send,
 	      M: Message + Send,
 	      M::Result: Send,

@@ -21,7 +21,7 @@ mod import
 	pub use
 	{
 		std     :: { sync::Arc, pin::Pin, future::Future, marker::PhantomData } ,
-		futures :: { prelude::{ Stream, StreamExt, Sink, SinkExt }, channel::{ oneshot, mpsc }, executor::ThreadPool, task::SpawnExt } ,
+		futures :: { prelude::{ Stream, StreamExt, Sink, SinkExt }, channel::{ oneshot, mpsc }, future::FutureExt, executor::ThreadPool, task::SpawnExt } ,
 
 		thespis :: { *                                   } ,
 		log     :: { *                                   } ,

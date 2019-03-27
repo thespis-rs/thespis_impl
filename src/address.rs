@@ -23,7 +23,7 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 
 
-	fn send<M>( &mut self, msg: M )
+	fn send<M>( &mut self, msg: M ) -> Pin<Box< Future<Output=()>>>
 
 		where A: Handler< M >,
 		      M: Message<Result = ()> + Send + 'static,
@@ -33,14 +33,11 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 		let mut mbb = self.mb.clone();
 
-		let fut = async move
+		async move
 		{
 			await!( mbb.send( envl ) ).expect( "Failed to send to mailbox" );
-		};
 
-		let mut executor = ThreadPool::new().unwrap();
-
-		executor.spawn( fut ).unwrap();
+		}.boxed()
 	}
 
 
@@ -58,7 +55,7 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 			let envl: Box< dyn Envelope<A> + Send >= Box::new( ChannelEnvelope::new( msg, ret_tx ) );
 
-			trace!( "Sending envl to mailbox" );
+			// trace!( "Sending envl to mailbox" );
 
 			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
 
