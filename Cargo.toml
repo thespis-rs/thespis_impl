@@ -45,5 +45,6 @@ version = "0.1.0"
 [profile]
 [profile.release]
 codegen-units = 1
-lto = true
+debug = true
+lto = false
 opt-level = 3

@@ -9,11 +9,9 @@ mod mailbox;
 pub use
 {
 	address   :: * ,
-	// backstage :: * ,
 	envelope  :: * ,
 	mailbox   :: * ,
 };
-
 
 
 mod import
