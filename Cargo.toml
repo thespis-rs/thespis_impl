@@ -41,3 +41,9 @@ authors = ["Naja Melan <najamelan@autistici.org>"]
 edition = "2018"
 name = "thespis_impl"
 version = "0.1.0"
+
+[profile]
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
