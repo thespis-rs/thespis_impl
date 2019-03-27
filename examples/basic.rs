@@ -5,20 +5,17 @@
 
 use
 {
-	thespis       :: { * } ,
-	thespis_impl  :: { * } ,
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::ThreadPool },
-	std           :: { pin::Pin },
-	log           :: { * },
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::ThreadPool } ,
+	std           :: { pin::Pin                                                                            } ,
+	log           :: { *                                                                                   } ,
+	thespis       :: { *                                                                                   } ,
+	thespis_impl  :: { *                                                                                   } ,
 };
 
 
 #[ derive( Actor ) ]
 //
-struct MyActor
-{
-	seed: String,
-}
+struct MyActor { seed: String }
 
 impl MyActor
 {
@@ -30,7 +27,7 @@ impl MyActor
 }
 
 
-struct Ping(String);
+struct Ping( String );
 
 
 impl Message for Ping

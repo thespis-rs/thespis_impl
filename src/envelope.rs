@@ -31,8 +31,8 @@ impl<A, M> Envelope<A> for ChannelEnvelope<M>
 
 			match self.addr.send( result )
 			{
-				Ok(_)    => {},
-				Err( _ ) => { error!( "failed to send from envelope, receiving end dropped" ) },
+				Ok (_) => {},
+				Err(_) => { error!( "failed to send from envelope, receiving end dropped" ) },
 			};
 		})
 	}
