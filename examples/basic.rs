@@ -7,7 +7,7 @@ use
 {
 	thespis       :: { * } ,
 	thespis_impl  :: { * } ,
-	futures       :: { future::Future, task::{ LocalSpawn, SpawnExt }, executor::ThreadPool },
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::ThreadPool },
 	std           :: { pin::Pin },
 	log           :: { * },
 };
@@ -41,7 +41,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, msg: Ping ) -> Response<Ping> { Box::pin( async move
+	fn handle( &mut self, msg: Ping ) -> Response<Ping> { async move
 	{
 		trace!( "Ping handler called" );
 
@@ -53,7 +53,7 @@ impl Handler< Ping > for MyActor
 
 		self.seed.clone()
 
-	})}
+	}.boxed() }
 }
 
 
