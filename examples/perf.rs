@@ -5,11 +5,12 @@
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::block_on } ,
-	std           :: { pin::Pin                                                                            } ,
-	log           :: { *                                                                                   } ,
-	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { *                                                                                   } ,
+	futures       :: { future::{ Future, FutureExt, TryFutureExt }, task::{ LocalSpawn, SpawnExt }, executor::LocalPool } ,
+	std           :: { pin::Pin                                                                                         } ,
+	log           :: { *                                                                                                } ,
+	thespis       :: { *                                                                                                } ,
+	thespis_impl  :: { single_thread::*                                                                                 } ,
+	tokio_current_thread:: { spawn, block_on_all                                                                        } ,
 };
 
 
@@ -47,20 +48,26 @@ impl Handler< Show > for Sum
 
 fn main()
 {
-	block_on( async
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
+
+	let program = async move
 	{
 		let     sum                      = Sum(5)      ;
-		let mut mb  : ProcLocalMb  <Sum> = sum.start() ;
+		let mut mb  : ProcLocalMb  <Sum> = sum.start( &mut exec ) ;
 		let mut addr: ProcLocalAddr<Sum> = mb .addr () ;
 
-		for _i in 0..100usize
+		for _i in 0..10_000_000usize
 		{
 			await!( addr.call( Add( 10 ) ) );
 		}
 
 		let res = await!( addr.call( Show{} ) );
-		assert_eq!( 1005, res );
+		assert_eq!( 100_000_005, res );
 
 		dbg!( res );
-	})
+
+	};
+
+	pool.run_until( program );
 }

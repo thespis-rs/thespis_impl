@@ -1,20 +1,27 @@
 # Auto-generated from "Cargo.yml"
 [[bench]]
 harness = false
-name = "delivery"
+name = "single_thread_delivery"
+path = "benches/single_thread/delivery.rs"
 
 [dependencies]
 log = "0.4.6"
 simple_logger = "^1"
+tokio-current-thread = "^0.1"
 
 [dependencies.futures-preview]
 default-features = false
-features = ["std"]
-version = "0.3.0-alpha.13"
+features = ["nightly", "std"]
+path = "../../futures-rs/futures"
 
 [dependencies.thespis]
 features = ["derive"]
 path = "../thespis_iface"
+
+[dependencies.tokio-async-await]
+default-features = false
+features = ["async-await-preview"]
+version = "^0.1"
 
 [dev-dependencies]
 actix = "^0.7.9"
@@ -25,13 +32,8 @@ version = "^0.2"
 
 [dev-dependencies.futures-preview]
 default-features = false
-features = ["std", "compat"]
-version = "0.3.0-alpha.13"
-
-[dev-dependencies.tokio-async-await]
-default-features = false
-features = ["async-await-preview"]
-version = "^0.1"
+features = ["std", "compat", "nightly"]
+path = "../../futures-rs/futures"
 
 [lib]
 bench = false

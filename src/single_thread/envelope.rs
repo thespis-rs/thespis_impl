@@ -1,4 +1,4 @@
-use crate :: { import::*, * };
+use crate :: { import::*, single_thread::* };
 
 pub struct ChannelEnvelope<M> where M: Message + Send + 'static
 {

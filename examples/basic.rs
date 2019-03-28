@@ -5,11 +5,11 @@
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::ThreadPool } ,
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::LocalPool  } ,
 	std           :: { pin::Pin                                                                            } ,
 	log           :: { *                                                                                   } ,
 	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { *                                                                                   } ,
+	thespis_impl  :: { single_thread::*                                                                    } ,
 };
 
 
@@ -59,13 +59,16 @@ fn main()
 {
 	simple_logger::init().unwrap();
 
-	let fut = async
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
+
+	let program = async move
 	{
 		let seed = "seed".into();
 		let a = MyActor{ seed };
 
 		trace!( "calling actor.start" );
-		let mut mb  : ProcLocalMb<MyActor>   = a.start();
+		let mut mb  : ProcLocalMb<MyActor>   = a.start( &mut exec );
 
 		trace!( "calling mb.addr()" );
 		let mut addr: ProcLocalAddr<MyActor> = mb.addr();
@@ -78,7 +81,5 @@ fn main()
 
 	};
 
-	let _executor = ThreadPool::new().unwrap();
-
-	futures::executor::block_on( fut );
+	pool.run_until( program );
 }

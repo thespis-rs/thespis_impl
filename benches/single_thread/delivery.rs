@@ -3,9 +3,9 @@
 use
 {
 	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on } } ,
+	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on }, executor::{ LocalPool } } ,
 	thespis           :: { *                                                     } ,
-	thespis_impl      :: { *                                                     } ,
+	thespis_impl      :: { single_thread::*                                                     } ,
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
 	tokio_async_await :: { await                                       },
 
@@ -72,11 +72,14 @@ impl Accu
 
 fn send()
 {
-	block_on( async
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
+
+	pool.run_until( async
 	{
-		let     sum                      = Sum(5)      ;
-		let mut mb  : ProcLocalMb  <Sum> = sum.start() ;
-		let mut addr: ProcLocalAddr<Sum> = mb .addr () ;
+		let     sum                      = Sum(5)                 ;
+		let mut mb  : ProcLocalMb  <Sum> = sum.start( &mut exec ) ;
+		let mut addr: ProcLocalAddr<Sum> = mb .addr ()            ;
 
 		for _i in 0..100usize
 		{
@@ -91,11 +94,14 @@ fn send()
 
 fn call()
 {
-	block_on( async
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
+
+	pool.run_until( async
 	{
-		let     sum                      = Sum(5)      ;
-		let mut mb  : ProcLocalMb  <Sum> = sum.start() ;
-		let mut addr: ProcLocalAddr<Sum> = mb .addr () ;
+		let     sum                      = Sum(5)                 ;
+		let mut mb  : ProcLocalMb  <Sum> = sum.start( &mut exec ) ;
+		let mut addr: ProcLocalAddr<Sum> = mb .addr ()            ;
 
 		for _i in 0..100usize
 		{

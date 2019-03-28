@@ -5,10 +5,10 @@
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt }, executor::{ ThreadPool, block_on } } ,
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt }, executor::LocalPool } ,
 	thespis       :: { * } ,
 	log           :: { * } ,
-	thespis_impl  :: { * } ,
+	thespis_impl  :: { single_thread::* } ,
 	std           :: { pin::Pin } ,
 };
 
@@ -61,11 +61,11 @@ impl Drop for Sum
 
 
 
-async fn sum() -> u64
+async fn sum( exec: &mut impl Spawn ) -> u64
 {
 	let sum = Sum(5);
 
-	let mut mb  : ProcLocalMb<Sum>   = sum.start();
+	let mut mb  : ProcLocalMb<Sum>   = sum.start( exec );
 	let mut addr: ProcLocalAddr<Sum> = mb.addr();
 
 	await!( addr.call( Add( 10 ) ) );
@@ -81,13 +81,20 @@ async fn sum() -> u64
 
 #[test]
 //
-fn test_basic_send_call() { block_on( async
+fn test_basic_send_call()
 {
-	simple_logger::init().unwrap();
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
 
-	let result = await!( sum() );
+	let program = async move
+	{
+		simple_logger::init().unwrap();
 
-	trace!( "result is: {}", result );
-	assert_eq!( 15, result );
+		let result = await!( sum( &mut exec ) );
 
-})}
+		trace!( "result is: {}", result );
+		assert_eq!( 15, result );
+	};
+
+	pool.run_until( program );
+}
