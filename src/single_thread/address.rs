@@ -52,7 +52,7 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 			let (ret_tx, ret_rx) = oneshot::channel::<M::Result>();
 
-			let envl: Box< dyn Envelope<A> + Send > = Box::new( ChannelEnvelope::new( msg, ret_tx ) );
+			let envl: Box< dyn Envelope<A> + Send > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
 			// trace!( "Sending envl to mailbox" );
 
