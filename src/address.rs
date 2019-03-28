@@ -23,19 +23,17 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 
 
-	fn send<M>( &mut self, msg: M ) -> Pin<Box< Future<Output=()>>>
+	fn send<M>( &mut self, msg: M ) -> Pin<Box< dyn Future<Output=()> + '_>>
 
 		where A: Handler< M >,
 		      M: Message<Result = ()> + Send + 'static,
 
 	{
-		let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
-
-		let mut mbb = self.mb.clone();
-
 		async move
 		{
-			await!( mbb.send( envl ) ).expect( "Failed to send to mailbox" );
+			let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
+
+			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
 
 		}.boxed()
 	}
@@ -49,7 +47,8 @@ impl< A> Address<A> for ProcLocalAddr<A>
 		      M::Result: Send,
 		      A: Send         ,
 	{
-		Box::pin( async move {
+		async move
+		{
 
 			let (ret_tx, ret_rx) = oneshot::channel::<M::Result>();
 
@@ -60,7 +59,8 @@ impl< A> Address<A> for ProcLocalAddr<A>
 			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
 
 			await!( ret_rx ).expect( "Failed to receive response in ProcLocalAddr.call" )
-		})
+
+		}.boxed()
 	}
 }
 
