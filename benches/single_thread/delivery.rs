@@ -78,8 +78,8 @@ fn send()
 	pool.run_until( async
 	{
 		let     sum                      = Sum(5)                 ;
-		let mut mb  : ProcLocalMb  <Sum> = sum.start( &mut exec ) ;
-		let mut addr: ProcLocalAddr<Sum> = mb .addr ()            ;
+		let mut mb  : Inbox  <Sum> = sum.start( &mut exec ) ;
+		let mut addr: Addr<Sum> = mb .addr ()            ;
 
 		for _i in 0..100usize
 		{
@@ -100,8 +100,8 @@ fn call()
 	pool.run_until( async
 	{
 		let     sum                      = Sum(5)                 ;
-		let mut mb  : ProcLocalMb  <Sum> = sum.start( &mut exec ) ;
-		let mut addr: ProcLocalAddr<Sum> = mb .addr ()            ;
+		let mut mb  : Inbox  <Sum> = sum.start( &mut exec ) ;
+		let mut addr: Addr<Sum> = mb .addr ()            ;
 
 		for _i in 0..100usize
 		{

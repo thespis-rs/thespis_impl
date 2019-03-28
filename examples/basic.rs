@@ -68,10 +68,10 @@ fn main()
 		let a = MyActor{ seed };
 
 		trace!( "calling actor.start" );
-		let mut mb  : ProcLocalMb<MyActor>   = a.start( &mut exec );
+		let mut mb  : Inbox<MyActor>   = a.start( &mut exec );
 
 		trace!( "calling mb.addr()" );
-		let mut addr: ProcLocalAddr<MyActor> = mb.addr();
+		let mut addr: Addr<MyActor> = mb.addr();
 
 		trace!( "calling addr.call( Ping(5) )" );
 		let result = await!( addr.call( Ping( "ping".into() ) ) );

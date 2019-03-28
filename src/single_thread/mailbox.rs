@@ -1,11 +1,11 @@
 use crate :: { import::*, single_thread::* };
 
-pub struct ProcLocalMb<A>
+pub struct Inbox<A>
 {
 	handle : mpsc::UnboundedSender  < Box< dyn Envelope<A> >>,
 }
 
-impl<A> ProcLocalMb<A> where A: Actor + 'static
+impl<A> Inbox<A> where A: Actor + 'static
 {
 	pub fn start( exec: &mut impl Spawn, mut actor: A, mut msgs: mpsc::UnboundedReceiver< Box< dyn Envelope<A> + 'static >> )
 	{
@@ -24,13 +24,13 @@ impl<A> ProcLocalMb<A> where A: Actor + 'static
 				else { break }
 			}
 
-		}).expect( "failed to spawn mailbox" );
+		}).expect( "failed to spawn Mailbox" );
 
 	}
 }
 
 
-impl<A> Mailbox<A> for ProcLocalMb<A> where A: Actor + 'static
+impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 {
 	fn new( actor: A, exec: &mut impl Spawn ) -> Self
 	{

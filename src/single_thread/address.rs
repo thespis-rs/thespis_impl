@@ -1,7 +1,7 @@
 use crate :: { import::*, single_thread::* };
 
 
-pub struct ProcLocalAddr< A: Actor + Send >
+pub struct Addr< A: Actor + Send >
 {
 	_phantom: PhantomData< A >,
 	mb      : mpsc::UnboundedSender<Box<dyn Envelope<A>>>,
@@ -9,7 +9,7 @@ pub struct ProcLocalAddr< A: Actor + Send >
 
 
 
-impl< A> Address<A> for ProcLocalAddr<A>
+impl< A> Address<A> for Addr<A>
 
 	where A: Actor + Send + 'static,
 
@@ -33,7 +33,7 @@ impl< A> Address<A> for ProcLocalAddr<A>
 		{
 			let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
 
-			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
+			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
 
 		}.boxed()
 	}
@@ -54,11 +54,11 @@ impl< A> Address<A> for ProcLocalAddr<A>
 
 			let envl: Box< dyn Envelope<A> + Send > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
-			// trace!( "Sending envl to mailbox" );
+			// trace!( "Sending envl to Mailbox" );
 
-			await!( self.mb.send( envl ) ).expect( "Failed to send to mailbox" );
+			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
 
-			await!( ret_rx ).expect( "Failed to receive response in ProcLocalAddr.call" )
+			await!( ret_rx ).expect( "Failed to receive response in Addr.call" )
 
 		}.boxed()
 	}

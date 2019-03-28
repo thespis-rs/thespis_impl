@@ -65,8 +65,8 @@ async fn sum( exec: &mut impl Spawn ) -> u64
 {
 	let sum = Sum(5);
 
-	let mut mb  : ProcLocalMb<Sum>   = sum.start( exec );
-	let mut addr: ProcLocalAddr<Sum> = mb.addr();
+	let mut mb  : Inbox<Sum>   = sum.start( exec );
+	let mut addr: Addr<Sum> = mb.addr();
 
 	await!( addr.call( Add( 10 ) ) );
 
