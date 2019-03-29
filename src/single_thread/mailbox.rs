@@ -36,15 +36,6 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 	{
 		let (handle, msgs) = mpsc::unbounded();
 
-		// let mb =
-
-		// TODO: centralize spawning
-		//
-		// std::thread::spawn( ||
-		// {
-		// 	futures::executor::block_on( Self::start( actor, msgs ) );
-		// });
-		//
 		Self::start( exec, actor, msgs );
 
 		Self { handle }

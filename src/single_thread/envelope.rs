@@ -51,7 +51,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + Send + '_> >
 	{
-		Box::pin( async move
+		async move
 		{
 			let result = await!( < A as Handler<M> >::handle( actor, self.msg ) );
 
@@ -62,7 +62,8 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 				Ok (_) => {},
 				Err(_) => { error!( "failed to send from envelope, receiving end dropped" ) },
 			};
-		})
+
+		}.boxed()
 	}
 }
 
