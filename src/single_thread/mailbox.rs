@@ -1,48 +1,52 @@
 use crate :: { import::*, single_thread::* };
 
-pub struct Inbox<A>
+pub struct Inbox<A> where A: Actor + 'static
 {
-	handle : mpsc::UnboundedSender  < Box< dyn Envelope<A> >>,
+	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A>           >> ,
+	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> + 'static >> ,
 }
 
 impl<A> Inbox<A> where A: Actor + 'static
 {
-	pub fn start( exec: &mut impl Spawn, mut actor: A, mut msgs: mpsc::UnboundedReceiver< Box< dyn Envelope<A> + 'static >> )
+	pub fn new() -> Self
 	{
-		exec.spawn( async move
-		{
-			let mut next = await!( msgs.next() );
+		let (handle, msgs) = mpsc::unbounded();
 
-			while next.is_some()
-			{
-				if let Some( envl ) = next
-				{
-					await!( envl.handle( &mut actor ) );
-					next = await!( msgs.next() )
-				}
+		Self { handle, msgs }
+	}
 
-				else { break }
-			}
-
-		}).expect( "failed to spawn Mailbox" );
-
+	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn Envelope<A> >>
+	{
+		self.handle.clone()
 	}
 }
 
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 {
-	fn new( actor: A, exec: &mut impl Spawn ) -> Self
+	fn start( &mut self, mut actor: A ) -> Pin<Box< Future<Output=()> + '_>>
 	{
-		let (handle, msgs) = mpsc::unbounded();
+		async move
+		{
+			let mut next = await!( self.msgs.next() );
 
-		Self::start( exec, actor, msgs );
+			while next.is_some()
+			{
+				if let Some( envl ) = next
+				{
+					await!( envl.handle( &mut actor ) );
+					next = await!( self.msgs.next() )
+				}
 
-		Self { handle }
+				else { break }
+			}
+
+		}.boxed()
 	}
+}
 
-	fn addr<Adr>( &mut self ) -> Adr where Adr: Address<A>
-	{
-		Adr::new( self.handle.clone() )
-	}
+
+impl<A> Default for Inbox<A> where A: Actor
+{
+	fn default() -> Self { Self::new() }
 }

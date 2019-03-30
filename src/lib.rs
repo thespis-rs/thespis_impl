@@ -12,7 +12,7 @@ mod import
 		std     :: { sync::Arc, pin::Pin, future::Future, marker::PhantomData                           } ,
 		futures :: { prelude::{ Stream, StreamExt, Sink, SinkExt }, channel::{ oneshot, mpsc }          } ,
 		futures :: { future::{ FutureExt, TryFutureExt }, executor::LocalSpawner                        } ,
-		futures :: { task::{ Spawn, SpawnExt }                                                          } ,
+		futures :: { task::{ Spawn, SpawnExt, LocalSpawn, LocalSpawnExt }                               } ,
 
 		// crossbeam_channel :: { futures::mpsc as crossbeam                                               } ,
 		thespis :: { *                                                                                  } ,

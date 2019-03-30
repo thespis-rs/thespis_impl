@@ -2,7 +2,7 @@ use crate :: { import::*, single_thread::* };
 
 
 
-impl<M> SendEnvelope<M> where M: Message + Send
+impl<M> SendEnvelope<M> where M: Message
 {
 	pub fn new( msg: M ) -> Self
 	{
@@ -12,12 +12,11 @@ impl<M> SendEnvelope<M> where M: Message + Send
 
 impl<A, M> Envelope<A> for SendEnvelope<M>
 
-	where A: Actor + Send,
-	      M: Message + Send,
-	      M::Result: Send,
+	where A: Actor,
+	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + Send + '_> >
+	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + '_> >
 	{
 		Box::pin( async move
 		{
@@ -28,13 +27,13 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 
 
 
-pub struct CallEnvelope<M> where M: Message + Send + 'static
+pub struct CallEnvelope<M> where M: Message + 'static
 {
 	msg : M,
 	addr: oneshot::Sender< M::Result >,
 }
 
-impl<M> CallEnvelope<M> where M: Message + Send
+impl<M> CallEnvelope<M> where M: Message
 {
 	pub fn new( msg: M, addr: oneshot::Sender< M::Result > ) -> Self
 	{
@@ -44,12 +43,11 @@ impl<M> CallEnvelope<M> where M: Message + Send
 
 impl<A, M> Envelope<A> for CallEnvelope<M>
 
-	where A: Actor + Send,
-	      M: Message + Send,
-	      M::Result: Send,
+	where A: Actor,
+	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + Send + '_> >
+	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + '_> >
 	{
 		async move
 		{
@@ -69,7 +67,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 
 
 
-pub struct SendEnvelope<M> where M: Message + Send + 'static
+pub struct SendEnvelope<M> where M: Message + 'static
 {
 	msg : M,
 }

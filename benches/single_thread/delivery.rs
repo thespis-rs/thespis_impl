@@ -3,7 +3,7 @@
 use
 {
 	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on }, executor::{ LocalPool } } ,
+	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { single_thread::*                                                     } ,
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
@@ -77,9 +77,14 @@ fn send()
 
 	pool.run_until( async
 	{
-		let     sum                      = Sum(5)                 ;
-		let mut mb  : Inbox  <Sum> = sum.start( &mut exec ) ;
-		let mut addr: Addr<Sum> = mb .addr ()            ;
+		let     sum              = Sum(5)                  ;
+		let mut mb  : Inbox<Sum> = Inbox::new()            ;
+		let mut addr             = Addr::new( mb.sender() );
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		let move_mb = async move { await!( mb.start( sum ) ); };
+		exec.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -99,9 +104,14 @@ fn call()
 
 	pool.run_until( async
 	{
-		let     sum                      = Sum(5)                 ;
-		let mut mb  : Inbox  <Sum> = sum.start( &mut exec ) ;
-		let mut addr: Addr<Sum> = mb .addr ()            ;
+		let     sum              = Sum(5)                  ;
+		let mut mb  : Inbox<Sum> = Inbox::new()            ;
+		let mut addr             = Addr::new( mb.sender() );
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		let move_mb = async move { await!( mb.start( sum ) ); };
+		exec.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -178,8 +188,7 @@ fn inline_method()
 
 // --------------------------------------------------------------------
 
-struct AxSum( u64 );
-
+struct AxSum (u64);
 struct AxAdd (u64);
 struct AxShow     ;
 
@@ -218,11 +227,11 @@ fn bench_calls( c: &mut Criterion )
 	(
 		"Delivery",
 
-		Benchmark::new   ( "Send x100"         , |b| b.iter( || send         () ) )
-			.with_function( "Call x100"         , |b| b.iter( || call         () ) )
-			.with_function( "method x100"       , |b| b.iter( || method       () ) )
-			.with_function( "inline method x100", |b| b.iter( || inline_method() ) )
-			.with_function( "actix x100"        , |b| b.iter( || actix        () ) )
+		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
+			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
+			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
+			.with_function( "async inline method x100", |b| b.iter( || inline_method() ) )
+			.with_function( "actix x100"              , |b| b.iter( || actix        () ) )
 	);
 }
 

@@ -5,7 +5,7 @@
 
 use
 {
-	futures       :: { future::{ Future, FutureExt, TryFutureExt }, task::{ LocalSpawn, SpawnExt }, executor::LocalPool } ,
+	futures       :: { future::{ Future, FutureExt, TryFutureExt }, task::{ LocalSpawn, LocalSpawnExt, SpawnExt }, executor::LocalPool } ,
 	std           :: { pin::Pin                                                                                         } ,
 	log           :: { *                                                                                                } ,
 	thespis       :: { *                                                                                                } ,
@@ -53,9 +53,18 @@ fn main()
 
 	let program = async move
 	{
-		let     sum                      = Sum(5)      ;
-		let mut mb  : Inbox  <Sum> = sum.start( &mut exec ) ;
-		let mut addr: Addr<Sum> = mb .addr () ;
+		let     sum              = Sum(5)      ;
+
+		let mut mb  : Inbox<Sum> = Inbox::new();
+		let     send             = mb.sender ();
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		let move_mb = async move { await!( mb.start( sum ) ); };
+		exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+
+		let mut addr  = Addr::new( send.clone() );
+
 
 		for _i in 0..10_000_000usize
 		{

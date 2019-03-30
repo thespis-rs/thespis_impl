@@ -5,7 +5,7 @@
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt }, executor::LocalPool } ,
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt, LocalSpawnExt }, executor::LocalPool } ,
 	thespis       :: { * } ,
 	log           :: { * } ,
 	thespis_impl  :: { single_thread::* } ,
@@ -61,12 +61,21 @@ impl Drop for Sum
 
 
 
-async fn sum( exec: &mut impl Spawn ) -> u64
+async fn sum( exec: &mut impl LocalSpawn ) -> u64
 {
 	let sum = Sum(5);
 
-	let mut mb  : Inbox<Sum>   = sum.start( exec );
-	let mut addr: Addr<Sum> = mb.addr();
+	// Create mailbox
+	//
+	let mut mb  : Inbox<Sum> = Inbox::new();
+	let     send             = mb.sender ();
+
+	// This is ugly right now. It will be more ergonomic in the future.
+	//
+	let move_mb = async move { await!( mb.start( sum ) ); };
+	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+
+	let mut addr  = Addr::new( send.clone() );
 
 	await!( addr.call( Add( 10 ) ) );
 
@@ -74,7 +83,6 @@ async fn sum( exec: &mut impl Spawn ) -> u64
 
 	trace!( "res is: {}", res );
 	return res;
-	// return await!( addr.call( Show{} ) );
 }
 
 
