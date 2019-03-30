@@ -22,7 +22,7 @@ impl<A> Address<A> for Addr<A>
 	where A: Actor + 'static,
 
 {
-	fn send<M>( &mut self, msg: M ) -> Pin<Box< dyn Future<Output=()> + '_>>
+	fn send<M>( &mut self, msg: M ) -> TupleResponse
 
 		where A: Handler< M >,
 		      M: Message<Result = ()> + 'static,
@@ -39,7 +39,7 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message + 'static>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = M::Result > + '_> >
+	fn call<M: Message + 'static>( &mut self, msg: M ) -> Response<M>
 
 		where A: Handler< M > ,
 

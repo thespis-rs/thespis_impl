@@ -24,7 +24,7 @@ impl<A> Inbox<A> where A: Actor + 'static
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 {
-	fn start( &mut self, mut actor: A ) -> Pin<Box< Future<Output=()> + '_>>
+	fn start( &mut self, mut actor: A ) -> TupleResponse
 	{
 		async move
 		{

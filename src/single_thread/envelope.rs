@@ -16,7 +16,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + '_> >
+	fn handle( self: Box<Self>, actor: &mut A ) -> TupleResponse
 	{
 		Box::pin( async move
 		{
@@ -47,7 +47,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Pin<Box< dyn Future< Output = () > + '_> >
+	fn handle( self: Box<Self>, actor: &mut A ) -> TupleResponse
 	{
 		async move
 		{
