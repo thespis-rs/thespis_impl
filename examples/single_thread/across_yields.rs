@@ -59,8 +59,9 @@ fn main()
 {
 	simple_logger::init().unwrap();
 
-	let mut pool = LocalPool::new();
-	let mut exec = pool.spawner();
+	let mut pool  = LocalPool::new();
+	let mut exec  = pool.spawner();
+	let mut exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -68,13 +69,13 @@ fn main()
 
 		// Create mailbox
 		//
-		let mut mb  : Inbox<MyActor> = Inbox::new();
-		let     send                 = mb.sender ();
+		let mb  : Inbox<MyActor> = Inbox::new();
+		let send                 = mb.sender ();
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
 		let move_mb = async move { await!( mb.start( a ) ); };
-		exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 
 		trace!( "calling mb.addr()" );
@@ -92,8 +93,9 @@ fn main()
 
 		info!( "We got a result: {}", result2 );
 		assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
-
 	};
 
-	pool.run_until( program );
+	exec.spawn_local( program ).expect( "Spawn program" );
+
+	pool.run();
 }

@@ -23,8 +23,8 @@ dependencies:
 dev-dependencies:
 
   actix            : ^0.7.9
-  criterion        : { version: ^0.2               , features: [ real_blackbox        ]                          }
-  futures-preview: { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
+  criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
+  futures-preview  : { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
 
 
 bench:
@@ -32,6 +32,24 @@ bench:
   - name   : single_thread_delivery
     path   : benches/single_thread/delivery.rs
     harness: false
+
+  - name   : multi_thread_delivery
+    path   : benches/multi_thread/delivery.rs
+    harness: false
+
+example:
+
+  - name   : single_thread_basic
+    path   : examples/single_thread/basic.rs
+
+  - name   : single_thread_across
+    path   : examples/single_thread/across_yields.rs
+
+  - name   : multi_thread_basic
+    path   : examples/multi_thread/basic.rs
+
+  - name   : multi_thread_move_fut
+    path   : examples/multi_thread/move_fut.rs
 
 
 profile:

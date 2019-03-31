@@ -1,9 +1,9 @@
-use crate :: { import::*, single_thread::* };
+use crate :: { import::*, multi_thread::* };
 
 pub struct Inbox<A> where A: Actor + 'static
 {
-	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A>           >> ,
-	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> + 'static >> ,
+	handle: mpsc::UnboundedSender  <Box< dyn ThreadSafeEnvelope<A>           >> ,
+	msgs  : mpsc::UnboundedReceiver<Box< dyn ThreadSafeEnvelope<A> + 'static >> ,
 }
 
 impl<A> Inbox<A> where A: Actor + 'static
@@ -15,12 +15,11 @@ impl<A> Inbox<A> where A: Actor + 'static
 		Self { handle, msgs }
 	}
 
-	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn Envelope<A> >>
+	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn ThreadSafeEnvelope<A> >>
 	{
 		self.handle.clone()
 	}
 }
-
 
 
 
@@ -34,6 +33,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 		let Inbox{ mut msgs, handle } = self;
 		drop( handle );
 
+		trace!( "starting loop in mailbox" );
+
 		loop
 		{
 			match await!( msgs.next() )
@@ -45,6 +46,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
 
 	}.boxed() }
 }
+
 
 
 impl<A> Default for Inbox<A> where A: Actor

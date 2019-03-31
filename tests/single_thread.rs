@@ -61,44 +61,92 @@ impl Drop for Sum
 
 
 
-async fn sum( exec: &mut impl LocalSpawn ) -> u64
+async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 {
 	let sum = Sum(5);
 
 	// Create mailbox
 	//
-	let mut mb  : Inbox<Sum> = Inbox::new();
-	let     send             = mb.sender ();
+	let     mb  : Inbox<Sum> = Inbox::new(             );
+	let mut addr             = Addr ::new( mb.sender() );
 
 	// This is ugly right now. It will be more ergonomic in the future.
 	//
 	let move_mb = async move { await!( mb.start( sum ) ); };
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
-	let mut addr  = Addr::new( send.clone() );
+
+	await!( addr.send( Add( 10 ) ) );
+
+	let res = await!( addr.call( Show{} ) );
+
+	trace!( "res is: {}", res );
+
+	res
+}
+
+
+
+async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
+{
+	let sum = Sum(5);
+
+	// Create mailbox
+	//
+	let     mb  : Inbox<Sum> = Inbox::new(             );
+	let mut addr             = Addr ::new( mb.sender() );
+
+	// This is ugly right now. It will be more ergonomic in the future.
+	//
+	let move_mb = async move { await!( mb.start( sum ) ); };
+	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+
 
 	await!( addr.call( Add( 10 ) ) );
 
 	let res = await!( addr.call( Show{} ) );
 
 	trace!( "res is: {}", res );
-	return res;
+
+	res
 }
 
 
 
 #[test]
 //
-fn test_basic_send_call()
+fn test_basic_send()
 {
 	let mut pool = LocalPool::new();
 	let mut exec = pool.spawner();
 
 	let program = async move
 	{
-		simple_logger::init().unwrap();
+		let _ = simple_logger::init();
 
-		let result = await!( sum( &mut exec ) );
+		let result = await!( sum_send( &mut exec ) );
+
+		trace!( "result is: {}", result );
+		assert_eq!( 15, result );
+	};
+
+	pool.run_until( program );
+}
+
+
+
+#[test]
+//
+fn test_basic_call()
+{
+	let mut pool = LocalPool::new();
+	let mut exec = pool.spawner();
+
+	let program = async move
+	{
+		let _ = simple_logger::init();
+
+		let result = await!( sum_call( &mut exec ) );
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );

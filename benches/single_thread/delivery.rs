@@ -72,19 +72,20 @@ impl Accu
 
 fn send()
 {
-	let mut pool = LocalPool::new();
-	let mut exec = pool.spawner();
+	let mut pool  = LocalPool::new();
+	let mut exec  = pool.spawner();
+	let mut exec2 = exec.clone();
 
-	pool.run_until( async
+	let bench = async move
 	{
 		let     sum              = Sum(5)                  ;
-		let mut mb  : Inbox<Sum> = Inbox::new()            ;
+		let     mb  : Inbox<Sum> = Inbox::new()            ;
 		let mut addr             = Addr::new( mb.sender() );
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
 		let move_mb = async move { await!( mb.start( sum ) ); };
-		exec.spawn_local( move_mb ).expect( "Spawning failed" );
+		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -93,25 +94,30 @@ fn send()
 
 		let res = await!( addr.call( Show{} ) );
 		assert_eq!( 1005, res );
-	})
+	};
+
+	exec.spawn_local( bench ).expect( "Spawn benchmark" );
+
+	pool.run();
 }
 
 
 fn call()
 {
-	let mut pool = LocalPool::new();
-	let mut exec = pool.spawner();
+	let mut pool  = LocalPool::new();
+	let mut exec  = pool.spawner();
+	let mut exec2 = exec.clone();
 
-	pool.run_until( async
+	let bench = async move
 	{
 		let     sum              = Sum(5)                  ;
-		let mut mb  : Inbox<Sum> = Inbox::new()            ;
+		let     mb  : Inbox<Sum> = Inbox::new()            ;
 		let mut addr             = Addr::new( mb.sender() );
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
 		let move_mb = async move { await!( mb.start( sum ) ); };
-		exec.spawn_local( move_mb ).expect( "Spawning failed" );
+		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -120,11 +126,43 @@ fn call()
 
 		let res = await!( addr.call( Show{} ) );
 		assert_eq!( 1005, res );
-	})
+	};
+
+	exec.spawn_local( bench ).expect( "Spawn benchmark" );
+
+	pool.run();
 }
 
 
-fn actix()
+fn actix_dosend()
+{
+	actix::System::run( ||
+	{
+		Arbiter::spawn( async
+		{
+			let sum  = AxSum(5)    ;
+			let addr = sum.start() ;
+
+			for _i in 0..100usize
+			{
+				addr.do_send( AxAdd( 10 ) );
+			}
+
+			let res = await!( addr.send( AxShow{} ) ).unwrap();
+
+			assert_eq!( 1005, res );
+
+			actix::System::current().stop();
+
+			Ok(())
+
+		}.boxed().compat());
+
+	});
+}
+
+
+fn actix_send()
 {
 	actix::System::run( ||
 	{
@@ -225,13 +263,14 @@ fn bench_calls( c: &mut Criterion )
 {
 	c.bench
 	(
-		"Delivery",
+		"Single Thread Delivery",
 
 		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
 			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
 			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
 			.with_function( "async inline method x100", |b| b.iter( || inline_method() ) )
-			.with_function( "actix x100"              , |b| b.iter( || actix        () ) )
+			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
+			.with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )
 	);
 }
 

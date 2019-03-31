@@ -1,0 +1,71 @@
+#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+
+#![ allow( dead_code, unused_imports )]
+
+
+use
+{
+	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
+	std           :: { pin::Pin                                                                            } ,
+	log           :: { *                                                                                   } ,
+	thespis       :: { *                                                                                   } ,
+	thespis_impl  :: { single_thread::*                                                                    } ,
+};
+
+
+#[ derive( Actor ) ]
+//
+struct MyActor;
+
+struct Ping( String );
+
+
+impl Message for Ping
+{
+	type Result = String;
+}
+
+
+impl Handler< Ping > for MyActor
+{
+	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
+	{
+		"pong".into()
+
+	}.boxed() }
+}
+
+
+
+fn main()
+{
+	let mut pool  = LocalPool::new();
+	let mut exec  = pool.spawner();
+	let mut exec2 = exec.clone();
+
+	let program = async move
+	{
+		let a = MyActor;
+
+		// Create mailbox
+		//
+		let mb  : Inbox<MyActor> = Inbox::new();
+		let send                 = mb.sender ();
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		let move_mb = async move { await!( mb.start( a ) ); };
+		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+
+		let mut addr  = Addr::new( send.clone() );
+
+		let result  = await!( addr.call( Ping( "ping".into() ) ) );
+
+		assert_eq!( "pong".to_string(), result );
+		dbg!( result );
+	};
+
+	exec.spawn_local( program ).expect( "Spawn program" );
+
+	pool.run();
+}
