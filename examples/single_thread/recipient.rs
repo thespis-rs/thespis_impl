@@ -13,9 +13,8 @@ use
 };
 
 
-#[ derive( Actor ) ]
-//
-struct MyActor;
+#[ derive( Actor ) ] struct MyActor;
+#[ derive( Actor ) ] struct Other  ;
 
 struct Ping( String );
 
@@ -30,7 +29,17 @@ impl Handler< Ping > for MyActor
 {
 	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
 	{
-		"pong".into()
+		"MyActor".into()
+
+	}.boxed() }
+}
+
+
+impl Handler< Ping > for Other
+{
+	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
+	{
+		"Other".into()
 
 	}.boxed() }
 }
@@ -46,21 +55,35 @@ fn main()
 	let program = async move
 	{
 		let a = MyActor;
+		let b = Other;
 
 		// Create mailbox
 		//
 		let mb  : Inbox<MyActor> = Inbox::new();
-		let mut addr  = Addr::new( mb.sender() );
+		let addr                 = Addr::new( mb.sender() );
+
+		// Create Other mailbox
+		//
+		let mbo  : Inbox<Other> = Inbox::new();
+		let addro               = Addr::new( mbo.sender() );
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
 		let move_mb = async move { await!( mb.start( a ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
-		let result  = await!( addr.call( Ping( "ping".into() ) ) );
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		let move_mbo = async move { await!( mbo.start( b ) ); };
+		exec2.spawn_local( move_mbo ).expect( "Spawning mailbox failed" );
 
-		assert_eq!( "pong".to_string(), result );
-		dbg!( result );
+		let recs = vec![ addr.recipient(), addro.recipient() ];
+
+		for mut actor in recs
+		{
+			println!( "Pinged: {}", await!( actor.call( Ping( "ping".into() ) ) ) );
+		}
+
 	};
 
 	exec.spawn_local( program ).expect( "Spawn program" );

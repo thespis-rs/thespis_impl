@@ -48,10 +48,10 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 
 
-	fn call<M: Message + 'static>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
+	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
 
 		where A: Handler< M > ,
-		      M: ThreadSafeMessage,
+		      M: ThreadSafeMessage + 'static,
 		      <M as Message>::Result: Send,
 
 	{
@@ -68,6 +68,52 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 		}.boxed()
 	}
+
+
+
+	fn recipient<M>( &self ) -> Box< dyn ThreadSafeRecipient<M> >
+
+		where M: ThreadSafeMessage + 'static,
+		      A: Handler<M> + 'static,
+		      <M as Message>::Result: Send,
+
+	{
+		box Receiver{ addr: self.clone() }
+	}
 }
 
 
+
+struct Receiver<A: Actor + 'static>
+{
+	addr: Addr<A>
+}
+
+
+
+impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
+
+	where A: Handler< M > + 'static,
+	      M: ThreadSafeMessage + 'static,
+	      <M as Message>::Result: Send,
+
+{
+	default fn send( &mut self, msg: M ) -> ThreadSafeTupleResponse
+
+		where M: ThreadSafeMessage<Result = ()>,
+	{
+		self.addr.send( msg )
+	}
+
+
+
+	default fn call( &mut self, msg: M ) -> ThreadSafeResponse<M>
+
+	where A: Handler< M > ,
+	      M: ThreadSafeMessage,
+	      <M as Message>::Result: Send,
+
+	{
+		self.addr.call( msg )
+	}
+}

@@ -45,6 +45,9 @@ example:
   - name   : single_thread_across
     path   : examples/single_thread/across_yields.rs
 
+  - name   : single_thread_recipient
+    path   : examples/single_thread/recipient.rs
+
   - name   : multi_thread_basic
     path   : examples/multi_thread/basic.rs
 
