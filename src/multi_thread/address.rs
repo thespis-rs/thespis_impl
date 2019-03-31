@@ -32,9 +32,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 {
 	fn send<M>( &mut self, msg: M ) -> ThreadSafeTupleResponse
 
-		where  A                    : Handler< M >                             ,
-		       M                    : ThreadSafeMessage<Result = ()> + 'static ,
-		      <M as Message>::Result: Send                                     ,
+		where  A                    : Handler< M >                          ,
+		       M                    : Message<Result = ()> + Send + 'static ,
+		      <M as Message>::Result: Send                                  ,
 
 	{
 		async move
@@ -50,9 +50,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
 
-		where  A                    : Handler< M >                ,
-		       M                    : ThreadSafeMessage + 'static ,
-		      <M as Message>::Result: Send                        ,
+		where  A                    : Handler< M >             ,
+		       M                    : Message + Send + 'static ,
+		      <M as Message>::Result: Send                     ,
 
 	{
 		let mut mb = self.mb.clone();
@@ -73,9 +73,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	fn recipient<M>( &self ) -> Box< dyn ThreadSafeRecipient<M> >
 
-		where  M                    : ThreadSafeMessage + 'static ,
-		       A                    : Handler<M>        + 'static ,
-		      <M as Message>::Result: Send                        ,
+		where  M                    : Message + Send + 'static ,
+		       A                    : Handler<M>     + 'static ,
+		      <M as Message>::Result: Send                     ,
 
 	{
 		box Receiver{ addr: self.clone() }
@@ -93,14 +93,14 @@ struct Receiver<A: Actor + 'static>
 
 impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 
-	where  A                    : Handler< M >      + 'static ,
-	       M                    : ThreadSafeMessage + 'static ,
-	      <M as Message>::Result: Send                        ,
+	where  A                    : Handler< M >   + 'static ,
+	       M                    : Message + Send + 'static ,
+	      <M as Message>::Result: Send                     ,
 
 {
 	default fn send( &mut self, msg: M ) -> ThreadSafeTupleResponse
 
-		where M: ThreadSafeMessage<Result = ()>,
+		where M: Message<Result = ()>,
 	{
 		self.addr.send( msg )
 	}

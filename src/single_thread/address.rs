@@ -19,7 +19,7 @@ impl<A> Addr<A> where A: Actor + 'static
 	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
 	// ditch channels or write some channels that implement sink.
 	//
-	pub fn new( mb: mpsc::UnboundedSender<Box<dyn Envelope<A>>> ) -> Self
+	pub fn new( mb: mpsc::UnboundedSender<Box< dyn Envelope<A> >> ) -> Self
 	{
 		Self{ mb }
 	}
@@ -90,7 +90,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 {
 	default fn send( &mut self, msg: M ) -> TupleResponse
 
-		where M: Message<Result = ()> + 'static,
+		where M: Message<Result = ()>,
 	{
 		self.addr.send( msg )
 	}

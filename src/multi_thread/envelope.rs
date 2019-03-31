@@ -14,7 +14,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 
 	where  A                    : Actor             ,
 	       A                    : Handler<M>        ,
-	       M                    : ThreadSafeMessage ,
+	       M                    : Message + Send ,
 	      <M as Message>::Result: Send              ,
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> TupleResponse
@@ -45,7 +45,7 @@ impl<M> CallEnvelope<M> where M: Message
 impl<A, M> Envelope<A> for CallEnvelope<M>
 
 	where A: Actor,
-	      M: ThreadSafeMessage,
+	      M: Message + Send,
 	      A: Handler<M>,
 	      <M as Message>::Result: Send,
 {
