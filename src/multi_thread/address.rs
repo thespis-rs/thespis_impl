@@ -3,7 +3,7 @@ use crate :: { import::*, multi_thread::* };
 
 pub struct Addr< A: Actor >
 {
-	mb: mpsc::UnboundedSender<Box<dyn ThreadSafeEnvelope<A>>>,
+	mb: mpsc::UnboundedSender<Box< dyn Envelope<A> + Send >>,
 }
 
 impl< A: Actor > Clone for Addr<A>
@@ -19,7 +19,7 @@ impl<A> Addr<A> where A: Actor + 'static
 	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
 	// ditch channels or write some channels that implement sink.
 	//
-	pub fn new( mb: mpsc::UnboundedSender<Box<dyn ThreadSafeEnvelope<A>>> ) -> Self
+	pub fn new( mb: mpsc::UnboundedSender<Box< dyn Envelope<A> + Send >> ) -> Self
 	{
 		Self{ mb }
 	}
@@ -39,7 +39,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	{
 		async move
 		{
-			let envl: Box< dyn ThreadSafeEnvelope<A> >= Box::new( SendEnvelope::new( msg ) );
+			let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
 
 			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
 
@@ -61,7 +61,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 		{
 			let (ret_tx, ret_rx) = oneshot::channel::< <M as Message>::Result >();
 
-			let envl: Box< dyn ThreadSafeEnvelope<A> > = Box::new( CallEnvelope::new( msg, ret_tx ) );
+			let envl: Box< dyn Envelope<A> + Send > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
 			await!( mb.send( envl ) ).expect( "Failed to send to Mailbox"               );
 			await!( ret_rx          ).expect( "Failed to receive response in Addr.call" )

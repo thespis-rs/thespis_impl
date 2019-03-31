@@ -2,8 +2,8 @@ use crate :: { import::*, multi_thread::* };
 
 pub struct Inbox<A> where A: Actor + 'static
 {
-	handle: mpsc::UnboundedSender  <Box< dyn ThreadSafeEnvelope<A>           >> ,
-	msgs  : mpsc::UnboundedReceiver<Box< dyn ThreadSafeEnvelope<A> + 'static >> ,
+	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A> + Send           >> ,
+	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> + Send + 'static >> ,
 }
 
 impl<A> Inbox<A> where A: Actor + 'static
@@ -15,7 +15,7 @@ impl<A> Inbox<A> where A: Actor + 'static
 		Self { handle, msgs }
 	}
 
-	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn ThreadSafeEnvelope<A> >>
+	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn Envelope<A> + Send >>
 	{
 		self.handle.clone()
 	}

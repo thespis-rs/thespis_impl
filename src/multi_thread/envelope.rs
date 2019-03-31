@@ -10,7 +10,7 @@ impl<M> SendEnvelope<M> where M: Message
 	}
 }
 
-impl<A, M> ThreadSafeEnvelope<A> for SendEnvelope<M>
+impl<A, M> Envelope<A> for SendEnvelope<M>
 
 	where A: Actor,
 	      M: ThreadSafeMessage,
@@ -41,7 +41,7 @@ impl<M> CallEnvelope<M> where M: Message
 	}
 }
 
-impl<A, M> ThreadSafeEnvelope<A> for CallEnvelope<M>
+impl<A, M> Envelope<A> for CallEnvelope<M>
 
 	where A: Actor,
 	      M: ThreadSafeMessage,
