@@ -45,23 +45,6 @@ impl Handler< Show > for Sum
 }
 
 
-struct Accu( AtomicU64 );
-
-impl Accu
-{
-	#[ inline( never ) ]
-	//
-	async fn add( &self, v: Add )
-	{
-		self.0.fetch_add( v.0, Ordering::Relaxed );
-	}
-
-	async fn show( &self ) -> u64
-	{
-		self.0.load( Ordering::Relaxed )
-	}
-}
-
 
 fn send()
 {
@@ -105,6 +88,7 @@ fn send()
 }
 
 
+
 fn call()
 {
 	let mut pool  = LocalPool::new();
@@ -145,6 +129,56 @@ fn call()
 
 	pool.run();
 }
+
+
+
+
+struct Accu( AtomicU64 );
+
+impl Accu
+{
+	#[ inline( never ) ]
+	//
+	async fn add( &self, v: Add )
+	{
+		self.0.fetch_add( v.0, Ordering::Relaxed );
+	}
+
+	async fn show( &self ) -> u64
+	{
+		self.0.load( Ordering::Relaxed )
+	}
+}
+
+
+
+fn method()
+{
+	block_on( async
+	{
+		let sum  = Arc::new( Accu( AtomicU64::from( 5 ) ) );
+		let sum2 = sum.clone();
+
+		thread::spawn( move ||
+		{
+			let mut thread_pool = LocalPool::new();
+
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					await!( sum2.add( Add( 10 ) ) );
+				}
+
+				let res = await!( sum2.show() );
+				assert_eq!( 1005, res );
+			};
+
+			thread_pool.run_until( thread_program );
+		});
+	})
+}
+
 
 
 // fn actix_dosend()
@@ -226,67 +260,35 @@ fn call()
 // 	});
 // }
 
+// struct AxSum (u64);
+// struct AxAdd (u64);
+// struct AxShow     ;
 
-fn method()
-{
-	block_on( async
-	{
-		let sum  = Arc::new( Accu( AtomicU64::from( 5 ) ) );
-		let sum2 = sum.clone();
-
-		thread::spawn( move ||
-		{
-			let mut thread_pool = LocalPool::new();
-
-			let thread_program = async move
-			{
-				for _i in 0..100usize
-				{
-					await!( sum2.add( Add( 10 ) ) );
-				}
-
-				let res = await!( sum2.show() );
-				assert_eq!( 1005, res );
-			};
-
-			thread_pool.run_until( thread_program );
-		});
-	})
-}
+// impl AxMessage for AxAdd  { type Result  = ()              ; }
+// impl AxMessage for AxShow { type Result  = u64             ; }
+// impl AxActor   for AxSum  { type Context = AxContext<Self> ; }
 
 
-
-// --------------------------------------------------------------------
-
-struct AxSum (u64);
-struct AxAdd (u64);
-struct AxShow     ;
-
-impl AxMessage for AxAdd  { type Result  = ()              ; }
-impl AxMessage for AxShow { type Result  = u64             ; }
-impl AxActor   for AxSum  { type Context = AxContext<Self> ; }
-
-
-impl AxHandler< AxAdd > for AxSum
-{
-	type Result  = ()
-;
-	fn handle( &mut self, msg: AxAdd, _ctx: &mut AxContext<Self> )
-	{
-		self.0 += msg.0;
-	}
-}
+// impl AxHandler< AxAdd > for AxSum
+// {
+// 	type Result  = ()
+// ;
+// 	fn handle( &mut self, msg: AxAdd, _ctx: &mut AxContext<Self> )
+// 	{
+// 		self.0 += msg.0;
+// 	}
+// }
 
 
-impl AxHandler< AxShow > for AxSum
-{
-	type Result  = u64
-;
-	fn handle( &mut self, _msg: AxShow, _ctx: &mut AxContext<Self> ) -> Self::Result
-	{
-		self.0
-	}
-}
+// impl AxHandler< AxShow > for AxSum
+// {
+// 	type Result  = u64
+// ;
+// 	fn handle( &mut self, _msg: AxShow, _ctx: &mut AxContext<Self> ) -> Self::Result
+// 	{
+// 		self.0
+// 	}
+// }
 
 
 
@@ -300,8 +302,8 @@ fn bench_calls( c: &mut Criterion )
 		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
 			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
 			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
-			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
-			.with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )
+			// .with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
+			// .with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )
 	);
 }
 
