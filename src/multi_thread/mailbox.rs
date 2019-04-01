@@ -1,12 +1,12 @@
 use crate :: { import::*, multi_thread::* };
 
-pub struct Inbox<A> where A: Actor + 'static
+pub struct Inbox<A> where A: Actor
 {
 	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A> + Send           >> ,
 	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> + Send + 'static >> ,
 }
 
-impl<A> Inbox<A> where A: Actor + 'static
+impl<A> Inbox<A> where A: Actor
 {
 	pub fn new() -> Self
 	{

@@ -14,7 +14,7 @@ impl< A: Actor > Clone for Addr<A>
 	}
 }
 
-impl<A> Addr<A> where A: Actor + 'static
+impl<A> Addr<A> where A: Actor
 {
 	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
 	// ditch channels or write some channels that implement sink.
@@ -27,7 +27,7 @@ impl<A> Addr<A> where A: Actor + 'static
 
 impl<A> ThreadSafeAddress<A> for Addr<A>
 
-	where A: Actor + 'static,
+	where A: Actor,
 
 {
 	fn send<M>( &mut self, msg: M ) -> ThreadSafeTupleResponse
@@ -48,9 +48,11 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 
 
+	// TODO: Why do actor and address have to be static here? The single threaded version doesn't require static here for actor
+	//
 	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
 
-		where  A                    : Handler< M >             ,
+		where  A                    : Handler< M >   + 'static ,
 		       M                    : Message + Send + 'static ,
 		      <M as Message>::Result: Send                     ,
 
@@ -84,7 +86,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 
 
-struct Receiver<A: Actor + 'static>
+struct Receiver<A: Actor>
 {
 	addr: Addr<A>
 }

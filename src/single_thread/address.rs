@@ -14,7 +14,7 @@ impl< A: Actor > Clone for Addr<A>
 	}
 }
 
-impl<A> Addr<A> where A: Actor + 'static
+impl<A> Addr<A> where A: Actor
 {
 	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
 	// ditch channels or write some channels that implement sink.
@@ -27,7 +27,7 @@ impl<A> Addr<A> where A: Actor + 'static
 
 impl<A> Address<A> for Addr<A>
 
-	where A: Actor + 'static,
+	where A: Actor,
 
 {
 	fn send<M>( &mut self, msg: M ) -> TupleResponse
@@ -75,7 +75,7 @@ impl<A> Address<A> for Addr<A>
 }
 
 
-struct Receiver<A: Actor + 'static>
+struct Receiver<A: Actor>
 {
 	addr: Addr<A>
 }
@@ -84,7 +84,7 @@ struct Receiver<A: Actor + 'static>
 
 impl<A, M> Recipient<M> for Receiver<A>
 
-	where A: Handler<M> + 'static,
+	where A: Handler<M>            ,
 	      M: Message    + 'static  ,
 
 {
