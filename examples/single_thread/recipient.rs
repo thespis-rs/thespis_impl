@@ -27,7 +27,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
+	fn handle( &mut self, _msg: Ping ) -> Response<String> { async move
 	{
 		"MyActor".into()
 
@@ -37,7 +37,7 @@ impl Handler< Ping > for MyActor
 
 impl Handler< Ping > for Other
 {
-	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
+	fn handle( &mut self, _msg: Ping ) -> Response<String> { async move
 	{
 		"Other".into()
 

@@ -38,7 +38,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, msg: Ping ) -> Response<Ping> { async move
+	fn handle( &mut self, msg: Ping ) -> Response<String> { async move
 	{
 		trace!( "Ping handler called" );
 

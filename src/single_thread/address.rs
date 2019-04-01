@@ -47,7 +47,7 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message>( &mut self, msg: M ) -> Response<M>
+	fn call<M: Message>( &mut self, msg: M ) -> Response< <M as Message>::Result >
 
 		where A: Handler< M > ,
 
@@ -97,7 +97,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> Response<M>
+	default fn call( &mut self, msg: M ) -> Response< <M as Message>::Result >
 	{
 		self.addr.call( msg )
 	}

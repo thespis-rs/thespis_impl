@@ -29,7 +29,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> Response<Ping> { async move
+	fn handle( &mut self, _msg: Ping ) -> Response<String> { async move
 	{
 		"pong".into()
 

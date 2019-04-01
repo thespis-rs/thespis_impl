@@ -32,9 +32,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 {
 	fn send<M>( &mut self, msg: M ) -> ThreadSafeTupleResponse
 
-		where  A                    : Handler< M >                          ,
-		       M                    : Message<Result = ()> + Send  ,
-		      <M as Message>::Result: Send                                  ,
+		where  A                    : Handler< M >                ,
+		       M                    : Message<Result = ()> + Send ,
+		      <M as Message>::Result: Send                        ,
 
 	{
 		async move
@@ -52,9 +52,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	//
 	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
 
-		where  A                    : Handler< M >             ,
-		       M                    : Message + Send  ,
-		      <M as Message>::Result: Send                     ,
+		where  A                    : Handler< M >   ,
+		       M                    : Message + Send ,
+		      <M as Message>::Result: Send           ,
 
 	{
 		let mut mb = self.mb.clone();
@@ -109,7 +109,7 @@ impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> ThreadSafeResponse<M>
+	default fn call( &mut self, msg: M ) -> ThreadSafeResponse< <M as Message>::Result >
 	{
 		self.addr.call( msg )
 	}
