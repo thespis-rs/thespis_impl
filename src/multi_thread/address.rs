@@ -33,7 +33,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	fn send<M>( &mut self, msg: M ) -> ThreadSafeTupleResponse
 
 		where  A                    : Handler< M >                          ,
-		       M                    : Message<Result = ()> + Send + 'static ,
+		       M                    : Message<Result = ()> + Send  ,
 		      <M as Message>::Result: Send                                  ,
 
 	{
@@ -52,8 +52,8 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	//
 	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
 
-		where  A                    : Handler< M >   + 'static ,
-		       M                    : Message + Send + 'static ,
+		where  A                    : Handler< M >             ,
+		       M                    : Message + Send  ,
 		      <M as Message>::Result: Send                     ,
 
 	{
@@ -75,8 +75,8 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	fn recipient<M>( &self ) -> Box< dyn ThreadSafeRecipient<M> >
 
-		where  M                    : Message + Send + 'static ,
-		       A                    : Handler<M>     + 'static ,
+		where  M                    : Message + Send  ,
+		       A                    : Handler<M>               ,
 		      <M as Message>::Result: Send                     ,
 
 	{
@@ -95,8 +95,8 @@ struct Receiver<A: Actor>
 
 impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 
-	where  A                    : Handler< M >   + 'static ,
-	       M                    : Message + Send + 'static ,
+	where  A                    : Handler< M >             ,
+	       M                    : Message + Send  ,
 	      <M as Message>::Result: Send                     ,
 
 {

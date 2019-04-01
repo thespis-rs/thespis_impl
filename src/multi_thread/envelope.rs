@@ -28,7 +28,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 
 
 
-pub struct CallEnvelope<M> where M: Message + 'static
+pub struct CallEnvelope<M> where M: Message
 {
 	msg : M,
 	addr: oneshot::Sender< M::Result >,
@@ -71,7 +71,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 
 
 
-pub struct SendEnvelope<M> where M: Message + 'static
+pub struct SendEnvelope<M> where M: Message
 {
 	msg : M,
 }

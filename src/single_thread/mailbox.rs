@@ -2,8 +2,8 @@ use crate :: { import::*, single_thread::* };
 
 pub struct Inbox<A> where A: Actor
 {
-	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A>           >> ,
-	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> + 'static >> ,
+	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A> >> ,
+	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> >> ,
 }
 
 impl<A> Inbox<A> where A: Actor
@@ -24,7 +24,7 @@ impl<A> Inbox<A> where A: Actor
 
 
 
-impl<A> Mailbox<A> for Inbox<A> where A: Actor + 'static
+impl<A> Mailbox<A> for Inbox<A> where A: Actor
 {
 	fn start( self, mut actor: A ) -> Pin<Box< dyn Future<Output=()> >> { async move
 	{

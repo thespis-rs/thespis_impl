@@ -33,7 +33,7 @@ impl<A> Address<A> for Addr<A>
 	fn send<M>( &mut self, msg: M ) -> TupleResponse
 
 		where A: Handler< M >,
-		      M: Message<Result = ()> + 'static,
+		      M: Message<Result = ()>,
 
 	{
 		async move
@@ -47,7 +47,7 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message + 'static>( &mut self, msg: M ) -> Response<M>
+	fn call<M: Message>( &mut self, msg: M ) -> Response<M>
 
 		where A: Handler< M > ,
 
@@ -68,7 +68,7 @@ impl<A> Address<A> for Addr<A>
 	}
 
 
-	fn recipient<M>( &self ) -> Box< dyn Recipient<M> > where M: Message + 'static, A: Handler<M> + 'static
+	fn recipient<M>( &self ) -> Box< dyn Recipient<M> > where M: Message, A: Handler<M>
 	{
 		box Receiver{ addr: self.clone() }
 	}
@@ -85,7 +85,7 @@ struct Receiver<A: Actor>
 impl<A, M> Recipient<M> for Receiver<A>
 
 	where A: Handler<M>            ,
-	      M: Message    + 'static  ,
+	      M: Message     ,
 
 {
 	default fn send( &mut self, msg: M ) -> TupleResponse
