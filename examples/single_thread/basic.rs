@@ -9,7 +9,7 @@ use
 	std           :: { pin::Pin                                                                            } ,
 	log           :: { *                                                                                   } ,
 	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { single_thread::*                                                                    } ,
+	thespis_impl  :: { single_thread::*, runtime::rt                                                       } ,
 };
 
 
@@ -39,23 +39,16 @@ impl Handler< Ping > for MyActor
 
 fn main()
 {
-	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
-
 	let program = async move
 	{
 		let a = MyActor;
 
 		// Create mailbox
 		//
-		let mb  : Inbox<MyActor> = Inbox::new();
-		let mut addr  = Addr::new( mb.sender() );
+		let     mb  : Inbox<MyActor> = Inbox::new();
+		let mut addr                 = Addr::new( mb.sender() );
 
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		let move_mb = async move { await!( mb.start( a ) ); };
-		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+		mb.start( a ).expect( "Failed to start mailbox" );
 
 		let result  = await!( addr.call( Ping( "ping".into() ) ) );
 
@@ -63,7 +56,7 @@ fn main()
 		dbg!( result );
 	};
 
-	exec.spawn_local( program ).expect( "Spawn program" );
+	rt::spawn( program ).expect( "Spawn program" );
 
-	pool.run();
+	rt::run();
 }

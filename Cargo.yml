@@ -13,19 +13,22 @@ lib:
 dependencies:
 
   # crossbeam-channel: { path: ../../crossbeam-channel, features: [ async  ]                          }
-  thespis          : { path: ../thespis_iface       , features: [ derive ]                          }
-  futures-preview: { path: ../../futures-rs/futures, features: [ nightly, std ], default-features: false }
-  log              : 0.4.6
-  simple_logger    : ^1
-  tokio-async-await: { version: ^0.1          , features: [ async-await-preview ], default-features: false }
+  thespis             : { path: ../thespis_iface       , features: [ derive ]                          }
+  failure             : ^0.1
+  futures-preview     : { path: ../../futures-rs/futures, features: [ nightly, std ], default-features: false }
+  log                 : 0.4.6
+  simple_logger       : ^1
+  tokio-async-await   : { version: ^0.1          , features: [ async-await-preview ], default-features: false }
   tokio-current-thread: ^0.1
+  once_cell           : ^0.1
 
 dev-dependencies:
 
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
   futures-preview  : { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
-
+  tokio            : { version: ^0.1                 , features: [ async-await-preview  ]                          }
+  tokio-async-await: ^0.1
 
 bench:
 
@@ -47,6 +50,10 @@ example:
 
   - name   : single_thread_recipient
     path   : examples/single_thread/recipient.rs
+
+  - name   : single_thread_tokio
+    path   : examples/single_thread/tokio.rs
+
 
   - name   : multi_thread_basic
     path   : examples/multi_thread/basic.rs

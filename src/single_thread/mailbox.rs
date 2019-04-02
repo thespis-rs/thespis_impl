@@ -1,4 +1,4 @@
-use crate :: { import::*, single_thread::* };
+use crate :: { import::*, single_thread::*, runtime::rt };
 
 pub struct Inbox<A> where A: Actor
 {
@@ -26,25 +26,29 @@ impl<A> Inbox<A> where A: Actor
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor
 {
-	fn start( self, mut actor: A ) -> Pin<Box< dyn Future<Output=()> >> { async move
+	fn start( self, mut actor: A ) -> ThesRes<()>
 	{
-		// TODO: Clean this up... can actor not be static here?
-		// We need to drop the handle, otherwise the channel will never close and the program will not
-		// terminate. Like this when the user drops all their handles, this loop will automatically break.
-		//
-		let Inbox{ mut msgs, handle } = self;
-		drop( handle );
-
-		loop
+		let mb = async move
 		{
-			match await!( msgs.next() )
-			{
-				Some( envl ) => { await!( envl.handle( &mut actor ) ); }
-				None         => { break;                               }
-			}
-		}
+			// TODO: Clean this up...
+			// We need to drop the handle, otherwise the channel will never close and the program will not
+			// terminate. Like this when the user drops all their handles, this loop will automatically break.
+			//
+			let Inbox{ mut msgs, handle } = self;
+			drop( handle );
 
-	}.boxed() }
+			loop
+			{
+				match await!( msgs.next() )
+				{
+					Some( envl ) => { await!( envl.handle( &mut actor ) ); }
+					None         => { break;                               }
+				}
+			}
+		};
+
+		rt::spawn( mb )
+	}
 }
 
 

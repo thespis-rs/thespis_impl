@@ -10,7 +10,9 @@ name = "multi_thread_delivery"
 path = "benches/multi_thread/delivery.rs"
 
 [dependencies]
+failure = "^0.1"
 log = "0.4.6"
+once_cell = "^0.1"
 simple_logger = "^1"
 tokio-current-thread = "^0.1"
 
@@ -30,6 +32,7 @@ version = "^0.1"
 
 [dev-dependencies]
 actix = "^0.7.9"
+tokio-async-await = "^0.1"
 
 [dev-dependencies.criterion]
 features = ["real_blackbox"]
@@ -39,6 +42,10 @@ version = "^0.2"
 default-features = false
 features = ["std", "compat", "nightly"]
 path = "../../futures-rs/futures"
+
+[dev-dependencies.tokio]
+features = ["async-await-preview"]
+version = "^0.1"
 
 [[example]]
 name = "single_thread_basic"
@@ -51,6 +58,10 @@ path = "examples/single_thread/across_yields.rs"
 [[example]]
 name = "single_thread_recipient"
 path = "examples/single_thread/recipient.rs"
+
+[[example]]
+name = "single_thread_tokio"
+path = "examples/single_thread/tokio.rs"
 
 [[example]]
 name = "multi_thread_basic"
