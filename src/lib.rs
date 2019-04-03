@@ -22,7 +22,6 @@ mod import
 		std       :: { sync::Arc, pin::Pin, future::Future, marker::PhantomData, cell::RefCell, rc::Rc } ,
 		thespis   :: { *                                                                               } ,
 		log       :: { *                                                                               } ,
-		tokio     :: { await as await01                                                                } ,
 		once_cell :: { unsync::OnceCell, unsync::Lazy, unsync_lazy                                     } ,
 
 		futures ::

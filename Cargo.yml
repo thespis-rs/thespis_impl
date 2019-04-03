@@ -10,6 +10,12 @@ lib:
 
   bench: false
 
+
+features:
+
+  default: [ tokio ]
+
+
 dependencies:
 
   # crossbeam-channel: { path: ../../crossbeam-channel, features: [ async  ]                          }
@@ -19,7 +25,7 @@ dependencies:
   log                 : 0.4.6
   simple_logger       : ^1
   # tokio-async-await   : { version: ^0.1, features: [ async-await-preview ], default-features: false }
-  tokio               : { version: ^0.1, features: [ async-await-preview, rt-full ], default-features: false }
+  tokio               : { version: ^0.1, features: [ async-await-preview, rt-full ], default-features: false, optional: true }
   once_cell           : ^0.1
 
 dev-dependencies:
@@ -52,14 +58,15 @@ example:
   - name   : single_thread_recipient
     path   : examples/single_thread/recipient.rs
 
-  - name   : single_thread_tokio
-    path   : examples/single_thread/tokio.rs
-
   - name   : single_thread_perf
     path   : examples/single_thread/perf.rs
 
   - name   : single_thread_no_rt
     path   : examples/single_thread/no_rt.rs
+
+  - name             : single_thread_tokio
+    path             : examples/single_thread/tokio.rs
+    required-features: [ tokio ]
 
 
   # Multi thread
