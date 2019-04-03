@@ -7,7 +7,7 @@ use
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { single_thread::*                                                     } ,
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
-	tokio_async_await :: { await                                       },
+	tokio             :: { await as await01                                       },
 
 };
 
@@ -84,7 +84,7 @@ fn send()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start( sum ) ); };
+		let move_mb = async move { await!( mb.start_fut( sum ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
@@ -116,7 +116,7 @@ fn call()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start( sum ) ); };
+		let move_mb = async move { await!( mb.start_fut( sum ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
@@ -148,7 +148,7 @@ fn actix_dosend()
 				addr.do_send( AxAdd( 10 ) );
 			}
 
-			let res = await!( addr.send( AxShow{} ) ).unwrap();
+			let res = await01!( addr.send( AxShow{} ) ).unwrap();
 
 			assert_eq!( 1005, res );
 
@@ -173,10 +173,10 @@ fn actix_send()
 
 			for _i in 0..100usize
 			{
-				await!( addr.send( AxAdd( 10 ) ) ).unwrap();
+				await01!( addr.send( AxAdd( 10 ) ) ).unwrap();
 			}
 
-			let res = await!( addr.send( AxShow{} ) ).unwrap();
+			let res = await01!( addr.send( AxShow{} ) ).unwrap();
 
 			assert_eq!( 1005, res );
 

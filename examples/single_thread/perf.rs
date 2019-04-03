@@ -1,16 +1,13 @@
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
-#![ allow( dead_code, unused_imports )]
+// #![ allow( dead_code, unused_imports )]
 
 
 use
 {
-	futures       :: { future::{ Future, FutureExt, TryFutureExt }, task::{ LocalSpawn, LocalSpawnExt, SpawnExt }, executor::LocalPool } ,
-	std           :: { pin::Pin                                                                                         } ,
-	log           :: { *                                                                                                } ,
+	futures       :: { future::{ FutureExt } } ,
 	thespis       :: { *                                                                                                } ,
-	thespis_impl  :: { single_thread::*                                                                                 } ,
-	tokio_current_thread:: { spawn, block_on_all                                                                        } ,
+	thespis_impl  :: { single_thread::*, runtime::rt                                                                    } ,
 };
 
 
@@ -25,7 +22,7 @@ impl Message for Show { type Result = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Response<Add> { async move
+	fn handle( &mut self, msg: Add ) -> TupleResponse { async move
 	{
 
 		self.0 += msg.0;
@@ -36,7 +33,7 @@ impl Handler< Add > for Sum
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Response<Show> { async move
+	fn handle( &mut self, _msg: Show ) -> Response<u64> { async move
 	{
 
 		self.0
@@ -48,20 +45,14 @@ impl Handler< Show > for Sum
 
 fn main()
 {
-	let mut pool = LocalPool::new();
-	let mut exec = pool.spawner();
-
 	let program = async move
 	{
 		let     sum              = Sum(5)      ;
 
-		let mut mb  : Inbox<Sum> = Inbox::new();
-		let     send             = mb.sender ();
+		let mb  : Inbox<Sum> = Inbox::new();
+		let send             = mb.sender ();
 
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		let move_mb = async move { await!( mb.start( sum ) ); };
-		exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+		mb.start( sum ).expect( "Failed to start mailbox" );
 
 		let mut addr  = Addr::new( send.clone() );
 
@@ -75,8 +66,9 @@ fn main()
 		assert_eq!( 100_000_005, res );
 
 		dbg!( res );
-
 	};
 
-	pool.run_until( program );
+	rt::spawn( program ).expect( "Spawn program" );
+
+	rt::run();
 }

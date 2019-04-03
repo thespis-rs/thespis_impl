@@ -9,7 +9,7 @@ use
 	std           :: { pin::Pin                                                                            } ,
 	log           :: { *                                                                                   } ,
 	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { single_thread::*                                                                    } ,
+	thespis_impl  :: { single_thread::*, runtime::rt                                                       } ,
 };
 
 
@@ -59,10 +59,6 @@ fn main()
 {
 	simple_logger::init().unwrap();
 
-	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
-
 	let program = async move
 	{
 		let a = MyActor{ seed: "seed".into() };
@@ -72,11 +68,7 @@ fn main()
 		let mb  : Inbox<MyActor> = Inbox::new();
 		let send                 = mb.sender ();
 
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		let move_mb = async move { await!( mb.start( a ) ); };
-		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
-
+		mb.start( a ).expect( "Failed to start mailbox" );
 
 		trace!( "calling mb.addr()" );
 		let mut addr  = Addr::new( send.clone() );
@@ -95,7 +87,7 @@ fn main()
 		assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
 	};
 
-	exec.spawn_local( program ).expect( "Spawn program" );
+	rt::spawn( program ).expect( "Spawn program" );
 
-	pool.run();
+	rt::run();
 }

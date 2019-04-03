@@ -9,12 +9,13 @@ use
 	std           :: { pin::Pin                                                                            } ,
 	log           :: { *                                                                                   } ,
 	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { single_thread::*, runtime::rt                                                       } ,
+	thespis_impl  :: { single_thread::*                                                                    } ,
 };
 
 
-#[ derive( Actor ) ] struct MyActor;
-#[ derive( Actor ) ] struct Other  ;
+#[ derive( Actor ) ]
+//
+struct MyActor;
 
 struct Ping( String );
 
@@ -29,17 +30,7 @@ impl Handler< Ping > for MyActor
 {
 	fn handle( &mut self, _msg: Ping ) -> Response<String> { async move
 	{
-		"MyActor".into()
-
-	}.boxed() }
-}
-
-
-impl Handler< Ping > for Other
-{
-	fn handle( &mut self, _msg: Ping ) -> Response<String> { async move
-	{
-		"Other".into()
+		"pong".into()
 
 	}.boxed() }
 }
@@ -48,33 +39,31 @@ impl Handler< Ping > for Other
 
 fn main()
 {
+	let mut pool  = LocalPool::new();
+	let mut exec  = pool.spawner();
+	let mut exec2 = exec.clone();
+
 	let program = async move
 	{
 		let a = MyActor;
-		let b = Other;
 
 		// Create mailbox
 		//
 		let mb  : Inbox<MyActor> = Inbox::new();
-		let addr                 = Addr::new( mb.sender() );
+		let mut addr  = Addr::new( mb.sender() );
 
-		// Create Other mailbox
+		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let mbo  : Inbox<Other> = Inbox::new();
-		let addro               = Addr::new( mbo.sender() );
+		let move_mb = async move { await!( mb.start_fut( a ) ); };
+		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
-		mb .start( a ).expect( "Failed to start mailbox" );
-		mbo.start( b ).expect( "Failed to start mailbox" );
+		let result  = await!( addr.call( Ping( "ping".into() ) ) );
 
-		let recs = vec![ addr.recipient(), addro.recipient() ];
-
-		for mut actor in recs
-		{
-			println!( "Pinged: {}", await!( actor.call( Ping( "ping".into() ) ) ) );
-		}
+		assert_eq!( "pong".to_string(), result );
+		dbg!( result );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
+	exec.spawn_local( program ).expect( "Spawn program" );
 
-	rt::run();
+	pool.run();
 }

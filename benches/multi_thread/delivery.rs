@@ -1,15 +1,13 @@
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-#![ allow( unused_imports ) ]
+
 
 use
 {
-	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main                                                     } ,
-	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
-	thespis           :: { *                                                                                                         } ,
-	thespis_impl      :: { multi_thread::*                                                                                           } ,
-	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter               } ,
-	tokio_async_await :: { await                                                                                                     } ,
-	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } }                                                    } ,
+	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main                                       } ,
+	futures           :: { future::{ FutureExt }, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
+	thespis           :: { *                                                                                           } ,
+	thespis_impl      :: { multi_thread::*                                                                             } ,
+	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } }                                      } ,
 };
 
 
@@ -49,8 +47,8 @@ impl Handler< Show > for Sum
 fn send()
 {
 	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
+	let mut exec  = pool.spawner  ();
+	let mut exec2 = exec.clone    ();
 
 	let bench = async move
 	{
@@ -60,7 +58,7 @@ fn send()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start( sum ) ); };
+		let move_mb = async move { await!( mb.start_fut( sum ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		thread::spawn( move ||
@@ -103,7 +101,7 @@ fn call()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start( sum ) ); };
+		let move_mb = async move { await!( mb.start_fut( sum ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		thread::spawn( move ||

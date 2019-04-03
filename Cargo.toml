@@ -14,25 +14,22 @@ failure = "^0.1"
 log = "0.4.6"
 once_cell = "^0.1"
 simple_logger = "^1"
-tokio-current-thread = "^0.1"
 
 [dependencies.futures-preview]
 default-features = false
-features = ["nightly", "std"]
+features = ["nightly", "compat", "std"]
 path = "../../futures-rs/futures"
 
 [dependencies.thespis]
-features = ["derive"]
 path = "../thespis_iface"
 
-[dependencies.tokio-async-await]
+[dependencies.tokio]
 default-features = false
-features = ["async-await-preview"]
+features = ["async-await-preview", "rt-full"]
 version = "^0.1"
 
 [dev-dependencies]
 actix = "^0.7.9"
-tokio-async-await = "^0.1"
 
 [dev-dependencies.criterion]
 features = ["real_blackbox"]
@@ -44,7 +41,8 @@ features = ["std", "compat", "nightly"]
 path = "../../futures-rs/futures"
 
 [dev-dependencies.tokio]
-features = ["async-await-preview"]
+default-features = false
+features = ["async-await-preview", "rt-full", "tcp"]
 version = "^0.1"
 
 [[example]]
@@ -62,6 +60,14 @@ path = "examples/single_thread/recipient.rs"
 [[example]]
 name = "single_thread_tokio"
 path = "examples/single_thread/tokio.rs"
+
+[[example]]
+name = "single_thread_perf"
+path = "examples/single_thread/perf.rs"
+
+[[example]]
+name = "single_thread_no_rt"
+path = "examples/single_thread/no_rt.rs"
 
 [[example]]
 name = "multi_thread_basic"

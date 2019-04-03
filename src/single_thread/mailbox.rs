@@ -26,9 +26,15 @@ impl<A> Inbox<A> where A: Actor
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor
 {
-	fn start( self, mut actor: A ) -> ThesRes<()>
+	fn start( self, actor: A ) -> ThesRes<()>
 	{
-		let mb = async move
+		rt::spawn_pinned( self.start_fut( actor ) )
+	}
+
+
+	fn start_fut( self, mut actor: A ) -> Pin<Box< dyn Future<Output = ()> >>
+	{
+		async move
 		{
 			// TODO: Clean this up...
 			// We need to drop the handle, otherwise the channel will never close and the program will not
@@ -45,9 +51,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 					None         => { break;                               }
 				}
 			}
-		};
 
-		rt::spawn( mb )
+		}.boxed()
 	}
 }
 

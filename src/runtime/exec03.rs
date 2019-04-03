@@ -1,11 +1,15 @@
 use crate :: { import::*, * };
 
 
+/// An executor that uses futures 0.3 executor under the hood.
+///
+/// TODO: threadpool impl. Currently puts everything on LocalPool.
+//
 pub struct Exec03
 {
-	local  : RefCell<LocalPool03>,
+	local  : RefCell<LocalPool03>    ,
 	spawner: RefCell<LocalSpawner03> ,
-	pool   : ThreadPool03   ,
+	pool   : ThreadPool03            ,
 }
 
 
@@ -19,8 +23,8 @@ impl Default for Exec03
 
 		Exec03
 		{
-			local: RefCell::new( local ),
-			pool : ThreadPool03::new().expect( "Create futures::ThreadPool with default configurtion" ),
+			local  : RefCell::new( local ),
+			pool   : ThreadPool03::new().expect( "Create futures::ThreadPool with default configurtion" ),
 			spawner: RefCell::new( spawner ),
 		}
 	}
@@ -30,12 +34,16 @@ impl Default for Exec03
 
 impl Executor for Exec03
 {
+	/// Run all spawned futures to completion.
+	//
 	fn run( &self )
 	{
 		self.local.borrow_mut().run();
 	}
 
 
+	/// Spawn a future to be run on the LocalPool (current thread)
+	//
 	fn spawn( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
 	{
 		self.spawner.borrow_mut().spawn_local( fut ).unwrap();
@@ -43,9 +51,11 @@ impl Executor for Exec03
 	}
 
 
-	fn spawn_pool( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
+	/// Spawn a future to be run on a threadpool.
+	/// Not implemented!
+	//
+	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
 	{
-		self.spawner.borrow_mut().spawn_local( fut ).unwrap();
-		Ok(())
+		todo!()
 	}
 }

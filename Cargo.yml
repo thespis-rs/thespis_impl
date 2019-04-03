@@ -13,13 +13,13 @@ lib:
 dependencies:
 
   # crossbeam-channel: { path: ../../crossbeam-channel, features: [ async  ]                          }
-  thespis             : { path: ../thespis_iface       , features: [ derive ]                          }
+  thespis             : { path: ../thespis_iface }
   failure             : ^0.1
-  futures-preview     : { path: ../../futures-rs/futures, features: [ nightly, std ], default-features: false }
+  futures-preview     : { path: ../../futures-rs/futures, features: [ nightly, compat, std ], default-features: false }
   log                 : 0.4.6
   simple_logger       : ^1
-  tokio-async-await   : { version: ^0.1          , features: [ async-await-preview ], default-features: false }
-  tokio-current-thread: ^0.1
+  # tokio-async-await   : { version: ^0.1, features: [ async-await-preview ], default-features: false }
+  tokio               : { version: ^0.1, features: [ async-await-preview, rt-full ], default-features: false }
   once_cell           : ^0.1
 
 dev-dependencies:
@@ -27,8 +27,7 @@ dev-dependencies:
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
   futures-preview  : { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
-  tokio            : { version: ^0.1                 , features: [ async-await-preview  ]                          }
-  tokio-async-await: ^0.1
+  tokio            : { version: ^0.1                 , features: [ async-await-preview, rt-full, tcp ], default-features: false }
 
 bench:
 
@@ -42,6 +41,8 @@ bench:
 
 example:
 
+  # Single thread
+  #
   - name   : single_thread_basic
     path   : examples/single_thread/basic.rs
 
@@ -54,7 +55,15 @@ example:
   - name   : single_thread_tokio
     path   : examples/single_thread/tokio.rs
 
+  - name   : single_thread_perf
+    path   : examples/single_thread/perf.rs
 
+  - name   : single_thread_no_rt
+    path   : examples/single_thread/no_rt.rs
+
+
+  # Multi thread
+  #
   - name   : multi_thread_basic
     path   : examples/multi_thread/basic.rs
 

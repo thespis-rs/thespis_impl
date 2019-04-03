@@ -9,7 +9,7 @@ use
 	std           :: { pin::Pin, thread                                                                                   } ,
 	log           :: { *                                                                                                  } ,
 	thespis       :: { *                                                                                                  } ,
-	thespis_impl  :: { multi_thread::*                                                                                    } ,
+	thespis_impl  :: { multi_thread::*, runtime::rt                                                                       } ,
 };
 
 
@@ -40,10 +40,6 @@ impl Handler< Ping > for MyActor
 
 fn main()
 {
-	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
-
 	let program = async move
 	{
 		let a = MyActor;
@@ -53,12 +49,9 @@ fn main()
 		let mb  : Inbox<MyActor> = Inbox::new();
 		let mut addr             = Addr::new( mb.sender () );
 
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		let move_mb = async move { await!( mb.start( a ) ); };
-		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+		mb.start( a ).expect( "Failed to start mailbox" );
 
-		// This might be a bug in async rust somewhere. It requires that addr is borrowed for static,
+		// TODO: This might be a bug in async rust somewhere. It requires that addr is borrowed for static,
 		// which makes no sense. Moving it into an async block here works, but it's an ugly workaround.
 		//
 		// let send_fut = addr.call( Ping( "ping".into() ) );
@@ -67,8 +60,6 @@ fn main()
 
 		thread::spawn( move ||
 		{
-			let mut thread_pool = LocalPool::new();
-
 			let thread_program = async move
 			{
 				let result = await!( send_fut );
@@ -77,11 +68,13 @@ fn main()
 				dbg!( result );
 			};
 
-			thread_pool.run_until( thread_program );
+			rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
+
+			rt::run();
 		});
 	};
 
-	exec.spawn_local( program ).expect( "Spawn program" );
+	rt::spawn( program ).expect( "Spawn program" );
 
-	pool.run();
+	rt::run();
 }
