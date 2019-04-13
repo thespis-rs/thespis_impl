@@ -2,6 +2,14 @@ use crate :: { import::*, single_thread::* };
 
 
 
+
+
+pub struct SendEnvelope<M> where M: Message
+{
+	msg : M,
+}
+
+
 impl<M> SendEnvelope<M> where M: Message
 {
 	pub fn new( msg: M ) -> Self
@@ -65,9 +73,3 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	}
 }
 
-
-
-pub struct SendEnvelope<M> where M: Message
-{
-	msg : M,
-}

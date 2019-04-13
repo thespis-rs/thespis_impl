@@ -30,7 +30,7 @@ impl<A> Address<A> for Addr<A>
 	where A: Actor,
 
 {
-	fn send<M>( &mut self, msg: M ) -> TupleResponse
+	fn send<M>( &mut self, msg: M ) -> Response< ThesRes<()> >
 
 		where A: Handler< M >,
 		      M: Message<Result = ()>,
@@ -40,14 +40,16 @@ impl<A> Address<A> for Addr<A>
 		{
 			let envl: Box< dyn Envelope<A> >= Box::new( SendEnvelope::new( msg ) );
 
-			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
+			await!( self.mb.send( envl ) )?;
+
+			Ok(())
 
 		}.boxed()
 	}
 
 
 
-	fn call<M: Message>( &mut self, msg: M ) -> Response< <M as Message>::Result >
+	fn call<M: Message>( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
 
 		where A: Handler< M > ,
 
@@ -60,9 +62,9 @@ impl<A> Address<A> for Addr<A>
 
 			// trace!( "Sending envl to Mailbox" );
 
-			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
+			await!( self.mb.send( envl ) )?;
 
-			await!( ret_rx ).expect( "Failed to receive response in Addr.call" )
+			Ok( await!( ret_rx )? )
 
 		}.boxed()
 	}
@@ -88,7 +90,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 	      M: Message     ,
 
 {
-	default fn send( &mut self, msg: M ) -> TupleResponse
+	default fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
 
 		where M: Message<Result = ()>,
 	{
@@ -97,7 +99,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> Response< <M as Message>::Result >
+	default fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
 	}

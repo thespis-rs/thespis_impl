@@ -41,7 +41,7 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 		{
 			// This is ugly right now. It will be more ergonomic in the future.
 			//
-			let move_addr = async move { await!( addr2.send( Add( 10 ) ) ); };
+			let move_addr = async move { await!( addr2.send( Add( 10 ) ) ).expect( "Call failed" ); };
 			thread_exec2.spawn_local( move_addr ).expect( "Spawning mailbox failed" );
 		};
 
@@ -51,7 +51,7 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 
 	}).join().expect( "join thread" );
 
-	await!( addr.call( Show{} ) )
+	await!( addr.call( Show{} ) ).expect( "Call failed" )
 }
 
 
@@ -84,7 +84,7 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 		{
 			// This is ugly right now. It will be more ergonomic in the future.
 			//
-			let move_addr = async move { await!( addr2.call( Add( 10 ) ) ); };
+			let move_addr = async move { await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" ); };
 			thread_exec2.spawn_local( move_addr ).expect( "Spawning mailbox failed" );
 		};
 
@@ -98,7 +98,7 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 
 	await!( rx ).expect( "receive Signal end of thread" );
 
-	await!( addr.call( Show{} ) )
+	await!( addr.call( Show{} ) ).expect( "Call failed" )
 }
 
 

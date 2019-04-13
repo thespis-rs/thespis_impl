@@ -1,5 +1,14 @@
 use crate :: { import::*, single_thread::*, runtime::rt };
 
+
+// TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
+//       Do not hold anything in the mailbox struct. just PhantomData<A>.
+//       In method start, create the channel. give msgs to start_fut, and create rawaddress from handle.
+//       return rawaddress to user.
+//
+//       Currently there is no way for the actor to decide to stop itself. Also, currently we give nothing
+//       to the actor in the started or stopped method (like a context, a RawAddress).
+//
 pub struct Inbox<A> where A: Actor
 {
 	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A> >> ,
@@ -43,6 +52,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			let Inbox{ mut msgs, handle } = self;
 			drop( handle );
 
+			await!( actor.started() );
+
 			loop
 			{
 				match await!( msgs.next() )
@@ -51,6 +62,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 					None         => { break;                               }
 				}
 			}
+
+			await!( actor.stopped() );
 
 		}.boxed()
 	}

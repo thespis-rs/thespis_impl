@@ -82,6 +82,10 @@ const HEADER_LEN: usize = 36;
 #[ derive( Debug, Clone, PartialEq, Eq ) ]
 //
 pub struct MultiServiceImpl<SID, CID, Codec>
+
+	where SID  : 'static,
+	      CID  : 'static,
+	      Codec: 'static,
 {
 	bytes: Bytes,
 
@@ -89,6 +93,13 @@ pub struct MultiServiceImpl<SID, CID, Codec>
 	p2: PhantomData< CID   >,
 	p3: PhantomData< SID   >,
 }
+
+
+impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
+{
+	type Result = ();
+}
+
 
 
 impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>

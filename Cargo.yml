@@ -24,8 +24,8 @@ features:
 
     - serde
     - thespis/remote
-    - unsigned-varint
     - bytes
+    - hashbrown
     - num-derive
     - num-traits
     - twox-hash
@@ -41,28 +41,38 @@ dependencies:
   futures-preview     : { path: ../../futures-rs/futures, features: [ nightly, compat, std ], default-features: false }
   log                 : 0.4.6
   simple_logger       : ^1
-  # tokio-async-await   : { version: ^0.1, features: [ async-await-preview ], default-features: false }
-  tokio               : { version: ^0.1, features: [ async-await-preview, rt-full ], default-features: false, optional: true }
+
+  # tokio stuff
+  #
   once_cell           : ^0.1
+  # tokio-async-await   : { version: ^0.1, features: [ async-await-preview ], default-features: false }
+
+  tokio:
+
+    path             : ../../tokio/tokio
+    features         : [ async-await-preview, rt-full, codec ]
+    default-features : false
+    optional         : true
+
 
   # remote stuff
   #
   serde               : { version: ^1  , optional: true, default-features: false }
   tokio-tungstenite   : { version: ^0.6, optional: true                          }
-  unsigned-varint     : { version: ^0.2, optional: true, features: [ codec ]     }
   bytes               : { version: ^0.4, optional: true                          }
   num-traits          : { version: ^0.2, optional: true                          }
   num-derive          : { version: ^0.2, optional: true                          }
   twox-hash           : { version: ^1.1, optional: true                          }
   byteorder           : { version: ^1.3, optional: true                          }
   rand                : { version: ^0.6, optional: true, default-features: false }
+  hashbrown           : { version: ^0.2, optional: true, features: [ nightly ], default-features: false }
 
 dev-dependencies:
 
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
   futures-preview  : { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
-  tokio            : { version: ^0.1                 , features: [ async-await-preview, rt-full, tcp ], default-features: false }
+  tokio            : { path: ../../tokio/tokio                 , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
   pretty_assertions: ^0.6
 
 

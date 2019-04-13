@@ -82,13 +82,14 @@ mod import
 	//
 	pub use
 	{
-		byteorder   :: { LittleEndian, ReadBytesExt, WriteBytesExt } ,
-		bytes       :: { Bytes, BytesMut, Buf, BufMut, IntoBuf     } ,
-		num_traits  :: { FromPrimitive, ToPrimitive                } ,
-		num_derive  :: { FromPrimitive, ToPrimitive                } ,
-		rand        :: { Rng                                       } ,
-		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor } ,
-		twox_hash   :: { RandomXxHashBuilder                       } ,
+		byteorder   :: { LittleEndian, ReadBytesExt, WriteBytesExt           } ,
+		bytes       :: { Bytes, BytesMut, Buf, BufMut, IntoBuf               } ,
+		num_traits  :: { FromPrimitive, ToPrimitive                          } ,
+		num_derive  :: { FromPrimitive, ToPrimitive                          } ,
+		rand        :: { Rng                                                 } ,
+		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
+		twox_hash   :: { RandomXxHashBuilder                                 } ,
+		hashbrown   :: { HashMap                                             } ,
 
 	};
 

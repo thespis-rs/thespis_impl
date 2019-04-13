@@ -30,7 +30,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	where A: Actor,
 
 {
-	fn send<M>( &mut self, msg: M ) -> ThreadSafeTupleResponse
+	fn send<M>( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<()> >
 
 		where  A                    : Handler< M >                ,
 		       M                    : Message<Result = ()> + Send ,
@@ -41,7 +41,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 		{
 			let envl: Box< dyn Envelope<A> + Send >= Box::new( SendEnvelope::new( msg ) );
 
-			await!( self.mb.send( envl ) ).expect( "Failed to send to Mailbox" );
+			await!( self.mb.send( envl ) )?;
+
+			Ok(())
 
 		}.boxed()
 	}
@@ -50,7 +52,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	// TODO: Why do actor and address have to be static here? The single threaded version doesn't require static here for actor
 	//
-	fn call<M>( &mut self, msg: M ) -> Pin<Box< dyn Future< Output = <M as Message>::Result > + Send >>
+	fn call<M>( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<<M as Message>::Result> >
 
 		where  A                    : Handler< M >   ,
 		       M                    : Message + Send ,
@@ -65,8 +67,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 			let envl: Box< dyn Envelope<A> + Send > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
-			await!( mb.send( envl ) ).expect( "Failed to send to Mailbox"               );
-			await!( ret_rx          ).expect( "Failed to receive response in Addr.call" )
+			await!( mb.send( envl ) )?;
+
+			Ok( await!( ret_rx )? )
 
 		}.boxed()
 	}
@@ -76,8 +79,8 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	fn recipient<M>( &self ) -> Box< dyn ThreadSafeRecipient<M> >
 
 		where  M                    : Message + Send  ,
-		       A                    : Handler<M>               ,
-		      <M as Message>::Result: Send                     ,
+		       A                    : Handler<M>      ,
+		      <M as Message>::Result: Send            ,
 
 	{
 		box Receiver{ addr: self.clone() }
@@ -95,12 +98,12 @@ struct Receiver<A: Actor>
 
 impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 
-	where  A                    : Handler< M >             ,
+	where  A                    : Handler< M >    ,
 	       M                    : Message + Send  ,
-	      <M as Message>::Result: Send                     ,
+	      <M as Message>::Result: Send            ,
 
 {
-	default fn send( &mut self, msg: M ) -> ThreadSafeTupleResponse
+	default fn send( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<()> >
 
 		where M: Message<Result = ()>,
 	{
@@ -109,7 +112,7 @@ impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> ThreadSafeResponse< <M as Message>::Result >
+	default fn call( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
 	}

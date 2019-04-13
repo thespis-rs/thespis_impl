@@ -5,13 +5,13 @@
 
 use
 {
-	std          :: { net::SocketAddr                                                                     } ,
-	futures      :: { future::{ FutureExt }                                                               } ,
-	thespis      :: { *                                                                                   } ,
-	thespis_impl :: { single_thread::*,  runtime::{ rt, tokio::TokioRT }                                  } ,
-	tokio        :: { codec::{ LinesCodec, Decoder, Framed }                                              } ,
-	tokio        :: { prelude::{ Stream as Stream01, Sink as Sink01, stream::SplitStream }                } ,
-	tokio        :: { await as await01, prelude::{ StreamAsyncExt }, net::{ TcpStream, TcpListener },     } ,
+	std          :: { net::SocketAddr                                                                } ,
+	futures      :: { future::{ FutureExt }                                                          } ,
+	thespis      :: { *                                                                              } ,
+	thespis_impl :: { single_thread::*,  runtime::{ rt, tokio::TokioRT }                             } ,
+	tokio        :: { codec::{ LinesCodec, Decoder, Framed }                                         } ,
+	tokio        :: { prelude::{ Stream as Stream01, Sink as Sink01, stream::SplitStream }           } ,
+	tokio        :: { await as await01, prelude::{ StreamAsyncExt }, net::{ TcpStream, TcpListener } } ,
 };
 
 
@@ -105,7 +105,7 @@ fn tcp_stream()
 
 		await01!( sink_a.send( test.clone() ) ).expect( "sending failed" );
 
-		if let Some(s) = await!( addr.call( Next ) )
+		if let Some(s) = await!( addr.call( Next ) ).expect( "Call failed" )
 		{
 			// You should see the debug output to prove that this runs and it's working.
 			//

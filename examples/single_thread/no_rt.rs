@@ -57,7 +57,7 @@ fn main()
 		let move_mb = async move { await!( mb.start_fut( a ) ); };
 		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
-		let result  = await!( addr.call( Ping( "ping".into() ) ) );
+		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
 
 		assert_eq!( "pong".to_string(), result );
 		dbg!( result );

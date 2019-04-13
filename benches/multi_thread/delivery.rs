@@ -69,10 +69,10 @@ fn send()
 			{
 				for _i in 0..100usize
 				{
-					await!( addr.send( Add( 10 ) ) );
+					await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
 				}
 
-				let res = await!( addr.call( Show{} ) );
+				let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
 				assert_eq!( 1005, res );
 			};
 
@@ -112,10 +112,10 @@ fn call()
 			{
 				for _i in 0..100usize
 				{
-					await!( addr.call( Add( 10 ) ) );
+					await!( addr.call( Add( 10 ) ) ).expect( "Call failed" );
 				}
 
-				let res = await!( addr.call( Show{} ) );
+				let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
 				assert_eq!( 1005, res );
 			};
 

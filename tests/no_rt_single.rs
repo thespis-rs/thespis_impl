@@ -37,9 +37,9 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 
-	await!( addr.send( Add( 10 ) ) );
+	await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
 
-	let res = await!( addr.call( Show{} ) );
+	let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
 
 	trace!( "res is: {}", res );
 
@@ -63,9 +63,9 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 
-	await!( addr.call( Add( 10 ) ) );
+	await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
 
-	let res = await!( addr.call( Show{} ) );
+	let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
 
 	trace!( "res is: {}", res );
 

@@ -42,6 +42,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			let Inbox{ mut msgs, handle } = self;
 			drop( handle );
 
+			await!( actor.started() );
+
 			loop
 			{
 				match await!( msgs.next() )
@@ -50,6 +52,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 					None         => { break;                               }
 				}
 			}
+
+			await!( actor.stopped() );
 
 		}.boxed()
 	}

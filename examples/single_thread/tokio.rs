@@ -1,5 +1,10 @@
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax ) ]
 
+//! In this example we demonstrate that tokio is working. We have a listener on a
+//! framed tcp stream. It's an actor which responds to the next message. When calling
+//! the actor with the next message, it will send back the next message that comes in
+//! on the tcp stream.
+//!
 
 use
 {
@@ -102,7 +107,7 @@ fn main()
 
 		await01!( sink_a.send( test.clone() ) ).expect( "sending failed" );
 
-		if let Some(s) = await!( addr.call( Next ) )
+		if let Some(s) = await!( addr.call( Next ) ).expect( "Call failed" )
 		{
 			// You should see the debug output to prove that this runs and it's working.
 			//

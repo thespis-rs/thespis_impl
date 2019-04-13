@@ -4,9 +4,9 @@ mod common;
 
 use
 {
-	thespis       :: { * } ,
+	thespis       :: { *                             } ,
 	thespis_impl  :: { single_thread::*, runtime::rt } ,
-	common        :: actors::{ Sum, Add, Show   } ,
+	common        :: { actors::{ Sum, Add, Show }    } ,
 };
 
 // We are testing single thread after all
@@ -28,8 +28,8 @@ async fn sum_send() -> u64
 
 	mb.start( sum ).expect( "Failed to start mailbox" );
 
-	await!( addr.send( Add( 10 ) ) );
-	await!( addr.call( Show{}    ) )
+	await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+	await!( addr.call( Show{}    ) ).expect( "Call failed" )
 }
 
 
@@ -45,8 +45,8 @@ async fn sum_call() -> u64
 
 	mb.start( sum ).expect( "Failed to start mailbox" );
 
-	await!( addr.call( Add( 10 ) ) );
-	await!( addr.call( Show{}    ) )
+	await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+	await!( addr.call( Show{}    ) ).expect( "Call failed" )
 }
 
 

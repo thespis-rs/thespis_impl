@@ -70,7 +70,7 @@ fn main()
 
 		for mut actor in recs
 		{
-			println!( "Pinged: {}", await!( actor.call( Ping( "ping".into() ) ) ) );
+			println!( "Pinged: {}", await!( actor.call( Ping( "ping".into() ) ) ).expect( "Call failed" ) );
 		}
 	};
 

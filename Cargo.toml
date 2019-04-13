@@ -28,6 +28,12 @@ default-features = false
 features = ["nightly", "compat", "std"]
 path = "../../futures-rs/futures"
 
+[dependencies.hashbrown]
+default-features = false
+features = ["nightly"]
+optional = true
+version = "^0.2"
+
 [dependencies.num-derive]
 optional = true
 version = "^0.2"
@@ -51,9 +57,9 @@ path = "../thespis_iface"
 
 [dependencies.tokio]
 default-features = false
-features = ["async-await-preview", "rt-full"]
+features = ["async-await-preview", "rt-full", "codec"]
 optional = true
-version = "^0.1"
+path = "../../tokio/tokio"
 
 [dependencies.tokio-tungstenite]
 optional = true
@@ -62,11 +68,6 @@ version = "^0.6"
 [dependencies.twox-hash]
 optional = true
 version = "^1.1"
-
-[dependencies.unsigned-varint]
-features = ["codec"]
-optional = true
-version = "^0.2"
 
 [dev-dependencies]
 actix = "^0.7.9"
@@ -83,8 +84,8 @@ path = "../../futures-rs/futures"
 
 [dev-dependencies.tokio]
 default-features = false
-features = ["async-await-preview", "rt-full", "tcp"]
-version = "^0.1"
+features = ["async-await-preview", "rt-full", "tcp", "codec"]
+path = "../../tokio/tokio"
 
 [[example]]
 name = "single_thread_basic"
@@ -121,7 +122,7 @@ path = "examples/multi_thread/move_fut.rs"
 
 [features]
 default = ["tokio", "remote", "ws"]
-remote = ["serde", "thespis/remote", "unsigned-varint", "bytes", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
+remote = ["serde", "thespis/remote", "bytes", "hashbrown", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
 tcp = ["remote", "tokio/tcp"]
 ws = ["remote", "tokio-tungstenite"]
 

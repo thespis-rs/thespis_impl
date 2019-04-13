@@ -56,7 +56,7 @@ fn main()
 		//
 		// let send_fut = addr.call( Ping( "ping".into() ) );
 		//
-		let send_fut = async move { await!( addr.call( Ping( "ping".into() ) ) ) };
+		let send_fut = async move { await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" ) };
 
 		thread::spawn( move ||
 		{

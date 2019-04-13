@@ -50,7 +50,7 @@ fn main()
 
 		mb.start( a ).expect( "Failed to start mailbox" );
 
-		let result  = await!( addr.call( Ping( "ping".into() ) ) );
+		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
 
 		assert_eq!( "pong".to_string(), result );
 		dbg!( result );

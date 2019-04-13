@@ -5,9 +5,9 @@
 
 use
 {
-	futures       :: { future::{ FutureExt } } ,
-	thespis       :: { *                                                                                                } ,
-	thespis_impl  :: { single_thread::*, runtime::rt                                                                    } ,
+	futures       :: { future::{ FutureExt }          } ,
+	thespis       :: { *                              } ,
+	thespis_impl  :: { single_thread::*, runtime::rt  } ,
 };
 
 
@@ -59,10 +59,10 @@ fn main()
 
 		for _i in 0..10_000_000usize
 		{
-			await!( addr.call( Add( 10 ) ) );
+			await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
 		}
 
-		let res = await!( addr.call( Show{} ) );
+		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
 		assert_eq!( 100_000_005, res );
 
 		dbg!( res );

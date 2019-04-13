@@ -38,6 +38,8 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
+	// If you forget the move on the end, it won't compile and error messages will be shit!!!
+	//
 	fn handle( &mut self, msg: Ping ) -> Response<String> { async move
 	{
 		trace!( "Ping handler called" );
@@ -75,10 +77,10 @@ fn main()
 		let mut addr2 = Addr::new( send.clone() );
 
 		trace!( "calling addr.call( Ping( 'ping' ) )" );
-		let result  = await!( addr.call( Ping( "ping".into() ) ) );
+		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
 
 		trace!( "calling addr.call( Ping( 'pang' ) )" );
-		let result2 = await!( addr2.call( Ping( "pang".into() ) ) );
+		let result2 = await!( addr2.call( Ping( "pang".into() ) ) ).expect( "Call failed" );
 
 		info!( "We got a result: {}", result );
 		assert_eq!( "seedpingbla - after yield".to_string(), result );

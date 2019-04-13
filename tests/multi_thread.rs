@@ -32,7 +32,7 @@ async fn sum_send() -> u64
 	{
 		let thread_program = async move
 		{
-			await!( addr2.send( Add( 10 ) ) );
+			await!( addr2.send( Add( 10 ) ) ).expect( "Send failed" );
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -40,7 +40,7 @@ async fn sum_send() -> u64
 
 	}).join().expect( "join thread" );
 
-	await!( addr.call( Show{} ) )
+	await!( addr.call( Show{} ) ).expect( "Call failed" )
 }
 
 
@@ -65,7 +65,7 @@ async fn sum_call() -> u64
 	{
 		let thread_program = async move
 		{
-			await!( addr2.call( Add( 10 ) ) );
+			await!( addr2.call( Add( 10 ) ) ).expect( "Send failed" );
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -79,7 +79,7 @@ async fn sum_call() -> u64
 	//
 	await!( rx ).expect( "receive Signal end of thread" );
 
-	await!( addr.call( Show{} ) )
+	await!( addr.call( Show{} ) ).expect( "Call failed" )
 }
 
 

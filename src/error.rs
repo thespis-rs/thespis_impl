@@ -12,5 +12,11 @@ pub enum ThesError
 	#[ fail( display = "Not enough bytes for the stream to contain a full message" ) ]
 	//
 	NeedMoreBytes,
+
+	/// Connection will be closed when this happens, because it might mean that the stream has become corrupt.
+	//
+	#[ fail( display = "Decoding a frame coming in over the network has failed. The connection has been closed." ) ]
+	//
+	CorruptFrame,
 }
 
