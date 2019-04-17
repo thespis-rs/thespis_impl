@@ -1,10 +1,16 @@
 use crate::{ import::* };
 
+
+/// The supported encodings for this implementation. Values come from the
+/// multiformat's multicodec table where possible.
+/// https://github.com/multiformats/multicodec/blob/master/table.csv
+//
 #[ derive( Debug, Clone, PartialEq, Eq, Hash, FromPrimitive, ToPrimitive ) ]
 //
 pub enum Codecs
 {
-	CBOR = 0x51, // value comes from multiformat multicodec table
+	CBOR = 0x51  ,
+	UTF8 = 0x4000, // not in multicodecs for now
 }
 
 impl CodecAlg for Codecs {}
@@ -16,7 +22,8 @@ impl fmt::Display for Codecs
 	{
 		match self
 		{
-			Codecs::CBOR => write!( f, "CBOR" )?
+			Codecs::CBOR => write!( f, "CBOR" )?,
+			Codecs::UTF8 => write!( f, "UTF8" )?,
 		}
 
 		Ok(())

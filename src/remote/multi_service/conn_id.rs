@@ -4,6 +4,8 @@ use crate::{ import::* };
 /// A connection identifier. This allows to match incoming packets to requests sent earlier.
 ///
 /// It is currently 128 bits, if created with the default impl here it will be random data.
+///
+/// TODO: keep it DRY, lot's of code duplication with ServiceID.
 //
 #[ derive( Clone, PartialEq, Eq, Hash ) ]
 //
@@ -46,7 +48,7 @@ impl Default for ConnID
 {
 	fn default() -> Self
 	{
-		Self::in_place( BytesMut::with_capacity( 128 ) )
+		Self::in_place( BytesMut::with_capacity( 16 ) )
 	}
 }
 
@@ -102,6 +104,13 @@ impl UniqueID for ConnID
 {
 	/// Seed the uniqueID. It might be data that will be hashed to generate the id.
 	/// An identical input here should always give an identical UniqueID.
+	///
+	/// This is not common for ConnID, since usually on wants it to be random
+	/// (as the impl Default provides), but since the trait UniqueID requires it,
+	/// you can get a hashed version here. This uses xxhash.
+	///
+	/// Currently xxhash only generates 64bits of data, so the collsision strength of this
+	/// is only 64bits.
 	//
 	fn from_seed( data: &[u8] ) -> Self
 	{
@@ -113,10 +122,36 @@ impl UniqueID for ConnID
 			h.write_u8( *byte );
 		}
 
+		// TODO: this is broken right now. Only creates 8 bytes instead of 16.
+		//       We need unit tests for this, and also  the in_place method is not
+		//       really in_place,...
+		//
+		//       Ok, my bad, i fixed it before writing the unit test...
+		//
 		let mut wtr = vec![];
 		wtr.write_u64::<LittleEndian>( h.finish() ).unwrap();
+		wtr.write_u64::<LittleEndian>( 0          ).unwrap();
 
 		Self { bytes: Bytes::from( wtr ) }
+	}
+
+
+	fn null() -> Self
+	{
+		// The format of the multiservice message requires this to be 128 bits, so add a zero
+		// We will have 128bit hash here when xxhash supports 128bit output.
+		//
+		let mut wtr = vec![];
+		wtr.write_u64::<LittleEndian>( 0 ).unwrap();
+		wtr.write_u64::<LittleEndian>( 0 ).unwrap();
+
+		Self { bytes: Bytes::from( wtr ) }
+	}
+
+
+	fn is_null( &self ) -> bool
+	{
+		self.bytes.iter().all( |b| *b == 0 )
 	}
 }
 

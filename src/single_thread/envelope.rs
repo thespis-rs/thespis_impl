@@ -26,10 +26,12 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> TupleResponse
 	{
-		Box::pin( async move
+		async move
 		{
+
 			let _ = await!( < A as Handler<M> >::handle( actor, self.msg ) );
-		})
+
+		}.boxed()
 	}
 }
 

@@ -79,7 +79,7 @@ fn tcp_stream()
 
 	let listen = async move
 	{
-		let addr     = "127.0.0.1:8998".parse::<SocketAddr>().unwrap();
+		let addr     = "127.0.0.1:8999".parse::<SocketAddr>().unwrap();
 		let listener = TcpListener::bind( &addr ).expect( "bind address" );
 		let codec    = LinesCodec::new();
 		let stream   = await01!( listener.incoming().take(1).into_future() ).expect( "find one stream" ).0.expect( "find one stream" );
@@ -92,24 +92,44 @@ fn tcp_stream()
 
 	let connect = async move
 	{
-		let socket = "127.0.0.1:8998".parse::<SocketAddr>().unwrap();
+		let socket = "127.0.0.1:8999".parse::<SocketAddr>().unwrap();
 		let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
 		let codec  = LinesCodec::new();
 
 		// Get read and write parts of our streams
 		//
-		let (sink_a, _       ) = codec.framed( stream ).split();
+		let (mut sink_a, _) = codec.framed( stream ).split();
 
 
-		let test = "HAHAHA".to_string();
+		let test  = "HAHAHA".to_string();
+		let test2 = "HOHOHO".to_string();
 
-		await01!( sink_a.send( test.clone() ) ).expect( "sending failed" );
+		sink_a = await01!( sink_a.send( test .clone() ) ).expect( "sending failed" );
+		         await01!( sink_a.send( test2.clone() ) ).expect( "sending failed" );
 
 		if let Some(s) = await!( addr.call( Next ) ).expect( "Call failed" )
 		{
 			// You should see the debug output to prove that this runs and it's working.
 			//
 			assert_eq!( dbg!( s ), test );
+		}
+
+		else
+		{
+			panic!( "we should have a next message" );
+		}
+
+
+		if let Some(s) = await!( addr.call( Next ) ).expect( "Call failed" )
+		{
+			// You should see the debug output to prove that this runs and it's working.
+			//
+			assert_eq!( dbg!( s ), test2 );
+		}
+
+		else
+		{
+			panic!( "we should have a next message" );
 		}
 	};
 

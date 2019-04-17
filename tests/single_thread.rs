@@ -78,3 +78,61 @@ fn test_basic_call()
 	rt::spawn( program ).expect( "Spawn program" );
 	rt::run();
 }
+
+
+
+#[test]
+//
+fn send_from_multiple_addrs()
+{
+	let program = async move
+	{
+		let sum = Sum(5);
+
+		// Create mailbox
+		//
+		let     mb  : Inbox<Sum> = Inbox::new(             );
+		let mut addr             = Addr ::new( mb.sender() );
+		let mut addr2            = addr.clone()             ;
+
+		mb.start( sum ).expect( "Failed to start mailbox" );
+
+		await!( addr.send ( Add( 10 ) ) ).expect( "Send failed" );
+		await!( addr2.send( Add( 10 ) ) ).expect( "Send failed" );
+
+		let resp = await!( addr.call ( Show{} ) ).expect( "Call failed" );
+
+		assert_eq!( 25, resp );
+	};
+
+	rt::spawn( program ).expect( "Spawn program" );
+	rt::run();
+}
+
+#[test]
+//
+fn call_from_multiple_addrs()
+{
+	let program = async move
+	{
+		let sum = Sum(5);
+
+		// Create mailbox
+		//
+		let     mb  : Inbox<Sum> = Inbox::new(             );
+		let mut addr             = Addr ::new( mb.sender() );
+		let mut addr2            = addr.clone()             ;
+
+		mb.start( sum ).expect( "Failed to start mailbox" );
+
+		await!( addr.call ( Add( 10 ) ) ).expect( "Send failed" );
+		await!( addr2.call( Add( 10 ) ) ).expect( "Send failed" );
+
+		let resp = await!( addr.call ( Show{} ) ).expect( "Call failed" );
+
+		assert_eq!( 25, resp );
+	};
+
+	rt::spawn( program ).expect( "Spawn program" );
+	rt::run();
+}

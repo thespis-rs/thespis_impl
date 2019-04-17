@@ -72,8 +72,7 @@ impl UniqueID for ServiceID
 	//
 	fn from_seed( data: &[u8] ) -> Self
 	{
-		let     b: RandomXxHashBuilder = Default::default();
-		let mut h                      = b.build_hasher();
+		let mut h = XxHash::default();
 
 		for byte in data
 		{
@@ -88,6 +87,47 @@ impl UniqueID for ServiceID
 		wtr.write_u64::<LittleEndian>( 0          ).unwrap();
 
 		Self { bytes: Bytes::from( wtr ) }
+	}
+
+
+	fn null() -> Self
+	{
+		// The format of the multiservice message requires this to be 128 bits, so add a zero
+		// We will have 128bit hash here when xxhash supports 128bit output.
+		//
+		let mut wtr = vec![];
+		wtr.write_u64::<LittleEndian>( 0 ).unwrap();
+		wtr.write_u64::<LittleEndian>( 0 ).unwrap();
+
+		Self { bytes: Bytes::from( wtr ) }
+	}
+
+
+	fn is_null( &self ) -> bool
+	{
+		self.bytes.iter().all( |b| *b == 0 )
+	}
+}
+
+
+#[cfg(test)]
+//
+mod tests
+{
+	// What's tested:
+	// 1. Identical input data should give identical hash.
+	//
+	use super::{ *, assert_eq };
+
+
+	#[test]
+	//
+	fn identical()
+	{
+		let sid  = ServiceID::from_seed( b"hi from seed" );
+		let sid2 = ServiceID::from_seed( b"hi from seed" );
+
+		assert_eq!( sid, sid2 );
 	}
 }
 

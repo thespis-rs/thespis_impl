@@ -1,6 +1,7 @@
 use crate :: { import::*, single_thread::* };
 
 
+
 pub struct Addr< A: Actor >
 {
 	mb: mpsc::UnboundedSender<Box<dyn Envelope<A>>>,
@@ -41,6 +42,8 @@ impl<A> Address<A> for Addr<A>
 			let envl: Box< dyn Envelope<A> >= Box::new( SendEnvelope::new( msg ) );
 
 			await!( self.mb.send( envl ) )?;
+			dbg!( "sent to mailbox" );
+
 
 			Ok(())
 
@@ -63,6 +66,7 @@ impl<A> Address<A> for Addr<A>
 			// trace!( "Sending envl to Mailbox" );
 
 			await!( self.mb.send( envl ) )?;
+			dbg!( "call to mailbox" );
 
 			Ok( await!( ret_rx )? )
 
@@ -77,16 +81,69 @@ impl<A> Address<A> for Addr<A>
 }
 
 
+
+
 struct Receiver<A: Actor>
 {
 	addr: Addr<A>
 }
 
 
+impl<A: Actor> Clone for Receiver<A>
+{
+	fn clone( &self ) -> Self
+	{
+		Self { addr: self.addr.clone() }
+	}
+}
+
+
+
+
+pub struct Rcpnt<M: Message>
+{
+	rec: Box< dyn Recipient<M> >
+}
+
+impl<M: Message> Rcpnt<M>
+{
+	pub fn new( rec: Box< dyn Recipient<M> > ) -> Self
+	{
+		Self { rec }
+	}
+}
+
+
+
+impl<M: Message> Recipient<M> for Rcpnt<M>
+{
+	fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
+
+		where M: Message<Result = ()>,
+	{
+		async move
+		{
+			await!( self.rec.send( msg ) )
+
+		}.boxed()
+	}
+
+
+
+	fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
+	{
+		async move
+		{
+			await!( self.rec.call( msg ) )
+
+		}.boxed()
+	}
+}
+
 
 impl<A, M> Recipient<M> for Receiver<A>
 
-	where A: Handler<M>            ,
+	where A: Handler<M>  ,
 	      M: Message     ,
 
 {

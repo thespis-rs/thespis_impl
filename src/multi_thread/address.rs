@@ -1,6 +1,7 @@
 use crate :: { import::*, multi_thread::* };
 
 
+
 pub struct Addr< A: Actor >
 {
 	mb: mpsc::UnboundedSender<Box< dyn Envelope<A> + Send >>,
@@ -92,6 +93,15 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 struct Receiver<A: Actor>
 {
 	addr: Addr<A>
+}
+
+
+impl<A: Actor> Clone for Receiver<A>
+{
+	fn clone( &self ) -> Self
+	{
+		Self { addr: self.addr.clone() }
+	}
 }
 
 

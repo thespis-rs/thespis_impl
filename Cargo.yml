@@ -38,14 +38,13 @@ dependencies:
   # crossbeam-channel: { path: ../../crossbeam-channel, features: [ async  ]                          }
   thespis             : { path: ../thespis_iface }
   failure             : ^0.1
-  futures-preview     : { path: ../../futures-rs/futures, features: [ nightly, compat, std ], default-features: false }
+  futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
   log                 : 0.4.6
   simple_logger       : ^1
 
   # tokio stuff
   #
   once_cell           : ^0.1
-  # tokio-async-await   : { version: ^0.1, features: [ async-await-preview ], default-features: false }
 
   tokio:
 
@@ -57,21 +56,21 @@ dependencies:
 
   # remote stuff
   #
-  serde               : { version: ^1  , optional: true, default-features: false }
-  tokio-tungstenite   : { version: ^0.6, optional: true                          }
-  bytes               : { version: ^0.4, optional: true                          }
-  num-traits          : { version: ^0.2, optional: true                          }
-  num-derive          : { version: ^0.2, optional: true                          }
-  twox-hash           : { version: ^1.1, optional: true                          }
-  byteorder           : { version: ^1.3, optional: true                          }
-  rand                : { version: ^0.6, optional: true, default-features: false }
-  hashbrown           : { version: ^0.2, optional: true, features: [ nightly ], default-features: false }
+  serde             : { version: ^1  , optional: true, default-features: false }
+  tokio-tungstenite : { version: ^0.6, optional: true                          }
+  bytes             : { version: ^0.4, optional: true                          }
+  num-traits        : { version: ^0.2, optional: true                          }
+  num-derive        : { version: ^0.2, optional: true                          }
+  twox-hash         : { version: ^1.1, optional: true                          }
+  byteorder         : { version: ^1.3, optional: true                          }
+  rand              : { version: ^0.6, optional: true, default-features: false }
+  hashbrown         : { version: ^0.2, optional: true, features: [ nightly ], default-features: false }
 
 dev-dependencies:
 
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
-  futures-preview  : { path: ../../futures-rs/futures, features: [ std, compat, nightly ], default-features: false }
+  futures-preview  : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
   tokio            : { path: ../../tokio/tokio                 , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
   pretty_assertions: ^0.6
 
@@ -104,6 +103,10 @@ example:
 
   - name   : single_thread_no_rt
     path   : examples/single_thread/no_rt.rs
+
+  # - name             : remote
+  #   path             : examples/single_thread/remote/src/peera.rs
+  #   required-features: [ remote ]
 
   - name             : single_thread_tokio
     path             : examples/single_thread/tokio.rs

@@ -1,0 +1,28 @@
+package:
+
+  name   : thespis_impl_remote_example
+  version: 0.1.0
+  authors: [ Naja Melan <najamelan@autistici.org> ]
+  edition: '2018'
+
+
+bin:
+
+  - name: peera
+    path: src/peera.rs
+
+  - name: peerb
+    path: src/peerb.rs
+
+
+dependencies:
+
+  thespis             : { path: ../../../../thespis_iface/ }
+  thespis_impl        : { path: ../../../                  }
+  tokio               : { path: ../../../../../tokio/tokio, features: [ async-await-preview, rt-full, codec ] }
+  serde               : { version: ^1, features: [ derive ] }
+  serde_cbor          : ^0.9
+  futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
+  bytes               : { version: ^0.4                          }
+  simple_logger       : ^1
+  log                 : ^0.4

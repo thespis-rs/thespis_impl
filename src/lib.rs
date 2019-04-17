@@ -88,7 +88,7 @@ mod import
 		num_derive  :: { FromPrimitive, ToPrimitive                          } ,
 		rand        :: { Rng                                                 } ,
 		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
-		twox_hash   :: { RandomXxHashBuilder                                 } ,
+		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
 		hashbrown   :: { HashMap                                             } ,
 
 	};
