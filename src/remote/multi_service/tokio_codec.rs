@@ -27,7 +27,7 @@ impl<Format> Decoder for MulServTokioCodec<Format>
 	type Item  = Format;
 	type Error = Error ;
 
-	fn decode( &mut self, buf: &mut BytesMut ) -> Result< Option<Self::Item>, Self::Error >
+	fn decode( &mut self, buf: &mut BytesMut ) -> ThesRes< Option<Self::Item> >
 	{
 		// Minimum length of an empty message is the u64 indicating the length
 		//

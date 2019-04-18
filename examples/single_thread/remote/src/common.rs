@@ -3,7 +3,7 @@ pub use
 	log          :: { *                                                                                } ,
 	thespis      :: { *                                                                                } ,
 	thespis_impl :: { single_thread::*, remote::*, runtime::{ rt, tokio::TokioRT }                               } ,
-	tokio        :: { await as await01, prelude::{ StreamAsyncExt, Stream as TokStream, stream::SplitSink as TokSplitSink }, net::{ TcpStream, TcpListener }, codec::{ Decoder, Framed } } ,
+	tokio        :: { await as await01, prelude::{ StreamAsyncExt, Stream as TokStream, stream::SplitStream as TokSplitStream, stream::SplitSink as TokSplitSink }, net::{ TcpStream, TcpListener }, codec::{ Decoder, Framed } } ,
 	serde        :: { Serialize, Deserialize, de::DeserializeOwned                                     } ,
 	serde_cbor   :: { from_slice as des                                                                } ,
 	std          :: { net::SocketAddr, any::Any                                                        } ,
@@ -288,4 +288,54 @@ impl RemoteRecipient<ServiceB> for PeerAServicesRecipient
 	{
 		box Self { peer: self.peer.clone() }
 	}
+}
+
+
+
+
+
+pub async fn listen_tcp( socket: &str ) -> (TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, TokSplitStream<Framed<TcpStream, MulServTokioCodec<MS>>>)
+{
+	// create tcp server
+	//
+	let socket   = socket.parse::<SocketAddr>().unwrap();
+	let listener = TcpListener::bind( &socket ).expect( "bind address" );
+
+	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+
+	let stream   = await01!( listener.incoming().take(1).into_future() )
+		.expect( "find one stream" ).0
+		.expect( "find one stream" );
+
+	codec.framed( stream ).split()
+}
+
+
+
+
+pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
+{
+	// Connect to tcp server
+	//
+	let socket = socket.parse::<SocketAddr>().unwrap();
+	let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
+
+	// frame the connection with codec for multiservice
+	//
+	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+
+	let (sink_a, stream_a) = codec.framed( stream ).split();
+
+	// Create mailbox for peer
+	//
+	let mb  : Inbox<MyPeer> = Inbox::new()             ;
+	let addr                = Addr ::new( mb.sender() );
+
+	// create peer with stream/sink + service map
+	//
+	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+
+	mb.start( peer ).expect( "Failed to start mailbox" );
+
+	addr
 }

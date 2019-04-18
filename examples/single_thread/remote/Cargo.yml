@@ -14,6 +14,9 @@ bin:
   - name: peerb
     path: src/peerb.rs
 
+  - name: peerc
+    path: src/peerc.rs
+
 
 dependencies:
 

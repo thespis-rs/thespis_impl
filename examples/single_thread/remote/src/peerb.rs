@@ -7,43 +7,49 @@ use common::*;
 fn main()
 {
 	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-	simple_logger::init().unwrap();
+	simple_logger::init_with_level( log::Level::Debug ).unwrap();
 
 	let program = async move
 	{
 		trace!( "Starting peerB" );
+		let peera  = await!( connect_to_tcp( "127.0.0.1:8998" ) );
+		let peera2 = peera.clone();
 
-		// Connect to tcp server
-		//
-		let socket = "127.0.0.1:8998".parse::<SocketAddr>().unwrap();
-		let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
+		// Relay part ---------------------
 
-		// frame the connection with codec for multiservice
-		//
-		let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+		rt::spawn( async move
+		{
+			let (srv_sink, srv_stream) = await!( listen_tcp( "127.0.0.1:8999" ) );
 
-		let (sink_a, stream_a) = codec.framed( stream ).split();
+			// Create mailbox for peer
+			//
+			let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
+			let peer_addr                = Addr ::new( mb_peer.sender() );
 
-		// Create mailbox for peer
-		//
-		let mb  : Inbox<MyPeer> = Inbox::new()             ;
-		let addr                = Addr ::new( mb.sender() );
+			// create peer with stream/sink + service map
+			//
+			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
 
-		// create peer with stream/sink + service map
-		//
-		let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+			peer.register_relayed_service::<ServiceA>( ServiceA::sid(), peera2.clone() );
+			peer.register_relayed_service::<ServiceB>( ServiceB::sid(), peera2         );
 
-		mb.start( peer ).expect( "Failed to start mailbox" );
+			mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
+
+		}).expect( "failed to spawn server" );
+
+		// --------------------------------------
+
+
+
 
 		// Call the service and receive the response
 		//
-		let mut recipient = PeerAServices::recip_service_a( addr.clone() );
-		let mut recb      = PeerAServices::recip_service_b( addr         );
+		let mut service_a = PeerAServices::recip_service_a( peera.clone() );
+		let mut service_b = PeerAServices::recip_service_b( peera         );
 
-		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb".to_string() } ) )
 
-			.expect( "Call failed" )
-		;
+
+		let resp = await!( service_a.call( ServiceA{ msg: "hi from peerb".to_string() } ) ).expect( "Call failed" );
 
 		dbg!( resp );
 
@@ -51,27 +57,18 @@ fn main()
 
 		// Send
 		//
-		await!( recb.send( ServiceB{ msg: "SEND from peerb".to_string() } ) )
-
-			.expect( "Send failed" )
-		;
+		await!( service_b.send( ServiceB{ msg: "SEND from peerb".to_string() } ) ).expect( "Send failed" );
 
 
 
-		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb -- again!!!".to_string() } ) )
-
-			.expect( "Call failed" )
-		;
+		let resp = await!( service_a.call( ServiceA{ msg: "hi from peerb -- again!!!".to_string() } ) ).expect( "Call failed" );
 
 		dbg!( resp );
 
 
 		// Send
 		//
-		await!( recb.send( ServiceB{ msg: "SEND AGAIN from peerb".to_string() } ) )
-
-			.expect( "Send failed" )
-		;
+		await!( service_b.send( ServiceB{ msg: "SEND AGAIN from peerb".to_string() } ) ).expect( "Send failed" );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

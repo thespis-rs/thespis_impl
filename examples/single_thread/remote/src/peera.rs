@@ -9,53 +9,39 @@ use common::*;
 fn main()
 {
 	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-	simple_logger::init().unwrap();
+	simple_logger::init_with_level( log::Level::Debug ).unwrap();
 
 	let program = async move
 	{
 		trace!( "Starting peerA" );
 
-		// create tcp server
-		//
-		let socket   = "127.0.0.1:8998".parse::<SocketAddr>().unwrap();
-		let listener = TcpListener::bind( &socket ).expect( "bind address" );
-
-		let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
-
-		let stream   = await01!( listener.incoming().take(1).into_future() )
-			.expect( "find one stream" ).0
-			.expect( "find one stream" )
-		;
-
-
 		// frame it with multiservice codec
 		//
-		let (sink_a, stream_a) = codec.framed( stream ).split();
+		let (sink_a, stream_a) = await!( listen_tcp( "127.0.0.1:8998" ) );
 
-		// Create mailbox for peer
-		//
-		let mb  : Inbox<MyPeer> = Inbox::new()             ;
-		let addr                = Addr ::new( mb.sender() );
 
-		// create peer with stream/sink + service map
-		//
-		let mut peer = Peer::new( addr, stream_a.compat(), sink_a.sink_compat() );
 
 		// register HandleA with peer as handler for ServiceA
 		//
-		let mbh       : Inbox<HandleA>  = Inbox::new()              ;
-		let addrh                       = Addr ::new( mbh.sender() );
-		let handler                     = HandleA {}                ;
-		let recipienth                  = addrh.recipient::<ServiceA>();
-		let recipientb                  = addrh.recipient::<ServiceB>();
-		let rech      : Rcpnt<ServiceA> = Rcpnt::new( recipienth );
-		let recb      : Rcpnt<ServiceB> = Rcpnt::new( recipientb );
+		let mb_handler  : Inbox<HandleA> = Inbox::new()                     ;
+		let addr_handler                 = Addr ::new( mb_handler.sender() );
 
-		peer.register_service( ServiceA::sid(), box PeerAServices, box rech );
-		peer.register_service( ServiceB::sid(), box PeerAServices, box recb );
+		// Create mailbox for peer
+		//
+		let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
+		let peer_addr                = Addr ::new( mb_peer.sender() );
 
-		mb .start( peer    ).expect( "Failed to start mailbox of Peer"     );
-		mbh.start( handler ).expect( "Failed to start mailbox for HandleA" );
+		// create peer with stream/sink + service map
+		//
+		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
+
+		peer.register_service( ServiceA::sid(), box PeerAServices, addr_handler.recipient::<ServiceA>() );
+		peer.register_service( ServiceB::sid(), box PeerAServices, addr_handler.recipient::<ServiceB>() );
+
+		let handler = HandleA {};
+
+		mb_peer   .start( peer    ).expect( "Failed to start mailbox of Peer"     );
+		mb_handler.start( handler ).expect( "Failed to start mailbox for HandleA" );
 	};
 
 
@@ -109,3 +95,6 @@ impl Handler<ServiceB> for HandleA
 
 	}.boxed() }
 }
+
+
+

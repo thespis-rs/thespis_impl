@@ -42,7 +42,7 @@ impl<A> Address<A> for Addr<A>
 			let envl: Box< dyn Envelope<A> >= Box::new( SendEnvelope::new( msg ) );
 
 			await!( self.mb.send( envl ) )?;
-			dbg!( "sent to mailbox" );
+			trace!( "sent to mailbox" );
 
 
 			Ok(())
@@ -66,7 +66,7 @@ impl<A> Address<A> for Addr<A>
 			// trace!( "Sending envl to Mailbox" );
 
 			await!( self.mb.send( envl ) )?;
-			dbg!( "call to mailbox" );
+			trace!( "call to mailbox" );
 
 			Ok( await!( ret_rx )? )
 

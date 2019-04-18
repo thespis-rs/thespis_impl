@@ -90,7 +90,7 @@ pub fn init( new_exec: Box< dyn Executor > ) -> ThesRes<()>
 		exec
 
 			.set( new_exec )
-			.map_err( |_| -> Error { ThesError::DoubleExecutorInit.into() } )
+			.map_err( |_| ThesError::DoubleExecutorInit.into() )
 	})
 }
 

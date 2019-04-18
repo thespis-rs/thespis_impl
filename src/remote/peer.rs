@@ -1,4 +1,4 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::Addr } };
+use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
 
 pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
 pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
@@ -25,9 +25,9 @@ pub struct Peer<Out, MulService>
 
 	services   : HashMap< <MulService as MultiService>::ServiceID , Box< Any >   > ,
 	local_sm   : HashMap< <MulService as MultiService>::ServiceID , Box< dyn ServiceMap<MulService>>> ,
-	relay      : HashMap< <MulService as MultiService>::ServiceID , Box< dyn Recipient<Any> >   > ,
+	relay      : HashMap< <MulService as MultiService>::ServiceID , Addr<Self>   > ,
 	responses  : HashMap< <MulService as MultiService>::ConnID    , oneshot::Sender<MulService> > ,
-	connections: HashMap< <MulService as MultiService>::ConnID    , String                      > ,
+	// connections: HashMap< <MulService as MultiService>::ConnID    , String                      > ,
 
 }
 
@@ -78,15 +78,23 @@ impl<Out, MulService> Peer<Out, MulService>
 			services   : HashMap::new() ,
 			local_sm   : HashMap::new() ,
 			relay      : HashMap::new() ,
-			connections: HashMap::new() ,
+			// connections: HashMap::new() ,
 		}
 	}
 
 
-	pub fn register_service( &mut self, sid: <MulService as MultiService>::ServiceID, sm: Box<dyn ServiceMap<MulService>>, handler: Box< dyn Any > )
+	pub fn register_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, sm: Box<dyn ServiceMap<MulService>>, handler: Box< Recipient<Service> > )
 	{
-		self.services.insert( sid.clone(), handler );
-		self.local_sm.insert( sid        , sm      );
+
+
+		self.services.insert( sid.clone(), box Rcpnt::new( handler ) );
+		self.local_sm.insert( sid        , sm                        );
+	}
+
+
+	pub fn register_relayed_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, peer: Addr<Self> )
+	{
+		self.relay.insert( sid.clone(), peer );
 	}
 
 
@@ -97,7 +105,7 @@ impl<Out, MulService> Peer<Out, MulService>
 		{
 			let event: Option< Result< MulService, _ > > = await!( incoming.next() );
 
-			dbg!( "got incoming event on stream" );
+			trace!( "got incoming event on stream" );
 
 			match event
 			{
@@ -107,9 +115,9 @@ impl<Out, MulService> Peer<Out, MulService>
 					{
 						Ok ( mesg  ) =>
 						{
-							dbg!( &mesg.conn_id() );
+							trace!( "{:?}", &mesg.conn_id() );
 							await!( self_addr.send( Incoming { mesg } ) ).expect( "Send to self in peer" );
-							dbg!( "after send incoming in peer" );
+							trace!( "after send incoming in peer" );
 						},
 
 						Err( error ) =>
@@ -199,7 +207,7 @@ impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
 	{
 		async move
 		{
-			dbg!( "Peer sending OUT" );
+			debug!( "Peer sending OUT" );
 
 			await!( self.send_msg( msg ) );
 
@@ -265,7 +273,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 {
 	fn handle( &mut self, call: Call<MulService> ) -> Response< <Call<MulService> as Message>::Result >
 	{
-		dbg!( "peer: starting call handler" );
+		debug!( "peer: starting Handler<Call<MulService>>" );
 
 		let (sender, receiver) = oneshot::channel::< MulService >();
 
@@ -292,7 +300,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 
 		}.boxed();
 
-		dbg!( "peer: returning from call handler" );
+		trace!( "peer: returning from call handler" );
 
 		fut
 	}
@@ -309,7 +317,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 {
 	fn handle( &mut self, incoming: Incoming<MulService> ) -> Response<()>
 	{
-		dbg!( "Incoming message!" );
+		debug!( "Incoming message!" );
 
 		async move
 		{
@@ -344,9 +352,9 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			// codec present -> obligatory, not used to distinguish use case, but do we accept utf8 for errors?
 			//                  maybe not, strongly typed errors defined by thespis encoded with cbor seem better.
 			//
-			dbg!( &frame.conn_id().unwrap() );
-			dbg!( &frame.service().unwrap() );
-			dbg!( &frame.service().unwrap().is_null() );
+			// dbg!( &frame.conn_id().unwrap() );
+			// dbg!( &frame.service().unwrap() );
+			// dbg!( &frame.service().unwrap().is_null() );
 
 			let sid = frame.service().expect( "fail to getting conn_id from frame"    );
 			let cid = frame.conn_id().expect( "fail to getting service_id from frame" );
@@ -355,12 +363,12 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			if cid.is_null()
 			{
-				trace!( "Incoming Send" );
+				debug!( "Incoming Send" );
 
 
 				if let Some( handler ) = self.services.get( &sid )
 				{
-					trace!( "Incoming Send for local Actor" );
+					debug!( "Incoming Send for local Actor" );
 
 
 					self.local_sm
@@ -373,17 +381,18 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 
 				// service_id in self.relay   => Create Call and send to recipient found in self.relay.
 				//
-				else if let Some( _r ) = self.relay.get( &sid )
+				else if let Some( r ) = self.relay.get_mut( &sid )
 				{
-					trace!( "Incoming Call for relayed Actor" );
+					debug!( "Incoming Send for relayed Actor" );
 
+					await!( r.send( frame ) ).expect( "Failed relaying send to other peer" );
 				}
 
 				// service_id unknown         => send back and log error
 				//
 				else
 				{
-					trace!( "Incoming Call for unknown Actor" );
+					error!( "Incoming Call for unknown Actor" );
 
 				}
 			}
@@ -393,19 +402,19 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			else if !self.responses.contains_key( &cid ) // && !self.relayed_calls.contains_key( &cid )
 			{
-				trace!( "Incoming Call" );
+				debug!( "Incoming Call" );
 
 				// service_id in self.process => deserialize, use call on recipient, when completes,
 				//                               reconstruct multiservice with connID for response.
 				//
 				if let Some( handler ) = self.services.get( &sid )
 				{
-					trace!( "Incoming Call for local Actor" );
+					debug!( "Incoming Call for local Actor" );
 
 					// Call actor
 					//
-					let sm      = self.local_sm.get( &sid ).expect( "failed to find service map." );
-					let addr    = self.addr.clone();
+					let sm   = self.local_sm.get( &sid ).expect( "failed to find service map." );
+					let addr = self.addr.clone();
 
 					sm.call_service( frame, handler, addr.recipient::<MulService>() );
 				}
@@ -413,9 +422,24 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 
 				// service_id in self.relay   => Create Call and send to recipient found in self.relay.
 				//
-				else if let Some( _r ) = self.relay.get( &sid )
+				else if let Some( r ) = self.relay.get_mut( &sid )
 				{
-					trace!( "Incoming Call for relayed Actor" );
+					debug!( "Incoming Call for relayed Actor" );
+
+					let mut r = r.clone();
+					let mut self_addr = self.addr.clone();
+
+					rt::spawn( async move
+					{
+						let channel = await!( r.call( Call::new( frame ) ) ).expect( "Call to relay failed" );
+
+						let resp    = await!( channel ).expect( "failed to read from channel for response from relay" );
+
+						debug!( "Got response from relayed call, sending out" );
+
+						await!( self_addr.send( resp ) ).expect( "Failed to send response from relay out on connection" );
+
+					}).expect( "failed to spawn" );
 
 				}
 
@@ -423,7 +447,8 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 				//
 				else
 				{
-					trace!( "Incoming Call for unknown Actor" );
+					debug!( "Incoming Call for unknown Actor" );
+
 
 				}
 
@@ -434,7 +459,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			else if let Some( channel ) = self.responses.remove( &cid )
 			{
-				trace!( "Incoming Response" );
+				debug!( "Incoming Response" );
 
 				// TODO: verify our error handling story here. Normally if this
 				// fails it means the receiver of the channel was dropped... so
@@ -456,6 +481,8 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			else
 			{
+				debug!( "Incoming Error" );
+
 				await!( self.handle_error( frame ) )
 			}
 

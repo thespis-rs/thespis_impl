@@ -7,6 +7,10 @@ path = "src/peera.rs"
 name = "peerb"
 path = "src/peerb.rs"
 
+[[bin]]
+name = "peerc"
+path = "src/peerc.rs"
+
 [dependencies]
 log = "^0.4"
 serde_cbor = "^0.9"

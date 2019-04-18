@@ -56,17 +56,17 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 
 			loop
 			{
-				dbg!( "mailbox: starting loop, if we don't get a message, should register waker" );
+				trace!( "mailbox: starting loop, if we don't get a message, should register waker" );
 
 				match await!( msgs.next() )
 				{
-					Some( envl ) => { dbg!( "mb: envelope handle" ); await!( envl.handle( &mut actor ) ); dbg!( "mb: envelope handle finished, ready to loop" );}
-					None         => { dbg!( "break from mailbox"  ); break;                               }
+					Some( envl ) => { trace!( "mb: envelope handle" ); await!( envl.handle( &mut actor ) ); trace!( "mb: envelope handle finished, ready to loop" );}
+					None         => { trace!( "break from mailbox"  ); break;                               }
 				}
 			}
 
 			await!( actor.stopped() );
-			dbg!( "Mailbox stopped actor" );
+			trace!( "Mailbox stopped actor" );
 
 		}.boxed()
 	}
