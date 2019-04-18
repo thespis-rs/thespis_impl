@@ -1,5 +1,5 @@
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait ) ]
+#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, slice_concat_ext ) ]
 
 mod common;
 use common::*;
@@ -40,6 +40,14 @@ fn main()
 		let mut recipient = PeerAServices::recip_service_a( addr );
 
 		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb".to_string() } ) )
+
+			.expect( "Call failed" )
+		;
+
+		dbg!( resp );
+
+
+		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb -- again!!!".to_string() } ) )
 
 			.expect( "Call failed" )
 		;

@@ -369,7 +369,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 				// service_id in self.process => deserialize, use call on recipient, when completes,
 				//                               reconstruct multiservice with connID for response.
 				//
-				if let Some( handler ) = self.services.remove( &sid )
+				if let Some( handler ) = self.services.get( &sid )
 				{
 					trace!( "Incoming Call for local Actor" );
 
@@ -377,9 +377,8 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 					//
 					let sm      = self.local_sm.get( &sid ).expect( "failed to find service map." );
 					let addr    = self.addr.clone();
-					let service = handler;//.clone();
 
-					await!( sm.call_service( frame, service, addr.recipient::<MulService>() ) );
+					sm.call_service( frame, handler, addr.recipient::<MulService>() );
 				}
 
 

@@ -126,4 +126,9 @@ impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
 	{
 		self.addr.call( msg )
 	}
+
+	fn clone_box( &self ) -> Box< dyn ThreadSafeRecipient<M> >
+	{
+		box Self { addr: self.addr.clone() }
+	}
 }

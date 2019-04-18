@@ -99,7 +99,6 @@ impl<A: Actor> Clone for Receiver<A>
 
 
 
-
 pub struct Rcpnt<M: Message>
 {
 	rec: Box< dyn Recipient<M> >
@@ -138,6 +137,12 @@ impl<M: Message> Recipient<M> for Rcpnt<M>
 
 		}.boxed()
 	}
+
+	fn clone_box( &self ) -> Box< dyn Recipient<M> >
+	{
+		box Self { rec: self.rec.clone_box() }
+	}
+
 }
 
 
@@ -159,6 +164,13 @@ impl<A, M> Recipient<M> for Receiver<A>
 	default fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
+	}
+
+
+
+	fn clone_box( &self ) -> Box< dyn Recipient<M> >
+	{
+		box Self { addr: self.addr.clone() }
 	}
 }
 

@@ -12,6 +12,9 @@ pub use
 };
 
 
+
+
+
 pub type TheSink = Compat01As03Sink<TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, MS>;
 pub type MS      = MultiServiceImpl<ServiceID, ConnID, Codecs>;
 pub type MyPeer  = Peer<TheSink, MS>;
@@ -20,20 +23,31 @@ pub type MyPeer  = Peer<TheSink, MS>;
 //
 pub struct ServiceA  { pub msg : String }
 
-impl ServiceA
-{
-	pub fn sid() -> ServiceID
-	{
-		ServiceID::from_seed( b"ServiceA" )
-	}
-}
-
 
 #[ derive( Serialize, Deserialize, Debug ) ]
 //
 pub struct ResponseA { pub resp: String }
 
 impl Message for ServiceA { type Result = ResponseA; }
+
+impl Service for ServiceA
+{
+	type UniqueID = ServiceID;
+
+	#[ inline ]
+	//
+	fn uid( seed: &[u8] ) -> ServiceID
+	{
+		ServiceID::from_seed( &[ b"ServiceA", seed ].concat() )
+	}
+
+	#[ inline ]
+	//
+	fn sid() -> ServiceID
+	{
+		ServiceID::from_seed( b"ServiceA" )
+	}
+}
 
 
 
@@ -76,45 +90,44 @@ impl ServiceMap<MS> for PeerAServices
 	(
 		&self                                   ,
 		 msg        : MS                        ,
-		 receiver   : Box< dyn Any > ,
+		 receiver   : &Box< dyn Any > ,
 		 mut return_addr: Box< dyn Recipient< MS >> ,
 
-	) -> Response<()>
+	)
 	{
-		async move
+		let service_a = ServiceID::from_seed( b"ServiceA" );
+
+		if msg.service().expect( "get service" ) == service_a
 		{
-			let service_a = ServiceID::from_seed( b"ServiceA" );
+			let     backup: &Rcpnt<ServiceA> = receiver.downcast_ref().expect( "downcast_ref failed" );
+			let mut rec                      = backup.clone_box();
 
-			if msg.service().expect( "get service" ) == service_a
+			let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+
+			rt::spawn( async move
 			{
-				let mut rec: Box< Rcpnt<ServiceA> > = receiver.downcast().expect( "downcast failed" );
-				let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+				let resp = await!( rec.call( message ) ).expect( "call actor" );
 
-				rt::spawn( async move
-				{
-					let resp = await!( rec.call( message ) ).expect( "call actor" );
+				let sid = ServiceID::null();
+				let cid = msg.conn_id().expect( "get conn_id" );
 
-					let sid = ServiceID::null();
-					let cid = msg.conn_id().expect( "get conn_id" );
+				let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
 
-					let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
+				let mul = MultiServiceImpl::new( sid, cid, Codecs::CBOR, Bytes::from( serialized ) );
 
-					let mul = MultiServiceImpl::new( sid, cid, Codecs::CBOR, Bytes::from( serialized ) );
+				await!( return_addr.send( mul ) ).expect( "send response back to peer" );
 
-					await!( return_addr.send( mul ) ).expect( "send response back to peer" );
+			}).expect( "spawn call for servicea" );
+		}
 
-				}).expect( "spawn call for servicea" );
-			}
-
-			else
-			{
-				panic!( "got wrong service" );
-			}
-
-
-		}.boxed()
+		else
+		{
+			panic!( "got wrong service" );
+		}
 	}
 }
+
+
 
 #[ derive( Clone ) ]
 //
@@ -175,5 +188,11 @@ impl RemoteRecipient<ServiceA> for PeerAServicesRecipient
 			Ok( resp )
 
 		}.boxed()
+	}
+
+
+	fn clone_box( &self ) -> Box< dyn RemoteRecipient<ServiceA> >
+	{
+		box Self { peer: self.peer.clone() }
 	}
 }
