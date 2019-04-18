@@ -357,8 +357,37 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			{
 				trace!( "Incoming Send" );
 
-				await!( self.handle_send( frame ) );
+
+				if let Some( handler ) = self.services.get( &sid )
+				{
+					trace!( "Incoming Send for local Actor" );
+
+
+					self.local_sm
+
+						.get( &sid ).expect( "failed to find service map." )
+						.send_service( frame, handler )
+					;
+				}
+
+
+				// service_id in self.relay   => Create Call and send to recipient found in self.relay.
+				//
+				else if let Some( _r ) = self.relay.get( &sid )
+				{
+					trace!( "Incoming Call for relayed Actor" );
+
+				}
+
+				// service_id unknown         => send back and log error
+				//
+				else
+				{
+					trace!( "Incoming Call for unknown Actor" );
+
+				}
 			}
+
 
 			// it's a call
 			//

@@ -37,7 +37,8 @@ fn main()
 
 		// Call the service and receive the response
 		//
-		let mut recipient = PeerAServices::recip_service_a( addr );
+		let mut recipient = PeerAServices::recip_service_a( addr.clone() );
+		let mut recb      = PeerAServices::recip_service_b( addr         );
 
 		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb".to_string() } ) )
 
@@ -47,12 +48,30 @@ fn main()
 		dbg!( resp );
 
 
+
+		// Send
+		//
+		await!( recb.send( ServiceB{ msg: "SEND from peerb".to_string() } ) )
+
+			.expect( "Send failed" )
+		;
+
+
+
 		let resp = await!( recipient.call( ServiceA{ msg: "hi from peerb -- again!!!".to_string() } ) )
 
 			.expect( "Call failed" )
 		;
 
 		dbg!( resp );
+
+
+		// Send
+		//
+		await!( recb.send( ServiceB{ msg: "SEND AGAIN from peerb".to_string() } ) )
+
+			.expect( "Send failed" )
+		;
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

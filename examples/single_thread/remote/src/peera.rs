@@ -47,9 +47,12 @@ fn main()
 		let addrh                       = Addr ::new( mbh.sender() );
 		let handler                     = HandleA {}                ;
 		let recipienth                  = addrh.recipient::<ServiceA>();
+		let recipientb                  = addrh.recipient::<ServiceB>();
 		let rech      : Rcpnt<ServiceA> = Rcpnt::new( recipienth );
+		let recb      : Rcpnt<ServiceB> = Rcpnt::new( recipientb );
 
 		peer.register_service( ServiceA::sid(), box PeerAServices, box rech );
+		peer.register_service( ServiceB::sid(), box PeerAServices, box recb );
 
 		mb .start( peer    ).expect( "Failed to start mailbox of Peer"     );
 		mbh.start( handler ).expect( "Failed to start mailbox for HandleA" );
@@ -94,6 +97,15 @@ impl Handler<ServiceA> for HandleA
 		dbg!( msg );
 
 		ResponseA{ resp: "pong".into() }
+
+	}.boxed() }
+}
+
+impl Handler<ServiceB> for HandleA
+{
+	fn handle( &mut self, msg: ServiceB ) -> Response<()> { async move
+	{
+		dbg!( msg );
 
 	}.boxed() }
 }
