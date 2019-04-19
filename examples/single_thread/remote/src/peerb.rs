@@ -44,8 +44,8 @@ fn main()
 
 		// Call the service and receive the response
 		//
-		let mut service_a = PeerAServices::recipient::<ServiceA>( peera.clone() );
-		let mut service_b = PeerAServices::recipient::<ServiceB>( peera         );
+		let mut service_a = peer_a::Services::recipient::<ServiceA>( peera.clone() );
+		let mut service_b = peer_a::Services::recipient::<ServiceB>( peera         );
 
 
 

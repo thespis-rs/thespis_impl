@@ -36,8 +36,8 @@ fn main()
 		//
 		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
 
-		peer.register_service( ServiceA::sid(), box PeerAServices, addr_handler.recipient::<ServiceA>() );
-		peer.register_service( ServiceB::sid(), box PeerAServices, addr_handler.recipient::<ServiceB>() );
+		peer.register_service( ServiceA::sid(), box peer_a::Services, addr_handler.recipient::<ServiceA>() );
+		peer.register_service( ServiceB::sid(), box peer_a::Services, addr_handler.recipient::<ServiceB>() );
 
 		trace!( "ServiceA: {:?}", ServiceA::sid() );
 		trace!( "ServiceB: {:?}", ServiceB::sid() );

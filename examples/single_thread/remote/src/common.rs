@@ -13,8 +13,6 @@ pub use
 
 
 
-
-
 pub type TheSink = Compat01As03Sink<TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, MS>;
 pub type MS      = MultiServiceImpl<ServiceID, ConnID, Codecs>;
 pub type MyPeer  = Peer<TheSink, MS>;
@@ -23,16 +21,10 @@ pub type MyPeer  = Peer<TheSink, MS>;
 #[ derive( Serialize, Deserialize, Debug ) ] pub struct ServiceB  { pub msg : String }
 
 
-pub trait MarkPeerAServices {}
-
-impl MarkPeerAServices for ServiceA {}
-impl MarkPeerAServices for ServiceB {}
-
-
-
 #[ derive( Serialize, Deserialize, Debug ) ]
 //
 pub struct ResponseA { pub resp: String }
+
 
 impl Message for ServiceA { type Result = ResponseA; }
 impl Message for ServiceB { type Result = ()       ; }
@@ -41,32 +33,105 @@ impl Service for ServiceA
 {
 	type UniqueID = ServiceID;
 
-	#[ inline ] fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceA", seed ].concat() ) }
-	#[ inline ] fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceA"                  ) }
+	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceA", seed ].concat() ) }
+	fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceA"                  ) }
 }
 
 impl Service for ServiceB
 {
 	type UniqueID = ServiceID;
 
-	#[ inline ] fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceB", seed ].concat() ) }
-	#[ inline ] fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceB"                  ) }
+	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceB", seed ].concat() ) }
+	fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceB"                  ) }
 }
 
 
 
+
+
+
+pub async fn listen_tcp( socket: &str ) -> (TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, TokSplitStream<Framed<TcpStream, MulServTokioCodec<MS>>>)
+{
+	// create tcp server
+	//
+	let socket   = socket.parse::<SocketAddr>().unwrap();
+	let listener = TcpListener::bind( &socket ).expect( "bind address" );
+
+	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+
+	let stream   = await01!( listener.incoming().take(1).into_future() )
+		.expect( "find one stream" ).0
+		.expect( "find one stream" );
+
+	codec.framed( stream ).split()
+}
+
+
+
+
+pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
+{
+	// Connect to tcp server
+	//
+	let socket = socket.parse::<SocketAddr>().unwrap();
+	let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
+
+	// frame the connection with codec for multiservice
+	//
+	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+
+	let (sink_a, stream_a) = codec.framed( stream ).split();
+
+	// Create mailbox for peer
+	//
+	let mb  : Inbox<MyPeer> = Inbox::new()             ;
+	let addr                = Addr ::new( mb.sender() );
+
+	// create peer with stream/sink + service map
+	//
+	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+
+	mb.start( peer ).expect( "Failed to start mailbox" );
+
+	addr
+}
+
+
+
+
+
+
+
+
+
+
+
+
+pub mod peer_a
+{
+
+use super::*;
+
+// Mark the services part of this particular service map, so we can write generic impls only for them.
+//
+pub trait MarkServices {}
+
+impl MarkServices for ServiceA {}
+impl MarkServices for ServiceB {}
+
+
 #[ derive( Clone ) ]
 //
-pub struct PeerAServices;
+pub struct Services;
 
-impl PeerAServices
+impl Services
 {
-	pub fn recipient<S>( peer: Addr<MyPeer> ) -> impl RemoteRecipient<S>
+	pub fn recipient<S>( peer: Addr<MyPeer> ) -> impl Recipient<S>
 
-	where  S                    : MarkPeerAServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Result: Serialize + DeserializeOwned                               ,
+	where  S                    : MarkServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
 	{
-		PeerAServicesRecipient::new( peer )
+		ServicesRecipient::new( peer )
 	}
 
 
@@ -123,7 +188,7 @@ impl PeerAServices
 }
 
 
-impl ServiceMap<MS> for PeerAServices
+impl ServiceMap<MS> for Services
 {
 	fn send_service( &self, msg: MS, receiver: &Box< dyn Any > )
 	{
@@ -150,9 +215,9 @@ impl ServiceMap<MS> for PeerAServices
 
 		match x
 		{
-			_ if x == ServiceA::sid() => Self::call_service_gen::<ServiceA>( msg, receiver, return_addr ),
-			_ if x == ServiceB::sid() => Self::call_service_gen::<ServiceB>( msg, receiver, return_addr ),
-			_                         => panic!( "got wrong service: {:?}", x ),
+			_ if x == ServiceA::sid() => Self::call_service_gen::<ServiceA>( msg, receiver, return_addr ) ,
+			_ if x == ServiceB::sid() => Self::call_service_gen::<ServiceB>( msg, receiver, return_addr ) ,
+			_                         => panic!( "got wrong service: {:?}", x )                           ,
 		}
 	}
 }
@@ -161,13 +226,13 @@ impl ServiceMap<MS> for PeerAServices
 
 #[ derive( Clone ) ]
 //
-pub struct PeerAServicesRecipient
+pub struct ServicesRecipient
 {
 	peer: Addr<MyPeer>
 }
 
 
-impl PeerAServicesRecipient
+impl ServicesRecipient
 {
 	pub fn new( peer: Addr<MyPeer> ) -> Self
 	{
@@ -213,10 +278,10 @@ impl PeerAServicesRecipient
 
 
 
-impl<S> RemoteRecipient<S> for PeerAServicesRecipient
+impl<S> Recipient<S> for ServicesRecipient
 
-	where  S                    : MarkPeerAServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Result: Serialize + DeserializeOwned                               ,
+	where  S                    : MarkServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
 
 {
 	fn send( &mut self, msg: S ) -> Response< ThesRes<()> >
@@ -231,57 +296,10 @@ impl<S> RemoteRecipient<S> for PeerAServicesRecipient
 	}
 
 
-	fn clone_box( &self ) -> Box< dyn RemoteRecipient<S> >
+	fn clone_box( &self ) -> Box< dyn Recipient<S> >
 	{
 		box Self { peer: self.peer.clone() }
 	}
 }
 
-
-
-
-pub async fn listen_tcp( socket: &str ) -> (TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, TokSplitStream<Framed<TcpStream, MulServTokioCodec<MS>>>)
-{
-	// create tcp server
-	//
-	let socket   = socket.parse::<SocketAddr>().unwrap();
-	let listener = TcpListener::bind( &socket ).expect( "bind address" );
-
-	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
-
-	let stream   = await01!( listener.incoming().take(1).into_future() )
-		.expect( "find one stream" ).0
-		.expect( "find one stream" );
-
-	codec.framed( stream ).split()
-}
-
-
-
-
-pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
-{
-	// Connect to tcp server
-	//
-	let socket = socket.parse::<SocketAddr>().unwrap();
-	let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
-
-	// frame the connection with codec for multiservice
-	//
-	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
-
-	let (sink_a, stream_a) = codec.framed( stream ).split();
-
-	// Create mailbox for peer
-	//
-	let mb  : Inbox<MyPeer> = Inbox::new()             ;
-	let addr                = Addr ::new( mb.sender() );
-
-	// create peer with stream/sink + service map
-	//
-	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
-
-	mb.start( peer ).expect( "Failed to start mailbox" );
-
-	addr
 }
