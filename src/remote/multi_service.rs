@@ -115,9 +115,6 @@ impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 	{
 		let mut bytes = BytesMut::with_capacity( HEADER_LEN + mesg.len() );
 
-		let b: Bytes = conn_id.clone().into();
-		dbg!( b.len());
-
 		bytes.put( service .into() );
 		bytes.put( conn_id .into() );
 		bytes.put( encoding.into() );

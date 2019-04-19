@@ -1,9 +1,4 @@
-use
-{
-	futures       :: { future::{ FutureExt } } ,
-	thespis       :: { * } ,
-	log           :: { * } ,
-};
+use super::import::*;
 
 
 #[ derive( Actor ) ] pub struct Sum( pub u64 );

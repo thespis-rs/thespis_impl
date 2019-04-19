@@ -9,7 +9,8 @@ use common::*;
 fn main()
 {
 	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-	simple_logger::init_with_level( log::Level::Debug ).unwrap();
+
+	let _handle = flexi_logger::Logger::with_str( "thespis_impl=debug, tokio=info" ).start().unwrap();
 
 	let program = async move
 	{
