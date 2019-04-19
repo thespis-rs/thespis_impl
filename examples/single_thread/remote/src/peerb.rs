@@ -7,7 +7,7 @@ use common::*;
 fn main()
 {
 	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-	let _handle = flexi_logger::Logger::with_str( "thespis_impl=debug, tokio=info" ).start().unwrap();
+	flexi_logger::Logger::with_str( "thespis_impl=debug, tokio=info" ).start().unwrap();
 
 	let program = async move
 	{
@@ -44,8 +44,8 @@ fn main()
 
 		// Call the service and receive the response
 		//
-		let mut service_a = PeerAServices::recip_service_a( peera.clone() );
-		let mut service_b = PeerAServices::recip_service_b( peera         );
+		let mut service_a = PeerAServices::recipient::<ServiceA>( peera.clone() );
+		let mut service_b = PeerAServices::recipient::<ServiceB>( peera         );
 
 
 
@@ -69,6 +69,12 @@ fn main()
 		// Send
 		//
 		await!( service_b.send( ServiceB{ msg: "SEND AGAIN from peerb".to_string() } ) ).expect( "Send failed" );
+
+
+		// Call ServiceB
+		let resp = await!( service_b.call( ServiceB{ msg: "hi from peerb -- Calling to ServiceB!!!".to_string() } ) ).expect( "Call failed" );
+
+		dbg!( resp );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

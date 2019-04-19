@@ -10,7 +10,7 @@ fn main()
 {
 	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
 
-	let _handle = flexi_logger::Logger::with_str( "thespis_impl=debug, tokio=info" ).start().unwrap();
+	let _handle = flexi_logger::Logger::with_str( "peera=trace, thespis_impl=debug, tokio=info" ).start().unwrap();
 
 	let program = async move
 	{
@@ -38,6 +38,9 @@ fn main()
 
 		peer.register_service( ServiceA::sid(), box PeerAServices, addr_handler.recipient::<ServiceA>() );
 		peer.register_service( ServiceB::sid(), box PeerAServices, addr_handler.recipient::<ServiceB>() );
+
+		trace!( "ServiceA: {:?}", ServiceA::sid() );
+		trace!( "ServiceB: {:?}", ServiceB::sid() );
 
 		let handler = HandleA {};
 

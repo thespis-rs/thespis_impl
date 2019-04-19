@@ -23,6 +23,12 @@ pub type MyPeer  = Peer<TheSink, MS>;
 #[ derive( Serialize, Deserialize, Debug ) ] pub struct ServiceB  { pub msg : String }
 
 
+pub trait MarkPeerAServices {}
+
+impl MarkPeerAServices for ServiceA {}
+impl MarkPeerAServices for ServiceB {}
+
+
 
 #[ derive( Serialize, Deserialize, Debug ) ]
 //
@@ -35,38 +41,16 @@ impl Service for ServiceA
 {
 	type UniqueID = ServiceID;
 
-	#[ inline ]
-	//
-	fn uid( seed: &[u8] ) -> ServiceID
-	{
-		ServiceID::from_seed( &[ b"ServiceA", seed ].concat() )
-	}
-
-	#[ inline ]
-	//
-	fn sid() -> ServiceID
-	{
-		ServiceID::from_seed( b"ServiceA" )
-	}
+	#[ inline ] fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceA", seed ].concat() ) }
+	#[ inline ] fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceA"                  ) }
 }
 
 impl Service for ServiceB
 {
 	type UniqueID = ServiceID;
 
-	#[ inline ]
-	//
-	fn uid( seed: &[u8] ) -> ServiceID
-	{
-		ServiceID::from_seed( &[ b"ServiceB", seed ].concat() )
-	}
-
-	#[ inline ]
-	//
-	fn sid() -> ServiceID
-	{
-		ServiceID::from_seed( b"ServiceB" )
-	}
+	#[ inline ] fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceB", seed ].concat() ) }
+	#[ inline ] fn sid()              -> ServiceID { ServiceID::from_seed(    b"ServiceB"                  ) }
 }
 
 
@@ -77,93 +61,98 @@ pub struct PeerAServices;
 
 impl PeerAServices
 {
-	pub fn recip_service_a( peer: Addr<MyPeer> ) -> impl RemoteRecipient<ServiceA>
+	pub fn recipient<S>( peer: Addr<MyPeer> ) -> impl RemoteRecipient<S>
+
+	where  S                    : MarkPeerAServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	      <S as Message>::Result: Serialize + DeserializeOwned                               ,
 	{
 		PeerAServicesRecipient::new( peer )
 	}
 
-	pub fn recip_service_b( peer: Addr<MyPeer> ) -> impl RemoteRecipient<ServiceB>
+
+	fn send_service_gen<S>( msg: MS, receiver: &Box< dyn Any > )
+
+		where S                     : Service + Message<Result=()>,
+		      <S as Message>::Result: Serialize + DeserializeOwned,
+
 	{
-		PeerAServicesRecipient::new( peer )
+		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
+		let mut rec               = backup.clone_box();
+
+		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+
+		rt::spawn( async move
+		{
+			await!( rec.send( message ) ).expect( "call actor" );
+
+		}).expect( "spawn call for service" );
+	}
+
+
+
+	fn call_service_gen<S>
+	(
+		     msg        :  MS                        ,
+		     receiver   : &Box< dyn Any >            ,
+		 mut return_addr:  Box< dyn Recipient< MS >> ,
+
+	)
+
+	where S                     : Service                     ,
+	      <S as Message>::Result: Serialize + DeserializeOwned,
+	{
+		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
+		let mut rec               = backup.clone_box();
+
+		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+
+		rt::spawn( async move
+		{
+			let resp       = await!( rec.call( message ) ).expect( "call actor" );
+
+			let sid        = ServiceID::null();
+			let cid        = msg.conn_id().expect( "get conn_id" );
+			let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
+
+			let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized.into() );
+
+			await!( return_addr.send( mul ) ).expect( "send response back to peer" );
+
+		}).expect( "spawn call for service" );
 	}
 }
 
 
 impl ServiceMap<MS> for PeerAServices
 {
-	fn deserialize( &self )
+	fn send_service( &self, msg: MS, receiver: &Box< dyn Any > )
 	{
+		let x = msg.service().expect( "get service" );
 
-	}
-
-
-	fn send_service
-	(
-		&self                     ,
-		 msg     : MS             ,
-		 receiver: &Box< dyn Any >,
-
-	)
-	{
-		let service_a = ServiceID::from_seed( b"ServiceB" );
-
-		if msg.service().expect( "get service" ) == service_a
+		match x
 		{
-			let     backup: &Rcpnt<ServiceB> = receiver.downcast_ref().expect( "downcast_ref failed" );
-			let mut rec                      = backup.clone_box();
-
-			let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
-
-			rt::spawn( async move
-			{
-				await!( rec.send( message ) ).expect( "call actor" );
-
-			}).expect( "spawn call for servicea" );
-		}
-
-		else
-		{
-			panic!( "got wrong service" );
+			_ if x == ServiceB::sid() => Self::send_service_gen::<ServiceB>( msg, receiver ),
+			_                         => panic!( "got wrong service: {:?}", x ),
 		}
 	}
+
 
 	fn call_service
 	(
-		&self                                   ,
-		 msg        : MS                        ,
-		 receiver   : &Box< dyn Any > ,
-		 mut return_addr: Box< dyn Recipient< MS >> ,
+		&self                                    ,
+		 msg        :  MS                        ,
+		 receiver   : &Box< dyn Any >            ,
+		 return_addr:  Box< dyn Recipient< MS >> ,
 
 	)
 	{
-		let service_a = ServiceID::from_seed( b"ServiceA" );
+		let x = msg.service().expect( "get service" );
 
-		if msg.service().expect( "get service" ) == service_a
+		match x
 		{
-			let     backup: &Rcpnt<ServiceA> = receiver.downcast_ref().expect( "downcast_ref failed" );
-			let mut rec                      = backup.clone_box();
-
-			let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
-
-			rt::spawn( async move
-			{
-				let resp = await!( rec.call( message ) ).expect( "call actor" );
-
-				let sid = ServiceID::null();
-				let cid = msg.conn_id().expect( "get conn_id" );
-
-				let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
-
-				let mul = MultiServiceImpl::new( sid, cid, Codecs::CBOR, Bytes::from( serialized ) );
-
-				await!( return_addr.send( mul ) ).expect( "send response back to peer" );
-
-			}).expect( "spawn call for servicea" );
-		}
-
-		else
-		{
-			panic!( "got wrong service" );
+			_ if x == ServiceA::sid() => Self::call_service_gen::<ServiceA>( msg, receiver, return_addr ),
+			_ if x == ServiceB::sid() => Self::call_service_gen::<ServiceB>( msg, receiver, return_addr ),
+			_                         => panic!( "got wrong service: {:?}", x ),
 		}
 	}
 }
@@ -184,112 +173,69 @@ impl PeerAServicesRecipient
 	{
 		Self { peer }
 	}
+
+
+	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
+
+		where  S                    : Service<UniqueID=ServiceID> ,
+				<S as Message>::Result: Serialize + DeserializeOwned,
+
+	{
+		let sid        = S::sid();
+		let cid        = ConnID::null();
+		let serialized = serde_cbor::to_vec( &msg )?;
+
+		let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized.into() );
+
+		await!( self.peer.send( mul ) )
+	}
+
+
+	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Result>
+
+		where  S                    : Service<UniqueID=ServiceID> ,
+				<S as Message>::Result: Serialize + DeserializeOwned,
+
+	{
+		let sid        = S::sid();
+		let cid        = ConnID::default();
+		let serialized = serde_cbor::to_vec( &msg )?.into();
+
+		let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized );
+
+		let call = Call::new( mul );
+		let re   = await!( await!( self.peer.call( call ) )? )?;
+
+		Ok( des( &re.mesg() )? )
+	}
 }
 
 
-impl RemoteRecipient<ServiceA> for PeerAServicesRecipient
+
+
+impl<S> RemoteRecipient<S> for PeerAServicesRecipient
+
+	where  S                    : MarkPeerAServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	      <S as Message>::Result: Serialize + DeserializeOwned                               ,
+
 {
-	fn send( &mut self, msg: ServiceA ) -> Response< ThesRes<()> >
+	fn send( &mut self, msg: S ) -> Response< ThesRes<()> >
 	{
-		async move
-		{
-			let sid = ServiceA::sid();
-			let cid = ConnID::null();
-
-			let serialized = serde_cbor::to_vec( &msg )?;
-
-			let mul = MultiServiceImpl::new( sid, cid, Codecs::CBOR, Bytes::from( serialized ) );
-
-			await!( self.peer.send( mul ) )
-
-		}.boxed()
+		self.send_gen( msg ).boxed()
 	}
 
 
-	fn call( &mut self, msg: ServiceA ) -> Response< ThesRes<<ServiceA as Message>::Result> >
+	fn call( &mut self, msg: S ) -> Response< ThesRes<<S as Message>::Result> >
 	{
-		async move
-		{
-			let sid = ServiceA::sid();
-			let cid = ConnID::default();
-
-			dbg!( &sid );
-
-			let serialized = serde_cbor::to_vec( &msg )?.into();
-
-			let mul  = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized );
-
-			let call = Call::new( mul );
-			dbg!( "RemoteRecipient: Sending message to peer" );
-
-			let re   = await!( await!( self.peer.call( call ) )? )?;
-
-			let resp: <ServiceA as Message>::Result = des( &re.mesg() )?;
-
-			Ok( resp )
-
-		}.boxed()
+		self.call_gen( msg ).boxed()
 	}
 
 
-	fn clone_box( &self ) -> Box< dyn RemoteRecipient<ServiceA> >
+	fn clone_box( &self ) -> Box< dyn RemoteRecipient<S> >
 	{
 		box Self { peer: self.peer.clone() }
 	}
 }
-
-
-impl RemoteRecipient<ServiceB> for PeerAServicesRecipient
-{
-	fn send( &mut self, msg: ServiceB ) -> Response< ThesRes<()> >
-	{
-		async move
-		{
-			let sid = ServiceB::sid();
-			let cid = ConnID::null();
-
-			let serialized = serde_cbor::to_vec( &msg )?;
-
-			let mul = MultiServiceImpl::new( sid, cid, Codecs::CBOR, Bytes::from( serialized ) );
-
-			await!( self.peer.send( mul ) )
-
-		}.boxed()
-	}
-
-
-	fn call( &mut self, msg: ServiceB ) -> Response< ThesRes<<ServiceB as Message>::Result> >
-	{
-		async move
-		{
-			let sid = ServiceB::sid();
-			let cid = ConnID::default();
-
-			dbg!( &sid );
-
-			let serialized = serde_cbor::to_vec( &msg )?.into();
-
-			let mul  = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized );
-
-			let call = Call::new( mul );
-			dbg!( "RemoteRecipient: Sending message to peer" );
-
-			let re   = await!( await!( self.peer.call( call ) )? )?;
-
-			let resp: <ServiceB as Message>::Result = des( &re.mesg() )?;
-
-			Ok( resp )
-
-		}.boxed()
-	}
-
-
-	fn clone_box( &self ) -> Box< dyn RemoteRecipient<ServiceB> >
-	{
-		box Self { peer: self.peer.clone() }
-	}
-}
-
 
 
 
