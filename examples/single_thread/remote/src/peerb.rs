@@ -1,4 +1,3 @@
-#![ allow( unused_imports, dead_code ) ]
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, slice_concat_ext ) ]
 
 mod common;
@@ -30,8 +29,8 @@ fn main()
 			//
 			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
 
-			peer.register_relayed_service::<ServiceA>( ServiceA::sid(), peera2.clone() );
-			peer.register_relayed_service::<ServiceB>( ServiceB::sid(), peera2         );
+			peer.register_relayed_service::<ServiceA>( ServiceA::uid( b"peer_a" ), peera2.clone() );
+			peer.register_relayed_service::<ServiceB>( ServiceB::uid( b"peer_a" ), peera2         );
 
 			mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 

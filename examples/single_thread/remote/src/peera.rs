@@ -1,4 +1,3 @@
-#![ allow( unused_imports, dead_code ) ]
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, slice_concat_ext ) ]
 
 mod common;
@@ -36,11 +35,11 @@ fn main()
 		//
 		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
 
-		peer.register_service( ServiceA::sid(), box peer_a::Services, addr_handler.recipient::<ServiceA>() );
-		peer.register_service( ServiceB::sid(), box peer_a::Services, addr_handler.recipient::<ServiceB>() );
+		peer.register_service( ServiceA::uid( b"peer_a" ), box peer_a::Services, addr_handler.recipient::<ServiceA>() );
+		peer.register_service( ServiceB::uid( b"peer_a" ), box peer_a::Services, addr_handler.recipient::<ServiceB>() );
 
-		trace!( "ServiceA: {:?}", ServiceA::sid() );
-		trace!( "ServiceB: {:?}", ServiceB::sid() );
+		trace!( "ServiceA: {:?}", ServiceA::uid( b"peer_a" ) );
+		trace!( "ServiceB: {:?}", ServiceB::uid( b"peer_a" ) );
 
 		let handler = HandleA {};
 
