@@ -1,5 +1,4 @@
 #![ cfg( feature = "remote" ) ]
-#![ allow( unused_imports, dead_code ) ]
 
 #![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
@@ -15,25 +14,20 @@
 
 use
 {
-	log          :: { *                                                                         } ,
 	thespis      :: { *                                                                         } ,
-	thespis_impl :: { single_thread::*, remote::*, service_map, runtime::{ rt, tokio::TokioRT } } ,
-	serde        :: { Serialize, Deserialize, de::DeserializeOwned                              } ,
+	thespis_impl :: { single_thread::*, remote::*, service_map, runtime::{ rt } } ,
 	std          :: { net::SocketAddr                                                           } ,
-	bytes        :: { Bytes                                                                     } ,
 
 
 	futures      ::
 	{
-		compat :: { Compat01As03, Compat01As03Sink, Stream01CompatExt, Sink01CompatExt, Future01CompatExt } ,
-		stream :: { Stream                                                             } ,
+		compat :: { Compat01As03Sink, Stream01CompatExt, Sink01CompatExt, Future01CompatExt } ,
 	},
 
 
 	tokio        ::
 	{
-		await as await01,
-		prelude :: { StreamAsyncExt, Stream as TokStream, stream::{ SplitStream as TokSplitStream, SplitSink as TokSplitSink } } ,
+		prelude :: { Stream as TokStream, stream::{ SplitStream as TokSplitStream, SplitSink as TokSplitSink } } ,
  		net     :: { TcpStream, TcpListener                                                                                    } ,
 		codec   :: { Decoder, Framed                                                                                           } ,
 	},
@@ -49,44 +43,6 @@ use common::actors::*;
 pub type TheSink = Compat01As03Sink<TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, MS> ;
 pub type MS      = MultiServiceImpl<ServiceID, ConnID, Codecs>                                  ;
 pub type MyPeer  = Peer<TheSink, MS>                                                            ;
-
-#[ derive( Serialize, Deserialize, Debug ) ] pub struct ServiceA  { pub msg : String }
-#[ derive( Serialize, Deserialize, Debug ) ] pub struct ServiceB  { pub msg : String }
-
-
-#[ derive( Serialize, Deserialize, Debug ) ]
-//
-pub struct ResponseA { pub resp: String }
-
-
-impl Message for ServiceA { type Result = ResponseA; }
-impl Message for ServiceB { type Result = ()       ; }
-
-impl Service for ServiceA
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceA", seed ].concat() ) }
-}
-
-impl Service for ServiceB
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceB", seed ].concat() ) }
-}
-
-
-service_map!
-(
-	namespace:     peer_a   ;
-	peer_type:     MyPeer   ;
-	multi_service: MS       ;
-	send_and_call: ServiceB ;
-	call_only:     ServiceA ;
-);
-
-
 
 
 
@@ -158,28 +114,6 @@ pub async fn connect_return_stream( socket: &str ) ->
 }
 
 
-pub struct HandleA {}
-
-impl Actor for HandleA {}
-
-
-impl Handler<ServiceA> for HandleA
-{
-	fn handle( &mut self, _msg: ServiceA ) -> Response<ResponseA> { async move
-	{
-		ResponseA{ resp: "pong".into() }
-
-	}.boxed() }
-}
-
-impl Handler<ServiceB> for HandleA
-{
-	fn handle( &mut self, _msg: ServiceB ) -> Response<()> { async move
-	{
-	}.boxed() }
-}
-
-
 
 
 impl Service for Add
@@ -195,8 +129,6 @@ impl Service for Show
 
 	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"Show", seed ].concat() ) }
 }
-
-
 
 
 
@@ -224,10 +156,9 @@ fn remote()
 		let (sink_a, stream_a) = await!( listen_tcp( "127.0.0.1:8998" ) );
 
 
-		// Create mailbox for our actor
+		// Create mailbox for our handler
 		//
-		let mb_handler  : Inbox<Sum> = Inbox::new()                     ;
-		let addr_handler             = Addr ::new( mb_handler.sender() );
+		let addr_handler = Addr::from( Sum(0) );
 
 		// Create mailbox for peer
 		//
@@ -243,10 +174,7 @@ fn remote()
 		peer.register_service( Add ::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Add >() );
 		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
 
-		let sum = Sum(0);
-
-		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
-		mb_handler.start( sum  ).expect( "Failed to start mailbox for Sum" );
+		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
 
 
@@ -296,10 +224,9 @@ fn relay()
 		let (sink_a, stream_a) = await!( listen_tcp( "127.0.0.1:20000" ) );
 
 
-		// Create mailbox for our actor
+		// Create mailbox for our handler
 		//
-		let mb_handler  : Inbox<Sum> = Inbox::new()                     ;
-		let addr_handler             = Addr ::new( mb_handler.sender() );
+		let addr_handler = Addr::from( Sum(0) );
 
 		// Create mailbox for peer
 		//
@@ -315,10 +242,7 @@ fn relay()
 		peer.register_service( Add ::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Add >() );
 		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
 
-		let sum = Sum(0);
-
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
-		mb_handler.start( sum  ).expect( "Failed to start mailbox for Sum" );
 	};
 
 
@@ -433,19 +357,11 @@ service_map!
 //
 fn parallel()
 {
-	// flexi_logger::Logger::with_str( "remote=trace, thespis_impl=trace, tokio=debug" ).start().unwrap();
-
 	let peera = async
 	{
 		// get a framed connection
 		//
 		let (sink_a, stream_a) = await!( listen_tcp( "127.0.0.1:20001" ) );
-
-
-		// Create mailbox for our actor
-		//
-		let mb_handler  : Inbox<Parallel> = Inbox::new()                     ;
-		let addr_handler                  = Addr ::new( mb_handler.sender() );
 
 		// Create mailbox for peer
 		//
@@ -460,25 +376,21 @@ fn parallel()
 		//
 		let show = remote::Services::recipient::<Show>( peer_addr.clone() );
 
+		// Create mailbox for our handler
+		//
+		let addr_handler = Addr::from( Parallel{ sum: box show } );
+
 		// register Sum with peer as handler for Add and Show
 		//
 		peer.register_service( Show::uid( b"parallel" ), box parallel::Services, addr_handler.recipient::<Show>() );
 
-		let para = Parallel{ sum: box show };
-
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
-		mb_handler.start( para ).expect( "Failed to start mailbox for Sum" );
 	};
 
 
 	let peerb = async
 	{
 		let (sink_b, stream_b) = await!( connect_return_stream( "127.0.0.1:20001" ) );
-
-		// Create mailbox for our actor
-		//
-		let mb_handler  : Inbox<Sum> = Inbox::new()                     ;
-		let addr_handler             = Addr ::new( mb_handler.sender() );
 
 		// Create mailbox for peer
 		//
@@ -489,14 +401,17 @@ fn parallel()
 		//
 		let mut peer = Peer::new( peer_addr.clone(), stream_b.compat(), sink_b.sink_compat() );
 
+		// Create mailbox for our handler
+		//
+		let addr_handler = Addr::from( Sum(19) );
+
+
 		// register Sum with peer as handler for Add and Show
 		//
 		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
 
-		let sum = Sum(19);
+		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 
-		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
-		mb_handler.start( sum  ).expect( "Failed to start mailbox for Sum" );
 
 		// Create recipients
 		//
