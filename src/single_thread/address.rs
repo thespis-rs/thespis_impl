@@ -44,6 +44,28 @@ impl<A> Addr<A> where A: Actor
 		trace!( "CREATE address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
 		Self{ mb }
 	}
+
+
+	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
+	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
+	/// Will consume your actor and return an address.
+	///
+	/// Since this is a convenience method, it avoids returning a result, however it spawns the
+	/// mailbox which in theory can fail, so this can panic.
+	///
+	/// ```ignore
+	/// let addr = Addr::from( MyActor{} );
+	/// await!( addr.call( MyMessage{} ) )?;
+	/// ```
+	//
+	pub fn from( actor: A ) -> Self
+	{
+		let inbox: Inbox<A> = Inbox::new();
+		let addr = Self::new( inbox.sender() );
+
+		inbox.start( actor ).expect( "spawn inbox" );
+		addr
+	}
 }
 
 
