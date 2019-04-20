@@ -50,23 +50,35 @@ impl<A> Addr<A> where A: Actor
 	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
 	/// Will consume your actor and return an address.
 	///
-	/// Since this is a convenience method, it avoids returning a result, however it spawns the
-	/// mailbox which in theory can fail, so this can panic.
-	///
-	/// ```ignore
-	/// let addr = Addr::from( MyActor{} );
+	/// let addr = Addr::try_from( MyActor{} )?;
 	/// await!( addr.call( MyMessage{} ) )?;
-	/// ```
 	//
-	pub fn from( actor: A ) -> Self
+	pub fn try_from( actor: A ) -> ThesRes<Self>
 	{
 		let inbox: Inbox<A> = Inbox::new();
 		let addr = Self::new( inbox.sender() );
 
-		inbox.start( actor ).expect( "spawn inbox" );
-		addr
+		inbox.start( actor )?;
+		Ok( addr )
 	}
 }
+
+
+
+// this doesn't work right now, because it would specialize a blanket impl from core...
+// impl<A: Actor> TryFrom<A> for Addr<A>
+// {
+// 	type Error = Error;
+
+// 	fn try_from( actor: A ) -> ThesRes<Self>
+// 	{
+// 		let inbox: Inbox<A> = Inbox::new();
+// 		let addr = Self::new( inbox.sender() );
+
+// 		inbox.start( actor )?;
+// 		Ok( addr )
+// 	}
+// }
 
 
 

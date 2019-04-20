@@ -158,7 +158,7 @@ fn remote()
 
 		// Create mailbox for our handler
 		//
-		let addr_handler = Addr::from( Sum(0) );
+		let addr_handler = Addr::try_from( Sum(0) ).expect( "spawn actor mailbox" );
 
 		// Create mailbox for peer
 		//
@@ -226,7 +226,7 @@ fn relay()
 
 		// Create mailbox for our handler
 		//
-		let addr_handler = Addr::from( Sum(0) );
+		let addr_handler = Addr::try_from( Sum(0) ).expect( "spawn actor mailbox" );
 
 		// Create mailbox for peer
 		//
@@ -378,7 +378,7 @@ fn parallel()
 
 		// Create mailbox for our handler
 		//
-		let addr_handler = Addr::from( Parallel{ sum: box show } );
+		let addr_handler = Addr::try_from( Parallel{ sum: box show } ).expect( "spawn actor mailbox" );
 
 		// register Sum with peer as handler for Add and Show
 		//
@@ -403,7 +403,7 @@ fn parallel()
 
 		// Create mailbox for our handler
 		//
-		let addr_handler = Addr::from( Sum(19) );
+		let addr_handler = Addr::try_from( Sum(19) ).expect( "spawn actor mailbox" );
 
 
 		// register Sum with peer as handler for Add and Show
