@@ -9,6 +9,11 @@ pub enum ThesError
 	//
 	DoubleExecutorInit,
 
+
+	#[ fail( display = "Cannot send messages to a closed connection" ) ]
+	//
+	PeerSendAfterCloseConnection,
+
 	// #[ fail( display = "Not enough bytes for the stream to contain a full message" ) ]
 	// //
 	// NeedMoreBytes,

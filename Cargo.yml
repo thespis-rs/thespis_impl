@@ -39,9 +39,9 @@ dependencies:
   thespis             : { path: ../thespis_iface }
   failure             : ^0.1
   futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
-  log                 : 0.4.6
+  log                 : ^0.4
   simple_logger       : ^1
-
+  regex               : { version: ^1, features: [ pattern ] }
   # tokio stuff
   #
   once_cell           : ^0.1
@@ -74,6 +74,7 @@ dev-dependencies:
   tokio            : { path: ../../tokio/tokio                 , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
   pretty_assertions: ^0.6
   serde_cbor       : ^0.9
+  flexi_logger        : ^0.11
 
 
 bench:

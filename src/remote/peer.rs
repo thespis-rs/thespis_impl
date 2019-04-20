@@ -1,5 +1,8 @@
 use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
 
+mod close_connection;
+pub use close_connection::CloseConnection;
+
 pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
 pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
 pub trait BoundsMulService     : 'static + Message<Result=()> + MultiService                  {}
@@ -14,21 +17,44 @@ impl<T> BoundsMulService for T
 where T: 'static + Message<Result=()> + MultiService {}
 
 
+/// Represents a connection to another process over which you can send actor messages.
+///
+/// TODO: - let the user subscribe to connection close event.
+///       - if you still have a recipient, so an address to this peer, but the remote end closes,
+///         what happens when you send on the recipient (error handling in other words)
+///
+/// ### Closing the connection
+///
+/// The reasoning behind a peer is that it is tied to a stream/sink, often a framed connection.
+/// When the connection closes for whatever reason, the peer should dissappear and no longer handle
+/// any messages.
+///
+/// If the remote closes the connection, and you are no longer holding any addresses to this
+/// peer (or recipients for remote actors), then the peer will get dropped.
+///
+/// If you do hold recipients and try to send on them, 2 things can happen. Since Send is like
+/// throwing a message in a bottle, without feedback, it's infallible, so your message will
+/// just get dropped silently. If you use call, which returns a result, you will get an error.
+///
+/// It's not yet implemented, but there will be an event that you will be able to subscribe to
+/// to detect closed connections, so you can drop your recipients, try to reconnect, etc...
+///
+/// When the remote closes the connection, this peer will drop it's own adress, which will
+///
+//
 pub struct Peer<Out, MulService>
 
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
 {
-	outgoing: Out                     ,
-	p       : PhantomData<MulService> ,
-	addr    : Addr<Self>              ,
+	outgoing      : Option< Out >             ,
+	addr          : Option< Addr<Self> >      ,
+	listen_handle : Option< RemoteHandle<()> >,
 
-	services   : HashMap< <MulService as MultiService>::ServiceID , Box< Any >   > ,
-	local_sm   : HashMap< <MulService as MultiService>::ServiceID , Box< dyn ServiceMap<MulService>>> ,
-	relay      : HashMap< <MulService as MultiService>::ServiceID , Addr<Self>   > ,
-	responses  : HashMap< <MulService as MultiService>::ConnID    , oneshot::Sender<MulService> > ,
-	// connections: HashMap< <MulService as MultiService>::ConnID    , String                      > ,
-
+	services      : HashMap< <MulService as MultiService>::ServiceID , Box< Any > >                      ,
+	local_sm      : HashMap< <MulService as MultiService>::ServiceID , Box< dyn ServiceMap<MulService>>> ,
+	relay         : HashMap< <MulService as MultiService>::ServiceID , Addr<Self>   >                    ,
+	responses     : HashMap< <MulService as MultiService>::ConnID    , oneshot::Sender<MulService> >     ,
 }
 
 
@@ -65,28 +91,42 @@ impl<Out, MulService> Peer<Out, MulService>
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
 {
-	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MulService>, outgoing: Out /*, _sm: impl ServiceMap*/ ) -> Self
+	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MulService>, outgoing: Out ) -> Self
 	{
-		rt::spawn( Self::listen( addr.clone(), incoming ) ).expect( "Failed to spawn listener" );
+		let listen = Self::listen( addr.clone(), incoming );
+
+		// Only way to able to close the connection... if it's tokio underneath. Anyways, since
+		// we take any kind of sink and stream, it's probably best to specifically stop listening
+		// when we want to close rather than count on drop side-effects.
+		//
+		// https://users.rust-lang.org/t/tokio-tcp-connection-not-closed-when-sender-is-dropped-futures-0-3-compat-layer/26910
+		// https://github.com/tokio-rs/tokio/issues/852#issuecomment-459766144
+		//
+		let (remote, handle) = listen.remote_handle();
+		rt::spawn( remote ).expect( "Failed to spawn listener" );
 
 		Self
 		{
-			outgoing                    ,
-			addr                        ,
-			p          : PhantomData    ,
-			responses  : HashMap::new() ,
-			services   : HashMap::new() ,
-			local_sm   : HashMap::new() ,
-			relay      : HashMap::new() ,
-			// connections: HashMap::new() ,
+			outgoing     : Some( outgoing ) ,
+			addr         : Some( addr )     ,
+			responses    : HashMap::new()   ,
+			services     : HashMap::new()   ,
+			local_sm     : HashMap::new()   ,
+			relay        : HashMap::new()   ,
+			listen_handle: Some( handle )   ,
 		}
 	}
 
 
+	/// Register a handler for a service that you want to expose over this connection.
+	///
+	/// TODO: define what has to happen when called several times on the same service
+	///       options: 1. error
+	///                2. replace prior entry
+	///                3. allow several handlers for the same service (not very likely)
+	//
 	pub fn register_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, sm: Box<dyn ServiceMap<MulService>>, handler: Box< Recipient<Service> > )
 	{
-
-
 		self.services.insert( sid.clone(), box Rcpnt::new( handler ) );
 		self.local_sm.insert( sid        , sm                        );
 	}
@@ -109,30 +149,30 @@ impl<Out, MulService> Peer<Out, MulService>
 
 			match event
 			{
-				Some( conn ) =>
+				Some( conn ) => { match conn
 				{
-					match conn
+					Ok ( mesg  ) =>
 					{
-						Ok ( mesg  ) =>
-						{
-							trace!( "{:?}", &mesg.conn_id() );
-							await!( self_addr.send( Incoming { mesg } ) ).expect( "Send to self in peer" );
-							trace!( "after send incoming in peer" );
-						},
+						await!( self_addr.send( Incoming { mesg } ) ).expect( "Send to self in peer" );
+					},
 
-						Err( error ) =>
-						{
-							error!( "Error extracting MultiService from stream: {:#?}", error );
+					Err( error ) =>
+					{
+						error!( "Error extracting MultiService from stream: {:#?}", error );
 
-							// TODO: we should send an error to the remote before closing the connection.
-							//       we should also close the sending end.
-							//
-							// return Err( ThesError::CorruptFrame.into() );
-						}
+						// TODO: we should send an error to the remote before closing the connection.
+						//       we should also close the sending end.
+						//
+						// return Err( ThesError::CorruptFrame.into() );
 					}
-				},
+				}},
 
-				None => { trace!( "Connection closed" ); return } // Ok(())    // Disconnected
+				None =>
+				{
+					trace!( "Connection closed" );
+
+					return await!( self_addr.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
+				}
 			};
 		}
 	}
@@ -181,12 +221,12 @@ impl<Out, MulService> Peer<Out, MulService>
 
 	// actually send the message accross the wire
 	//
-	async fn send_msg( &mut self, msg: MulService )
+	async fn send_msg( &mut self, msg: MulService ) -> ThesRes<()>
 	{
-		match await!( self.outgoing.send( msg ) )
+		match &mut self.outgoing
 		{
-			Ok (_) => { trace!( "Peer: successfully wrote to stream"       ); },
-			Err(e) => { error!( "Peer: failed to write to stream: {:?}", e ); },
+			Some( out ) => await!( out.send( msg ) )                             ,
+			None        => Err( ThesError::PeerSendAfterCloseConnection.into() ) ,
 		}
 	}
 }
@@ -209,21 +249,10 @@ impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
 		{
 			debug!( "Peer sending OUT" );
 
-			await!( self.send_msg( msg ) );
+			let _ = await!( self.send_msg( msg ) );
 
 		}.boxed()
 	}
-}
-
-
-
-
-
-
-pub struct ForwardCall<MulService: MultiService>
-{
-	reply_to: Box< dyn Recipient<MulService> >,
-	mesg    : MulService,
 }
 
 
@@ -237,7 +266,7 @@ pub struct Call<MulService: MultiService>
 
 impl<MulService: 'static +  MultiService> Message for Call<MulService>
 {
-	type Result = oneshot::Receiver<MulService>;
+	type Result = ThesRes< oneshot::Receiver<MulService> >;
 }
 
 impl<MulService: MultiService> Call<MulService>
@@ -283,7 +312,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 
 		let fut = async move
 		{
-			await!( self.send_msg( call.mesg ) );
+			await!( self.send_msg( call.mesg ) )?;
 
 			// We run expect here, because we are holding the sender part of this, so
 			// it should never be cancelled. It is more pleasant for the client
@@ -296,7 +325,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 			// TODO: 2: We return a oneshot::Receiver, rather than a future, so we expose
 			// implementation details to the user = BAD!!!
 			//
-			receiver
+			Ok( receiver )
 
 		}.boxed();
 
@@ -404,52 +433,61 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			{
 				debug!( "Incoming Call" );
 
-				// service_id in self.process => deserialize, use call on recipient, when completes,
-				//                               reconstruct multiservice with connID for response.
-				//
-				if let Some( handler ) = self.services.get( &sid )
+				if let Some( ref addr ) = self.addr
 				{
-					debug!( "Incoming Call for local Actor" );
-
-					// Call actor
+					// service_id in self.process => deserialize, use call on recipient, when completes,
+					//                               reconstruct multiservice with connID for response.
 					//
-					let sm   = self.local_sm.get( &sid ).expect( "failed to find service map." );
-					let addr = self.addr.clone();
-
-					sm.call_service( frame, handler, addr.recipient::<MulService>() );
-				}
-
-
-				// service_id in self.relay   => Create Call and send to recipient found in self.relay.
-				//
-				else if let Some( r ) = self.relay.get_mut( &sid )
-				{
-					debug!( "Incoming Call for relayed Actor" );
-
-					let mut r = r.clone();
-					let mut self_addr = self.addr.clone();
-
-					rt::spawn( async move
+					if let Some( handler ) = self.services.get( &sid )
 					{
-						let channel = await!( r.call( Call::new( frame ) ) ).expect( "Call to relay failed" );
+						debug!( "Incoming Call for local Actor" );
 
-						let resp    = await!( channel ).expect( "failed to read from channel for response from relay" );
+						// Call actor
+						//
+						self.local_sm.get( &sid ).expect( "failed to find service map." )
 
-						debug!( "Got response from relayed call, sending out" );
+							.call_service( frame, handler, addr.clone().recipient::<MulService>() );
+					}
 
-						await!( self_addr.send( resp ) ).expect( "Failed to send response from relay out on connection" );
 
-					}).expect( "failed to spawn" );
+					// service_id in self.relay   => Create Call and send to recipient found in self.relay.
+					//
+					else if let Some( r ) = self.relay.get_mut( &sid )
+					{
+						debug!( "Incoming Call for relayed Actor" );
 
+						let mut r    = r.clone();
+						let mut addr = addr.clone();
+
+						rt::spawn( async move
+						{
+							let channel = await!( r.call( Call::new( frame ) ) ).expect( "Call to relay failed" );
+
+							let resp    = await!( channel.expect( "send call out over connection" ) )
+
+								.expect( "failed to read from channel for response from relay" );
+
+							trace!( "Got response from relayed call, sending out" );
+
+							await!( addr.send( resp ) ).expect( "Failed to send response from relay out on connection" );
+
+						}).expect( "failed to spawn" );
+
+					}
+
+					// service_id unknown         => send back and log error
+					//
+					else
+					{
+						trace!( "Incoming Call for unknown Actor" );
+
+
+					}
 				}
 
-				// service_id unknown         => send back and log error
-				//
 				else
 				{
-					debug!( "Incoming Call for unknown Actor" );
-
-
+					// we no longer have our address, we're shutting down. We should prevent the caller somehow.
 				}
 
 

@@ -11,7 +11,7 @@ pub use
 	futures      ::
 	{
 		future :: { FutureExt                                                          } ,
-		compat :: { Compat01As03, Compat01As03Sink, Stream01CompatExt, Sink01CompatExt } ,
+		compat :: { Future01CompatExt, Compat01As03, Compat01As03Sink, Stream01CompatExt, Sink01CompatExt } ,
 		stream :: { Stream                                                             } ,
 	},
 
@@ -60,7 +60,7 @@ impl Service for ServiceB
 
 service_map!
 (
-	module:        peer_a   ;
+	namespace:     peer_a   ;
 	peer_type:     MyPeer   ;
 	multi_service: MS       ;
 	send_and_call: ServiceB ;
@@ -85,12 +85,13 @@ pub async fn listen_tcp( socket: &str ) ->
 
 	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
 
-	let stream   = await01!( listener.incoming().take(1).into_future() )
+	let stream   = await!( listener.incoming().take(1).into_future().compat() )
 		.expect( "find one stream" ).0
 		.expect( "find one stream" );
 
 	codec.framed( stream ).split()
 }
+
 
 
 // compiler bug
@@ -102,7 +103,7 @@ pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
 	// Connect to tcp server
 	//
 	let socket = socket.parse::<SocketAddr>().unwrap();
-	let stream = await01!( TcpStream::connect( &socket ) ).expect( "connect address" );
+	let stream = await!( TcpStream::connect( &socket ).compat() ).expect( "connect address" );
 
 	// frame the connection with codec for multiservice
 	//

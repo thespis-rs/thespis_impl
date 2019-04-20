@@ -7,9 +7,7 @@ use common::*;
 
 fn main()
 {
-	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-
-	let _handle = flexi_logger::Logger::with_str( "peera=trace, thespis_impl=debug, tokio=info" ).start().unwrap();
+	flexi_logger::Logger::with_str( "peera=trace, thespis_impl=trace, tokio=debug" ).start().unwrap();
 
 	let program = async move
 	{
@@ -55,7 +53,7 @@ fn main()
 
 
 
-pub struct HandleA {}
+pub struct HandleA;
 
 impl Actor for HandleA
 {
@@ -63,7 +61,7 @@ impl Actor for HandleA
 	{
 		async move
 		{
-			dbg!( "Started HandleA actor" );
+			trace!( "Started HandleA actor" );
 
 		}.boxed()
 	}
@@ -73,7 +71,7 @@ impl Actor for HandleA
 	{
 		async move
 		{
-			dbg!( "Stopped HandleA actor" );
+			trace!( "Stopped HandleA actor" );
 
 		}.boxed()
 	}

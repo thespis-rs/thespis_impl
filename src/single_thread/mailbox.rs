@@ -53,11 +53,10 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			drop( handle );
 
 			await!( actor.started() );
+			trace!( "mailbox: started" );
 
 			loop
 			{
-				trace!( "mailbox: started" );
-
 				match await!( msgs.next() )
 				{
 					Some( envl ) => { await!( envl.handle( &mut actor ) ); }

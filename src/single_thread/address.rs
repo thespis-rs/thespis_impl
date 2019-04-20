@@ -1,19 +1,38 @@
 use crate :: { import::*, single_thread::* };
 
 
-
+/// Reference implementation of thespis::Address.
+/// It can receive all message types the actor implements thespis::Handler for.
+//
 pub struct Addr< A: Actor >
 {
 	mb: mpsc::UnboundedSender<Box<dyn Envelope<A>>>,
 }
 
+
+
 impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
+		trace!( "CREATE address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
+
 		Self { mb: self.mb.clone() }
 	}
 }
+
+
+// TODO: test this and do we really want to introduce unsafe just for a type name?
+//
+impl<A: Actor> fmt::Debug for Addr<A>
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		unsafe{ write!( f, "Addr<{:?}>", clean_name( std::intrinsics::type_name::<A>() ) ) }
+	}
+}
+
+
 
 impl<A> Addr<A> where A: Actor
 {
@@ -22,9 +41,34 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn new( mb: mpsc::UnboundedSender<Box< dyn Envelope<A> >> ) -> Self
 	{
+		trace!( "CREATE address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
 		Self{ mb }
 	}
 }
+
+
+
+fn clean_name( name: &str ) -> String
+{
+	use regex::Regex;
+
+	let re = Regex::new( r"\w+::" ).unwrap();
+
+	let s = re.replace_all( name, "" );
+
+	s.replace( "Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>", "Peer" )
+}
+
+
+impl<A: Actor> Drop for Addr<A>
+{
+	fn drop( &mut self )
+	{
+		trace!( "DROP address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
+	}
+}
+
+
 
 impl<A> Address<A> for Addr<A>
 
@@ -72,6 +116,7 @@ impl<A> Address<A> for Addr<A>
 
 		}.boxed()
 	}
+
 
 
 	fn recipient<M>( &self ) -> Box< dyn Recipient<M> > where M: Message, A: Handler<M>

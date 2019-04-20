@@ -16,7 +16,26 @@
 //!
 //!
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits, decl_macro ) ]
+
+#![ feature
+(
+	arbitrary_self_types ,
+	async_await          ,
+	await_macro          ,
+	box_patterns         ,
+	box_syntax           ,
+	core_intrinsics      ,
+	decl_macro           ,
+	futures_api          ,
+	never_type           ,
+	nll                  ,
+	optin_builtin_traits ,
+	specialization       ,
+	todo_macro           ,
+	trait_alias          ,
+	try_trait            ,
+	unboxed_closures     ,
+)]
 
 
     mod error;
@@ -90,6 +109,7 @@ mod import
 		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
 		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
 		hashbrown   :: { HashMap                                             } ,
+		futures     :: { future::RemoteHandle } ,
 
 	};
 

@@ -5,18 +5,17 @@ use common::*;
 
 fn main()
 {
-	rt::init( box TokioRT::default() ).expect( "We only set the executor once" );
-	flexi_logger::Logger::with_str( "thespis_impl=debug, tokio=info" ).start().unwrap();
+	flexi_logger::Logger::with_str( "peerb=trace, thespis_impl=trace, tokio=info" ).start().unwrap();
 
 	let program = async move
 	{
 		trace!( "Starting peerB" );
-		let peera  = await!( connect_to_tcp( "127.0.0.1:8998" ) );
-		let peera2 = peera.clone();
+		let mut peera  = await!( connect_to_tcp( "127.0.0.1:8998" ) );
+		let     peera2 = peera.clone();
 
 		// Relay part ---------------------
 
-		rt::spawn( async move
+		let relay = async move
 		{
 			let (srv_sink, srv_stream) = await!( listen_tcp( "127.0.0.1:8999" ) );
 
@@ -32,9 +31,11 @@ fn main()
 			peer.register_relayed_service::<ServiceA>( ServiceA::uid( b"peer_a" ), peera2.clone() );
 			peer.register_relayed_service::<ServiceB>( ServiceB::uid( b"peer_a" ), peera2         );
 
-			mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
+			await!( mb_peer.start_fut( peer ) );
+		};
 
-		}).expect( "failed to spawn server" );
+		let (relay, relay_outcome) = relay.remote_handle();
+		rt::spawn( relay ).expect( "failed to spawn server" );
 
 		// --------------------------------------
 
@@ -44,7 +45,7 @@ fn main()
 		// Call the service and receive the response
 		//
 		let mut service_a = peer_a::Services::recipient::<ServiceA>( peera.clone() );
-		let mut service_b = peer_a::Services::recipient::<ServiceB>( peera         );
+		let mut service_b = peer_a::Services::recipient::<ServiceB>( peera.clone() );
 
 
 
@@ -71,9 +72,18 @@ fn main()
 
 
 		// Call ServiceB
-		let resp = await!( service_b.call( ServiceB{ msg: "hi from peerb -- Calling to ServiceB!!!".to_string() } ) ).expect( "Call failed" );
+		let resp = await!( service_b.call( ServiceB{ msg: "hi from peerb -- Calling to ServiceB!!!".to_string() } ) )
+
+			.expect( "Call failed" );
 
 		dbg!( resp );
+
+		// If the peerc closes the connection, we might as well terminate as well, because we did all our work.
+		//
+		await!( relay_outcome );
+		await!( peera.send( CloseConnection ) ).expect( "close connection to peera" );
+
+		trace!( "After close connection" );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
