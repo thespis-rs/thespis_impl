@@ -72,6 +72,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 }
 
 
+
 impl<A> Default for Inbox<A> where A: Actor
 {
 	fn default() -> Self { Self::new() }

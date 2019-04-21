@@ -104,6 +104,8 @@ impl Services
 
 
 
+	// Helper function for send_service below
+	//
 	fn send_service_gen<S>( msg: $ms_type, receiver: &Box< dyn Any > )
 
 		where S                     : Service   + Message<Result=()>,
@@ -124,6 +126,8 @@ impl Services
 
 
 
+	// Helper function for call_service below
+	//
 	fn call_service_gen<S>
 	(
 		     msg        :  $ms_type                        ,
@@ -144,6 +148,9 @@ impl Services
 		{
 			let resp       = await!( rec.call( message ) ).expect( "call actor" );
 
+			// it's important that the sid is null here, because a response with both cid and sid
+			// not null is interpreted as an error.
+			//
 			let sid        = ServiceID::null();
 			let cid        = msg.conn_id().expect( "get conn_id" );
 			let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
@@ -160,6 +167,7 @@ impl Services
 
 impl ServiceMap<$ms_type> for Services
 {
+	// Will match the type of the service id to deserialize the message and send it to the handling actor
 	//
 	fn send_service( &self, msg: $ms_type, receiver: &Box< dyn Any > )
 	{
@@ -176,6 +184,9 @@ impl ServiceMap<$ms_type> for Services
 	}
 
 
+
+	// Will match the type of the service id to deserialize the message and call the handling actor
+	//
 	fn call_service
 	(
 		&self                                          ,
@@ -207,7 +218,7 @@ impl ServiceMap<$ms_type> for Services
 
 
 
-/// Concrete type for creating recipients for Services in this thespis::ServiceMap.
+/// Concrete type for creating recipients for remote Services in this thespis::ServiceMap.
 //
 #[ derive( Clone, Debug ) ]
 //

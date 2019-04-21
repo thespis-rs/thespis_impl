@@ -33,29 +33,33 @@ impl<Out, MulService> Handler<CloseConnection> for Peer<Out, MulService>
 		{
 			trace!( "CloseConnection self in peer");
 
-			self.addr     = None;
-
+			// Try to close the connection properly
+			//
 			match &mut self.outgoing
 			{
 				Some( out ) =>
 				{
 					await!( out.close() ).expect( "close sink for peer" );
-					self.outgoing      = None;
-					self.listen_handle = None;
-
-					// Also clear everything else, because services might have our address, because they
-					// want to send stuff over the network, so if we keep them alive, they will keep us
-					// alive. This breaks that cycle.
-					//
-					self.services .clear();
-					self.local_sm .clear();
-					self.relay    .clear();
-					self.responses.clear();
+					self.outgoing = None;
 				},
 
 				None => {},
 			};
 
+
+			// try to drop close our mailbox and drop ourselves
+			//
+			self.addr          = None;
+			self.listen_handle = None;
+
+
+			// Also clear everything else, because services might have our address, because they
+			// want to send stuff over the network, so if we keep them alive, they will keep us
+			// alive. This breaks that cycle.
+			//
+			self.services .clear();
+			self.relay    .clear();
+			self.responses.clear();
 
 		}.boxed()
 	}

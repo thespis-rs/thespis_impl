@@ -1,8 +1,16 @@
 use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
 
 mod close_connection;
-pub use close_connection::CloseConnection;
+mod call;
+mod incoming;
 
+pub use close_connection :: CloseConnection ;
+pub use call             :: Call            ;
+    use incoming         :: Incoming        ;
+
+
+// Reduce trait bound boilerplate, since we have to repeat them all over
+//
 pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
 pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
 pub trait BoundsMulService     : 'static + Message<Result=()> + MultiService                  {}
@@ -39,22 +47,45 @@ where T: 'static + Message<Result=()> + MultiService {}
 /// It's not yet implemented, but there will be an event that you will be able to subscribe to
 /// to detect closed connections, so you can drop your recipients, try to reconnect, etc...
 ///
-/// When the remote closes the connection, this peer will drop it's own adress, which will
+/// ### Actor shutdown
 ///
 //
 pub struct Peer<Out, MulService>
 
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
+
 {
-	outgoing      : Option< Out >             ,
-	addr          : Option< Addr<Self> >      ,
+	/// The sink
+	//
+	outgoing      : Option< Out >,
+
+	/// This is needed so that the loop listening to the incoming stream can send messages to this actor.
+	/// The loop runs in parallel of the rest of the actor, yet processing incoming messages need mutable
+	/// access to our state, so we have to pass through a message, or we need to put everything in Rc<RefCell>>.
+	/// For now, passing messages seems the cleaner solution.
+	///
+	/// It also allows us to hand out our address to things that have to respond to the remote on our connection.
+	//
+	addr          : Option< Addr<Self> >,
+
+	/// The handle to the spawned listen function. If we drop this, the listen function immediately stops.
+	//
 	listen_handle : Option< RemoteHandle<()> >,
 
-	services      : HashMap< <MulService as MultiService>::ServiceID , Box< Any > >                      ,
-	local_sm      : HashMap< <MulService as MultiService>::ServiceID , Box< dyn ServiceMap<MulService>>> ,
-	relay         : HashMap< <MulService as MultiService>::ServiceID , Addr<Self>   >                    ,
-	responses     : HashMap< <MulService as MultiService>::ConnID    , oneshot::Sender<MulService> >     ,
+	/// Information required to process incoming messages. The first element is a boxed Rcpnt, and the second is
+	/// the service map that takes care of this service type.
+	//
+	services      : HashMap< <MulService as MultiService>::ServiceID , (Box<Any>, Box< dyn ServiceMap<MulService> >) >,
+
+	/// All services that we relay to another peer. It has to be of the same type for now since there is
+	/// no trait for peers.
+	//
+	relay         : HashMap< <MulService as MultiService>::ServiceID, Addr<Self> >,
+
+	/// We use onshot channels to give clients a future that will resolve to their response.
+	//
+	responses     : HashMap< <MulService as MultiService>::ConnID, oneshot::Sender<MulService> >,
 }
 
 
@@ -64,24 +95,24 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
 {
-	fn started ( &mut self ) -> Response<()>
-	{
-		async move
-		{
-			trace!( "Started Peer actor" );
+	// fn started ( &mut self ) -> Response<()>
+	// {
+	// 	async move
+	// 	{
+	// 		trace!( "Started Peer actor" );
 
-		}.boxed()
-	}
+	// 	}.boxed()
+	// }
 
 
-	fn stopped ( &mut self ) -> Response<()>
-	{
-		async move
-		{
-			trace!( "Stopped Peer actor" );
+	// fn stopped ( &mut self ) -> Response<()>
+	// {
+	// 	async move
+	// 	{
+	// 		trace!( "Stopped Peer actor" );
 
-		}.boxed()
-	}
+	// 	}.boxed()
+	// }
 }
 
 
@@ -90,7 +121,10 @@ impl<Out, MulService> Peer<Out, MulService>
 
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
+
 {
+	/// Create a new peer to represent a connection to some remote.
+	//
 	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MulService>, outgoing: Out ) -> Self
 	{
 		let listen = Self::listen( addr.clone(), incoming );
@@ -111,7 +145,6 @@ impl<Out, MulService> Peer<Out, MulService>
 			addr         : Some( addr )     ,
 			responses    : HashMap::new()   ,
 			services     : HashMap::new()   ,
-			local_sm     : HashMap::new()   ,
 			relay        : HashMap::new()   ,
 			listen_handle: Some( handle )   ,
 		}
@@ -125,13 +158,21 @@ impl<Out, MulService> Peer<Out, MulService>
 	///                2. replace prior entry
 	///                3. allow several handlers for the same service (not very likely)
 	//
-	pub fn register_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, sm: Box<dyn ServiceMap<MulService>>, handler: Box< Recipient<Service> > )
+	pub fn register_service<Service: Message>
+	(
+		&mut self                                             ,
+		     sid    : <MulService as MultiService>::ServiceID ,
+		     sm     : Box< dyn ServiceMap<MulService> >       ,
+		     handler: Box< dyn Recipient <Service   > >       ,
+	)
 	{
-		self.services.insert( sid.clone(), box Rcpnt::new( handler ) );
-		self.local_sm.insert( sid        , sm                        );
+		self.services.insert( sid, (box Rcpnt::new( handler ), sm) );
 	}
 
 
+	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
+	/// For relaying services from other processes.
+	//
 	pub fn register_relayed_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, peer: Addr<Self> )
 	{
 		self.relay.insert( sid.clone(), peer );
@@ -179,46 +220,6 @@ impl<Out, MulService> Peer<Out, MulService>
 
 
 
-	// actor in self.process => deserialize, use send on recipient
-	// actor in self.relay   => forward
-	// actor unknown         => send back and log error
-	//
-	async fn handle_send( &mut self, _frame: MulService )
-	{
-
-	}
-
-
-	// actor in self.process => deserialize, use call on recipient,
-	//                          when completes, reconstruct multiservice with connID for response.
-	// actor in self.relay   => Create Call and send to recipient found in self.relay.
-	// actor unknown         => send back and log error
-	//
-	async fn handle_call( &mut self, _frame: MulService )
-	{
-
-	}
-
-
-	// actor in self.process => look in self.responses, deserialize and send response in channel.
-	// actor in self.relay   => Create Call and send to recipient found in self.relay.
-	// actor unknown         => send back and log error
-	//
-	async fn handle_response( &mut self, _frame: MulService )
-	{
-
-	}
-
-
-	// log error?
-	// allow user to set a handler for these...
-	//
-	async fn handle_error( &mut self, _frame: MulService )
-	{
-
-	}
-
-
 	// actually send the message accross the wire
 	//
 	async fn send_msg( &mut self, msg: MulService ) -> ThesRes<()>
@@ -247,7 +248,7 @@ impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
 	{
 		async move
 		{
-			debug!( "Peer sending OUT" );
+			trace!( "Peer sending OUT" );
 
 			let _ = await!( self.send_msg( msg ) );
 
@@ -257,273 +258,3 @@ impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
 
 
 
-/// Type representing the outgoing call
-//
-pub struct Call<MulService: MultiService>
-{
-	mesg: MulService,
-}
-
-impl<MulService: 'static +  MultiService> Message for Call<MulService>
-{
-	type Result = ThesRes< oneshot::Receiver<MulService> >;
-}
-
-impl<MulService: MultiService> Call<MulService>
-{
-	pub fn new( mesg: MulService ) -> Self
-	{
-		Self{ mesg }
-	}
-}
-
-
-
-/// Type representing Messages coming in over the wire
-//
-struct Incoming<MulService: MultiService>
-{
-	pub mesg: MulService,
-}
-
-impl<MulService: 'static + MultiService> Message for Incoming<MulService>
-{
-	type Result = ();
-}
-
-
-
-/// Handler for outgoing Calls
-//
-impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
-
-	where Out: BoundsOut<MulService>,
-	      MulService: BoundsMulService,
-{
-	fn handle( &mut self, call: Call<MulService> ) -> Response< <Call<MulService> as Message>::Result >
-	{
-		debug!( "peer: starting Handler<Call<MulService>>" );
-
-		let (sender, receiver) = oneshot::channel::< MulService >();
-
-		let conn_id = call.mesg.conn_id().expect( "Failed to get connection ID from call" );
-
-		self.responses.insert( conn_id, sender );
-
-		let fut = async move
-		{
-			await!( self.send_msg( call.mesg ) )?;
-
-			// We run expect here, because we are holding the sender part of this, so
-			// it should never be cancelled. It is more pleasant for the client
-			// not to have to deal with 2 nested Results.
-			//
-			// TODO: There is one exeption, when this actor get's stopped, the client will
-			// be holding this future and the expect will panic. That's bad, but we will
-			// investigate how to deal with that once we have some more real life usecases.
-			//
-			// TODO: 2: We return a oneshot::Receiver, rather than a future, so we expose
-			// implementation details to the user = BAD!!!
-			//
-			Ok( receiver )
-
-		}.boxed();
-
-		trace!( "peer: returning from call handler" );
-
-		fut
-	}
-}
-
-
-
-/// Handler for incoming messages
-//
-impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
-
-	where Out       : BoundsOut<MulService>,
-	      MulService: BoundsMulService     ,
-{
-	fn handle( &mut self, incoming: Incoming<MulService> ) -> Response<()>
-	{
-		debug!( "Incoming message!" );
-
-		async move
-		{
-			let frame = incoming.mesg;
-
-			// algorithm for incoming messages. Options are:
-			//
-			// 1. incoming send/call               for local/relayed/unknown actor (6 options)
-			// 2.       response to outgoing call from local/relayed actor         (2 options)
-			// 3. error response to outgoing call from local/relayed actor         (2 options)
-			//
-			// 4 possibilities with ServiceID and ConnID. These can be augmented with
-			// predicates about our local state (sid in local table, routing table, unknown), + the codec
-			// which gives us largely the 10 needed states:
-			//
-			// SID  present -> always tells us if it's for local/relayed/unknown actor
-			//                 based on our routing tables
-			//
-			//                 if it's absent, it can come from our open connections table.
-			//
-			// (leaves distinguishing between send/call/response/error)
-			//
-			// CID   absent  -> Send
-			// CID   unknown -> Call
-			//
-			// CID   present -> Response/Error
-			//
-			// (leaves Response/Error)
-			//
-			// both  present -> Error, if response, no need for SID since ConnID will be in our open connections table
-			// none  present -> not supported?
-			// codec present -> obligatory, not used to distinguish use case, but do we accept utf8 for errors?
-			//                  maybe not, strongly typed errors defined by thespis encoded with cbor seem better.
-			//
-			// dbg!( &frame.conn_id().unwrap() );
-			// dbg!( &frame.service().unwrap() );
-			// dbg!( &frame.service().unwrap().is_null() );
-
-			let sid = frame.service().expect( "fail to getting conn_id from frame"    );
-			let cid = frame.conn_id().expect( "fail to getting service_id from frame" );
-
-			// it's an incoming send
-			//
-			if cid.is_null()
-			{
-				debug!( "Incoming Send" );
-
-
-				if let Some( handler ) = self.services.get( &sid )
-				{
-					debug!( "Incoming Send for local Actor" );
-
-
-					self.local_sm
-
-						.get( &sid ).expect( "failed to find service map." )
-						.send_service( frame, handler )
-					;
-				}
-
-
-				// service_id in self.relay   => Create Call and send to recipient found in self.relay.
-				//
-				else if let Some( r ) = self.relay.get_mut( &sid )
-				{
-					debug!( "Incoming Send for relayed Actor" );
-
-					await!( r.send( frame ) ).expect( "Failed relaying send to other peer" );
-				}
-
-				// service_id unknown         => send back and log error
-				//
-				else
-				{
-					error!( "Incoming Call for unknown Actor" );
-
-				}
-			}
-
-
-			// it's a call
-			//
-			else if !self.responses.contains_key( &cid ) // && !self.relayed_calls.contains_key( &cid )
-			{
-				debug!( "Incoming Call" );
-
-				if let Some( ref addr ) = self.addr
-				{
-					// service_id in self.process => deserialize, use call on recipient, when completes,
-					//                               reconstruct multiservice with connID for response.
-					//
-					if let Some( handler ) = self.services.get( &sid )
-					{
-						debug!( "Incoming Call for local Actor" );
-
-						// Call actor
-						//
-						self.local_sm.get( &sid ).expect( "failed to find service map." )
-
-							.call_service( frame, handler, addr.clone().recipient::<MulService>() );
-					}
-
-
-					// service_id in self.relay   => Create Call and send to recipient found in self.relay.
-					//
-					else if let Some( r ) = self.relay.get_mut( &sid )
-					{
-						debug!( "Incoming Call for relayed Actor" );
-
-						let mut r    = r.clone();
-						let mut addr = addr.clone();
-
-						rt::spawn( async move
-						{
-							let channel = await!( r.call( Call::new( frame ) ) ).expect( "Call to relay failed" );
-
-							let resp    = await!( channel.expect( "send call out over connection" ) )
-
-								.expect( "failed to read from channel for response from relay" );
-
-							trace!( "Got response from relayed call, sending out" );
-
-							await!( addr.send( resp ) ).expect( "Failed to send response from relay out on connection" );
-
-						}).expect( "failed to spawn" );
-
-					}
-
-					// service_id unknown         => send back and log error
-					//
-					else
-					{
-						trace!( "Incoming Call for unknown Actor" );
-
-
-					}
-				}
-
-				else
-				{
-					// we no longer have our address, we're shutting down. We should prevent the caller somehow.
-				}
-
-
-			}
-
-			// it's a response
-			//
-			else if let Some( channel ) = self.responses.remove( &cid )
-			{
-				debug!( "Incoming Response" );
-
-				// TODO: verify our error handling story here. Normally if this
-				// fails it means the receiver of the channel was dropped... so
-				// they are no longer interested in the reponse? Should we log?
-				// Have a different behaviour in release than debug?
-				//
-				let _ = channel.send( frame );
-			}
-
-			// it's a response for a relayed actor (need to keep track of relayed cid's)
-			//
-			// else if let Some( channel = self.responses.get( cid ))
-			// {
-			// 	trace!( "Incoming Response" );
-
-			// }
-
-			// it's an error
-			//
-			else
-			{
-				debug!( "Incoming Error" );
-
-				await!( self.handle_error( frame ) )
-			}
-
-		}.boxed()
-	}
-}
