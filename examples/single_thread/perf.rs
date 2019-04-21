@@ -22,7 +22,7 @@ impl Message for Show { type Result = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> TupleResponse { async move
+	fn handle( &mut self, msg: Add ) -> Response<()> { async move
 	{
 
 		self.0 += msg.0;

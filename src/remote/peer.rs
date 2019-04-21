@@ -64,7 +64,7 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
 {
-	fn started ( &mut self ) -> TupleResponse
+	fn started ( &mut self ) -> Response<()>
 	{
 		async move
 		{
@@ -74,7 +74,7 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 	}
 
 
-	fn stopped ( &mut self ) -> TupleResponse
+	fn stopped ( &mut self ) -> Response<()>
 	{
 		async move
 		{
