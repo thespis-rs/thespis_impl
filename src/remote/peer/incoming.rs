@@ -42,7 +42,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			// SID  present -> always tells us if it's for local/relayed/unknown actor
 			//                 based on our routing tables
 			//
-			//                 if it's absent, it can come from our open connections table.
+			//                 if it's null, it means the message is meant for this peer (ConnectionError).
 			//
 			// (leaves distinguishing between send/call/response/error)
 			//
@@ -53,10 +53,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			// (leaves Response/Error)
 			//
-			// both  present -> Error, if response, no need for SID since ConnID will be in our open connections table
-			// none  present -> considered a send to an unknown actor
-			// codec present -> obligatory, not used to distinguish use case, but TODO: do we accept utf8 for errors?
-			//                  maybe not, strongly typed errors defined by thespis encoded with cbor seem better.
+			// sid null      -> ConnectionError
 			//
 			//
 			// TODO: Error handling
@@ -158,7 +155,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			//
 			else if let Some( channel ) = self.responses.remove( &cid )
 			{
-				if sid.is_null()
+				if !sid.is_null()
 				{
 					trace!( "Incoming Response" );
 

@@ -1,10 +1,12 @@
 use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
 
 mod close_connection;
+mod connection_error;
 mod call;
 mod incoming;
 
 pub use close_connection :: CloseConnection ;
+pub use connection_error :: ConnectionError ;
 pub use call             :: Call            ;
     use incoming         :: Incoming        ;
 
@@ -213,6 +215,8 @@ impl<Out, MulService> Peer<Out, MulService>
 						//       we should also close the sending end.
 						//
 						// return Err( ThesError::CorruptFrame.into() );
+						//
+						return await!( self_addr.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
 					}
 				}},
 
