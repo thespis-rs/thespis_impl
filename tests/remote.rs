@@ -116,22 +116,6 @@ pub async fn connect_return_stream( socket: &str ) ->
 
 
 
-impl Service for Add
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"Add", seed ].concat() ) }
-}
-
-impl Service for Show
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"Show", seed ].concat() ) }
-}
-
-
-
 service_map!
 (
 	namespace:     remote   ;
@@ -171,8 +155,8 @@ fn remote()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( Add ::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Add >() );
-		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Add >() );
+		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -239,8 +223,8 @@ fn relay()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( Add ::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Add >() );
-		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Add >() );
+		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -268,8 +252,8 @@ fn relay()
 			//
 			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
 
-			peer.register_relayed_service::<Add >( Add ::uid( b"remote" ), peera2.clone() );
-			peer.register_relayed_service::<Show>( Show::uid( b"remote" ), peera2         );
+			peer.register_relayed_service::<Add >( <Add  as Service<remote::Services>>::sid(), peera2.clone() );
+			peer.register_relayed_service::<Show>( <Show as Service<remote::Services>>::sid(), peera2         );
 
 			await!( mb_peer.start_fut( peer ) );
 		};
@@ -382,7 +366,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( Show::uid( b"parallel" ), box parallel::Services, addr_handler.recipient::<Show>() );
+		peer.register_service( <Show as Service<parallel::Services>>::sid(), box parallel::Services, addr_handler.recipient::<Show>() );
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -408,7 +392,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( Show::uid( b"remote" ), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 

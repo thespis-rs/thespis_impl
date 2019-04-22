@@ -1,6 +1,3 @@
-use crate::{ * };
-
-
 /// This is a beefy macro which is your main interface to using the remote actors. It's unavoidable to
 /// require code in the client application because thespis does not know the types of messages you will
 /// create, yet we aim at making the difference between local and remote actors seamless for using code.
@@ -29,57 +26,103 @@ macro_rules! service_map
 	///
 	/// A process wanting to send messages needs to create the service map with the same namespace as the
 	/// receiving process.
+	///
+	/// TODO: are we sure that path is better than ty or ident? We should test it actually works with paths.
+	///       one place where it makes a difference, is in the use statement just below, where ty doesn't
+	///       seem to work.
 	//
-	namespace: $module: ident;
+	namespace: $ns: ident;
 
 	/// The type used for [Peer]. This is because [Peer] is generic, thus you need to specify the exact type.
 	//
-	peer_type: $peer_type: ty;
+	peer_type: $peer_type: path;
 
 	/// The type you want to use that implements [thespis::MultiService] (the wire format).
 	//
-	multi_service: $ms_type: ty;
+	multi_service: $ms_type: path;
 
 	/// Comma separated list of Services you want to include that can be both Send to and Called. These
 	/// must implement thespis::Message with `type Result = ();`. Otherwise send is not possible. There
 	/// can not be any overlap with the list `call_only`, otherwise it won't compile.
 	//
-	send_and_call: $($send_and_call: ident),* $(,)?;
+	send_and_call: $($send_and_call: path),* $(,)?;
 
 	/// Comma separated list of Services that don't have a tuple as their result type, and thus can be
 	/// called but not send to.
 	//
-	call_only: $($call_only: ident),* $(,)?;
+	call_only: $($call_only: path),* $(,)?;
 
 ) =>
 
 {
 
-pub mod $module
+pub mod $ns
 {
 
 use
 {
-	// This is actually necessary to see the imports from the module that includes us, otherwise
-	// the types the use passes in won't be available.
-	// TODO: does this work with paths being passed to the macro rather than types that are in scope
-	//       where the macro gets called?
+	// It's important the comma be inside the parenthesis, because these lists might be empty, in which
+	// we should not have a leading comma before the next item, but if the comma is after the closing
+	// parenthesis, it will not output a trailing comma, which will be needed to separate from the next item.
 	//
-	super          :: { *                                            },
-	::futures      :: { future::FutureExt                            },
-	::thespis      :: { *                                            },
-	::thespis_impl :: { *, remote::*, single_thread::*, runtime::rt  },
-	::serde_cbor   :: { self, from_slice as des                      },
-	::serde        :: { Serialize, Deserialize, de::DeserializeOwned },
-	::std          :: { any::Any                                     },
+	super :: { $( $send_and_call, )* $( $call_only, )* $peer_type, $ms_type } ,
+	$crate:: { *, remote::*, single_thread::*, runtime::rt                  } ,
+	std   :: { any::Any                                                     } ,
+
+	$crate::external_deps::
+	{
+		once_cell    :: { sync::OnceCell                               } ,
+		futures      :: { future::FutureExt                            } ,
+		thespis      :: { *                                            } ,
+		serde_cbor   :: { self, from_slice as des                      } ,
+		serde        :: { Serialize, Deserialize, de::DeserializeOwned } ,
+	},
 };
 
 /// Mark the services part of this particular service map, so we can write generic impls only for them.
 //
 pub trait MarkServices {}
 
-$(	impl MarkServices for $send_and_call {} )*
-$(	impl MarkServices for $call_only {} )*
+$
+(
+	impl MarkServices for $send_and_call {}
+
+	impl Service<self::Services> for $send_and_call
+	{
+		type UniqueID = ServiceID;
+
+		fn sid() -> &'static Self::UniqueID
+		{
+			static INSTANCE: OnceCell<ServiceID> = OnceCell::INIT;
+
+			INSTANCE.get_or_init( ||
+			{
+				ServiceID::from_seed( &[ stringify!( $send_and_call ), Services::NAMESPACE ].concat().as_bytes() )
+			})
+		}
+	}
+)*
+
+$
+(
+	impl MarkServices for $call_only {}
+
+	impl Service<self::Services> for $call_only
+	{
+		type UniqueID = ServiceID;
+
+		fn sid() -> &'static Self::UniqueID
+		{
+			static INSTANCE: OnceCell<ServiceID> = OnceCell::INIT;
+
+			INSTANCE.get_or_init( ||
+			{
+				ServiceID::from_seed( &[ stringify!( $call_only ), Services::NAMESPACE ].concat().as_bytes() )
+			})
+		}
+	}
+)*
+
 
 
 /// The actual service map.
@@ -89,6 +132,9 @@ $(	impl MarkServices for $call_only {} )*
 //
 pub struct Services;
 
+impl Namespace for Services { const NAMESPACE: &'static str = stringify!( $ns ); }
+
+
 impl Services
 {
 	/// Creates a recipient to a Service type for a remote actor, which can be used in exactly the
@@ -96,7 +142,7 @@ impl Services
 	//
 	pub fn recipient<S>( peer: Addr<$peer_type> ) -> impl Recipient<S>
 
-	where  S                    : MarkServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
 	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
 	{
 		ServicesRecipient::new( peer )
@@ -108,7 +154,7 @@ impl Services
 	//
 	fn send_service_gen<S>( msg: $ms_type, receiver: &Box< dyn Any > )
 
-		where S                     : Service   + Message<Result=()>,
+		where S                     : Service<self::Services>   + Message<Result=()>,
 		      <S as Message>::Result: Serialize + DeserializeOwned  ,
 
 	{
@@ -136,7 +182,7 @@ impl Services
 
 	)
 
-	where S                     : Service                     ,
+	where  S                    : Service<self::Services, UniqueID=ServiceID> ,
 	      <S as Message>::Result: Serialize + DeserializeOwned,
 	{
 		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
@@ -151,7 +197,7 @@ impl Services
 			// it's important that the sid is null here, because a response with both cid and sid
 			// not null is interpreted as an error.
 			//
-			let sid        = ServiceID::null();
+			let sid        = <S as Service<self::Services>>::sid().clone();
 			let cid        = msg.conn_id().expect( "get conn_id" );
 			let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
 
@@ -175,7 +221,7 @@ impl ServiceMap<$ms_type> for Services
 
 		match x
 		{
-			$( _ if x == <$send_and_call>::uid( stringify!( $module ).as_bytes() ) =>
+			$( _ if x == *<$send_and_call as Service<self::Services>>::sid() =>
 
 				Self::send_service_gen::<$send_and_call>( msg, receiver ) , )*
 
@@ -201,12 +247,12 @@ impl ServiceMap<$ms_type> for Services
 		match x
 		{
 
-			$( _ if x == <$send_and_call>::uid( stringify!( $module ).as_bytes() ) =>
+			$( _ if x == *<$send_and_call as Service<self::Services>>::sid() =>
 
 				Self::call_service_gen::<$send_and_call>( msg, receiver, return_addr ) , )*
 
 
-			$( _ if x == <$call_only>::uid( stringify!( $module ).as_bytes() ) =>
+			$( _ if x == *<$call_only as Service<self::Services>>::sid() =>
 
 				Self::call_service_gen::<$call_only>( msg, receiver, return_addr ) , )*
 
@@ -238,11 +284,11 @@ impl ServicesRecipient
 
 	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
 
-		where  S                    : Service<UniqueID=ServiceID> ,
+		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
 				<S as Message>::Result: Serialize + DeserializeOwned,
 
 	{
-		let sid        = S::uid( stringify!( $module ).as_bytes() );
+		let sid        = <S as Service<self::Services>>::sid().clone();
 		let cid        = ConnID::null();
 		let serialized = serde_cbor::to_vec( &msg )?;
 
@@ -254,11 +300,11 @@ impl ServicesRecipient
 
 	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Result>
 
-		where  S                    : Service<UniqueID=ServiceID> ,
+		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
 				<S as Message>::Result: Serialize + DeserializeOwned,
 
 	{
-		let sid        = S::uid( stringify!( $module ).as_bytes() );
+		let sid        = <S as Service<self::Services>>::sid().clone();
 		let cid        = ConnID::default();
 		let serialized = serde_cbor::to_vec( &msg )?.into();
 
@@ -276,7 +322,7 @@ impl ServicesRecipient
 
 impl<S> Recipient<S> for ServicesRecipient
 
-	where  S                    : MarkServices + Service<UniqueID=ServiceID> + Serialize + DeserializeOwned ,
+	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
 	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
 
 {

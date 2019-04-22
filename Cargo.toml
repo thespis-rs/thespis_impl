@@ -57,6 +57,10 @@ features = ["derive"]
 optional = true
 version = "^1"
 
+[dependencies.serde_cbor]
+optional = true
+version = "^0.9"
+
 [dependencies.thespis]
 path = "../thespis_iface"
 
@@ -129,7 +133,7 @@ path = "examples/multi_thread/move_fut.rs"
 
 [features]
 default = ["tokio", "remote", "ws"]
-remote = ["serde", "thespis/remote", "bytes", "hashbrown", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
+remote = ["serde", "serde_cbor", "thespis/remote", "bytes", "hashbrown", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
 tcp = ["remote", "tokio/tcp"]
 ws = ["remote", "tokio-tungstenite"]
 

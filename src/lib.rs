@@ -52,6 +52,16 @@ pub use
 	error::*,
 };
 
+// needed for macro
+//
+pub mod external_deps
+{
+	pub use once_cell;
+	pub use futures;
+	pub use thespis;
+	pub use serde_cbor;
+	pub use serde;
+}
 
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
 // the crate. The must all be unique.

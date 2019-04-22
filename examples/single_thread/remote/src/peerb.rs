@@ -24,12 +24,12 @@ fn main()
 			let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
 			let peer_addr                = Addr ::new( mb_peer.sender() );
 
-			// create peer with stream/sink + service map
+			// create peer with stream/sink
 			//
 			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
 
-			peer.register_relayed_service::<ServiceA>( ServiceA::uid( b"peer_a" ), peera2.clone() );
-			peer.register_relayed_service::<ServiceB>( ServiceB::uid( b"peer_a" ), peera2         );
+			peer.register_relayed_service::<ServiceA>( <ServiceA as Service<peer_a::Services>>::sid(), peera2.clone() );
+			peer.register_relayed_service::<ServiceB>( <ServiceB as Service<peer_a::Services>>::sid(), peera2         );
 
 			await!( mb_peer.start_fut( peer ) );
 		};

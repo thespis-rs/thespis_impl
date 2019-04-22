@@ -23,6 +23,7 @@ features:
   remote :
 
     - serde
+    - serde_cbor
     - thespis/remote
     - bytes
     - hashbrown
@@ -42,6 +43,7 @@ dependencies:
   log                 : ^0.4
   simple_logger       : ^1
   regex               : { version: ^1, features: [ pattern ] }
+
   # tokio stuff
   #
   once_cell           : ^0.1
@@ -56,6 +58,7 @@ dependencies:
 
   # remote stuff
   #
+  serde_cbor        : { version: ^0.9, optional: true                                                }
   serde             : { version: ^1  , optional: true, default-features: false, features: [ derive ] }
   tokio-tungstenite : { version: ^0.6, optional: true                                                }
   bytes             : { version: ^0.4, optional: true                                                }
@@ -71,7 +74,7 @@ dev-dependencies:
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
   futures-preview  : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
-  tokio            : { path: ../../tokio/tokio                 , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
+  tokio            : { path: ../../tokio/tokio , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
   pretty_assertions: ^0.6
   serde_cbor       : ^0.9
   flexi_logger        : ^0.11

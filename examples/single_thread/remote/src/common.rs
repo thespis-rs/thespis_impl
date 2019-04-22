@@ -5,7 +5,6 @@ pub use
 	thespis_impl :: { single_thread::*, remote::*, service_map, runtime::{ rt, tokio::TokioRT } } ,
 	serde        :: { Serialize, Deserialize, de::DeserializeOwned                              } ,
 	std          :: { net::SocketAddr                                                           } ,
-	bytes        :: { Bytes                                                                     } ,
 
 
 	futures      ::
@@ -18,7 +17,6 @@ pub use
 
 	tokio        ::
 	{
-		await as await01,
 		prelude :: { StreamAsyncExt, Stream as TokStream, stream::{ SplitStream as TokSplitStream, SplitSink as TokSplitSink } } ,
  		net     :: { TcpStream, TcpListener                                                                                    } ,
 		codec   :: { Decoder, Framed                                                                                           } ,
@@ -43,19 +41,6 @@ pub struct ResponseA { pub resp: String }
 impl Message for ServiceA { type Result = ResponseA; }
 impl Message for ServiceB { type Result = ()       ; }
 
-impl Service for ServiceA
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceA", seed ].concat() ) }
-}
-
-impl Service for ServiceB
-{
-	type UniqueID = ServiceID;
-
-	fn uid( seed: &[u8] ) -> ServiceID { ServiceID::from_seed( &[ b"ServiceB", seed ].concat() ) }
-}
 
 
 service_map!

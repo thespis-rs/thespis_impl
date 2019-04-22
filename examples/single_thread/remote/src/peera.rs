@@ -33,11 +33,9 @@ fn main()
 		//
 		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
 
-		peer.register_service( ServiceA::uid( b"peer_a" ), box peer_a::Services, addr_handler.recipient::<ServiceA>() );
-		peer.register_service( ServiceB::uid( b"peer_a" ), box peer_a::Services, addr_handler.recipient::<ServiceB>() );
+		peer.register_service( <ServiceA as Service<peer_a::Services>>::sid(), box peer_a::Services, addr_handler.recipient::<ServiceA>() );
+		peer.register_service( <ServiceB as Service<peer_a::Services>>::sid(), box peer_a::Services, addr_handler.recipient::<ServiceB>() );
 
-		trace!( "ServiceA: {:?}", ServiceA::uid( b"peer_a" ) );
-		trace!( "ServiceB: {:?}", ServiceB::uid( b"peer_a" ) );
 
 		let handler = HandleA {};
 
@@ -57,7 +55,7 @@ pub struct HandleA;
 
 impl Actor for HandleA
 {
-	fn started ( &mut self ) -> TupleResponse
+	fn started ( &mut self ) -> Response<()>
 	{
 		async move
 		{
@@ -67,7 +65,7 @@ impl Actor for HandleA
 	}
 
 
-	fn stopped ( &mut self ) -> TupleResponse
+	fn stopped ( &mut self ) -> Response<()>
 	{
 		async move
 		{

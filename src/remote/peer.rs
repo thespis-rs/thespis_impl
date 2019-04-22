@@ -76,12 +76,12 @@ pub struct Peer<Out, MulService>
 	/// Information required to process incoming messages. The first element is a boxed Rcpnt, and the second is
 	/// the service map that takes care of this service type.
 	//
-	services      : HashMap< <MulService as MultiService>::ServiceID , (Box<Any>, Box< dyn ServiceMap<MulService> >) >,
+	services      : HashMap< &'static <MulService as MultiService>::ServiceID , (Box<Any>, Box< dyn ServiceMap<MulService> >) >,
 
 	/// All services that we relay to another peer. It has to be of the same type for now since there is
 	/// no trait for peers.
 	//
-	relay         : HashMap< <MulService as MultiService>::ServiceID, Addr<Self> >,
+	relay         : HashMap< &'static <MulService as MultiService>::ServiceID, Addr<Self> >,
 
 	/// We use onshot channels to give clients a future that will resolve to their response.
 	//
@@ -157,11 +157,19 @@ impl<Out, MulService> Peer<Out, MulService>
 	///       options: 1. error
 	///                2. replace prior entry
 	///                3. allow several handlers for the same service (not very likely)
+	///
+	/// TODO: review api design. We take the service as a type parameter yet still require the user to pass in
+	///       sid? Should we not require a trait bound on Service rather than on Message? Is that possible
+	///       since we need a Recipient to it? We would need service map type if we were to call sid() on the
+	///       Service, but maybe we could take an explicit type for the service map?
+	///       Currently this requires the user to instantiate a new service map per service. Do we want this?
+	///       I think current impl is a zero sized type, so that's probably not problem.
+	///       Same questions for relayed services
 	//
 	pub fn register_service<Service: Message>
 	(
 		&mut self                                             ,
-		     sid    : <MulService as MultiService>::ServiceID ,
+		     sid    : &'static <MulService as MultiService>::ServiceID ,
 		     sm     : Box< dyn ServiceMap<MulService> >       ,
 		     handler: Box< dyn Recipient <Service   > >       ,
 	)
@@ -173,9 +181,9 @@ impl<Out, MulService> Peer<Out, MulService>
 	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
 	/// For relaying services from other processes.
 	//
-	pub fn register_relayed_service<Service: Message>( &mut self, sid: <MulService as MultiService>::ServiceID, peer: Addr<Self> )
+	pub fn register_relayed_service<Service: Message>( &mut self, sid: &'static <MulService as MultiService>::ServiceID, peer: Addr<Self> )
 	{
-		self.relay.insert( sid.clone(), peer );
+		self.relay.insert( sid, peer );
 	}
 
 

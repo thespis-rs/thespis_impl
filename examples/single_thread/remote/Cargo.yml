@@ -24,8 +24,6 @@ dependencies:
   thespis_impl        : { path: ../../../                  }
   tokio               : { path: ../../../../../tokio/tokio, features: [ async-await-preview, rt-full, codec ] }
   serde               : { version: ^1, features: [ derive ] }
-  serde_cbor          : ^0.9
   futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
-  bytes               : { version: ^0.4                          }
   flexi_logger        : ^0.11
   log                 : ^0.4
