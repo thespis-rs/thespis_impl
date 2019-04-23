@@ -30,7 +30,7 @@ struct Next;
 
 impl Message for Next
 {
-	type Result = Option<String>;
+	type Return = Option<String>;
 }
 
 

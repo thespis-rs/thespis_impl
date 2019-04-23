@@ -32,7 +32,7 @@ struct Ping( String );
 
 impl Message for Ping
 {
-	type Result = String;
+	type Return = String;
 }
 
 

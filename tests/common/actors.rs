@@ -13,8 +13,8 @@ use
 #[cfg_attr(feature = "remote", derive(Serialize, Deserialize))] #[ derive( Debug ) ] pub struct Add( pub u64 );
 #[cfg_attr(feature = "remote", derive(Serialize, Deserialize))] #[ derive( Debug ) ] pub struct Show;
 
-impl Message for Add  { type Result = ();  }
-impl Message for Show { type Result = u64; }
+impl Message for Add  { type Return = ();  }
+impl Message for Show { type Return = u64; }
 
 
 

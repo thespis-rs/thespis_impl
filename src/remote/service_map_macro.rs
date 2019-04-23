@@ -114,7 +114,7 @@ impl Services
 	pub fn recipient<S>( peer: Addr<$peer_type> ) -> impl Recipient<S>
 
 	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
+	      <S as Message>::Return: Serialize + DeserializeOwned                                              ,
 	{
 		ServicesRecipient::new( peer )
 	}
@@ -154,7 +154,7 @@ impl Services
 	)
 
 	where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-	      <S as Message>::Result: Serialize + DeserializeOwned,
+	      <S as Message>::Return: Serialize + DeserializeOwned,
 	{
 		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
 		let mut rec               = backup.clone_box();
@@ -254,7 +254,7 @@ impl ServicesRecipient
 	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
 
 		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-				<S as Message>::Result: Serialize + DeserializeOwned,
+				<S as Message>::Return: Serialize + DeserializeOwned,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
@@ -267,10 +267,10 @@ impl ServicesRecipient
 	}
 
 
-	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Result>
+	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Return>
 
 		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-				<S as Message>::Result: Serialize + DeserializeOwned,
+				<S as Message>::Return: Serialize + DeserializeOwned,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
@@ -292,7 +292,7 @@ impl ServicesRecipient
 impl<S> Recipient<S> for ServicesRecipient
 
 	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
+	      <S as Message>::Return: Serialize + DeserializeOwned                                              ,
 
 {
 	/// Send any thespis::Service message that has a impl Message to a remote actor.
@@ -307,7 +307,7 @@ impl<S> Recipient<S> for ServicesRecipient
 	/// TODO: does this return type have must use or should we specify that ourselves. Maybe on the
 	///       type alias...
 	//
-	fn call( &mut self, msg: S ) -> Return< ThesRes<<S as Message>::Result> >
+	fn call( &mut self, msg: S ) -> Return< ThesRes<<S as Message>::Return> >
 	{
 		self.call_gen( msg ).boxed()
 	}

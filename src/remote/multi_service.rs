@@ -97,7 +97,7 @@ pub struct MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
 {
-	type Result = ();
+	type Return = ();
 }
 
 

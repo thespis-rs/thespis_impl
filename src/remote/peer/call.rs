@@ -13,7 +13,7 @@ pub struct Call<MulService: MultiService>
 
 impl<MulService: 'static +  MultiService> Message for Call<MulService>
 {
-	type Result = ThesRes< oneshot::Receiver<MulService> >;
+	type Return = ThesRes< oneshot::Receiver<MulService> >;
 }
 
 impl<MulService: MultiService> Call<MulService>
@@ -35,7 +35,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 	where Out       : BoundsOut<MulService>,
 	      MulService: BoundsMulService     ,
 {
-	fn handle( &mut self, call: Call<MulService> ) -> Return< <Call<MulService> as Message>::Result >
+	fn handle( &mut self, call: Call<MulService> ) -> Return< <Call<MulService> as Message>::Return >
 	{
 		trace!( "peer: starting Handler<Call<MulService>>" );
 

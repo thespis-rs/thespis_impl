@@ -35,7 +35,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 		where  A                    : Handler< M >   ,
 		       M                    : Message + Send ,
-		      <M as Message>::Result: Send           ,
+		      <M as Message>::Return: Send           ,
 
 	{
 		async move
@@ -53,18 +53,18 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	// TODO: Why do actor and address have to be static here? The single threaded version doesn't require static here for actor
 	//
-	fn call<M>( &mut self, msg: M ) -> ThreadSafeReturn< ThesRes<<M as Message>::Result> >
+	fn call<M>( &mut self, msg: M ) -> ThreadSafeReturn< ThesRes<<M as Message>::Return> >
 
 		where  A                    : Handler< M >   ,
 		       M                    : Message + Send ,
-		      <M as Message>::Result: Send           ,
+		      <M as Message>::Return: Send           ,
 
 	{
 		let mut mb = self.mb.clone();
 
 		async move
 		{
-			let (ret_tx, ret_rx) = oneshot::channel::< <M as Message>::Result >();
+			let (ret_tx, ret_rx) = oneshot::channel::< <M as Message>::Return >();
 
 			let envl: Box< dyn Envelope<A> + Send > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
@@ -81,7 +81,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 		where  M                    : Message + Send  ,
 		       A                    : Handler<M>      ,
-		      <M as Message>::Result: Send            ,
+		      <M as Message>::Return: Send            ,
 
 	{
 		box Receiver{ addr: self.clone() }
@@ -110,7 +110,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 	where  A                    : Handler< M >   ,
 	       M                    : Message + Send ,
-	      <M as Message>::Result: Send           ,
+	      <M as Message>::Return: Send           ,
 
 {
 	default fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
@@ -120,7 +120,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
+	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		self.addr.call( msg )
 	}

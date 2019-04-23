@@ -10,7 +10,7 @@ pub(super) struct Incoming<MulService: MultiService>
 
 impl<MulService: 'static + MultiService> Message for Incoming<MulService>
 {
-	type Result = ();
+	type Return = ();
 }
 
 

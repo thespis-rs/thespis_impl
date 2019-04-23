@@ -40,12 +40,12 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 pub struct CallEnvelope<M> where M: Message
 {
 	msg : M,
-	addr: oneshot::Sender< M::Result >,
+	addr: oneshot::Sender< M::Return >,
 }
 
 impl<M> CallEnvelope<M> where M: Message
 {
-	pub fn new( msg: M, addr: oneshot::Sender< M::Result > ) -> Self
+	pub fn new( msg: M, addr: oneshot::Sender< M::Return > ) -> Self
 	{
 		Self { msg, addr }
 	}

@@ -38,8 +38,8 @@ pub type MyPeer  = Peer<TheSink, MS>                                            
 pub struct ReturnA { pub resp: String }
 
 
-impl Message for ServiceA { type Result = ReturnA; }
-impl Message for ServiceB { type Result = ()       ; }
+impl Message for ServiceA { type Return = ReturnA; }
+impl Message for ServiceB { type Return = ()       ; }
 
 
 

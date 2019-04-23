@@ -130,14 +130,14 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message>( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
+	fn call<M: Message>( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 
 		where A: Handler< M > ,
 
 	{
 		async move
 		{
-			let (ret_tx, ret_rx) = oneshot::channel::<M::Result>();
+			let (ret_tx, ret_rx) = oneshot::channel::<M::Return>();
 
 			let envl: Box< dyn Envelope<A> > = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
@@ -206,7 +206,7 @@ impl<M: Message> Recipient<M> for Rcpnt<M>
 
 
 
-	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
+	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		async move
 		{
@@ -238,7 +238,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
+	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		self.addr.call( msg )
 	}

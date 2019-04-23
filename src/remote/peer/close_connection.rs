@@ -19,7 +19,7 @@ use { crate :: { import::*, remote::peer::* }};
 //
 pub struct CloseConnection;
 
-impl Message for CloseConnection { type Result = (); }
+impl Message for CloseConnection { type Return = (); }
 
 impl<Out, MulService> Handler<CloseConnection> for Peer<Out, MulService>
 

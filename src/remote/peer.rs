@@ -15,7 +15,7 @@ pub use call             :: Call            ;
 //
 pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
 pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
-pub trait BoundsMulService     : 'static + Message<Result=()> + MultiService                  {}
+pub trait BoundsMulService     : 'static + Message<Return=()> + MultiService                  {}
 
 impl<T, MulService> BoundsIn<MulService> for T
 where T: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
@@ -24,7 +24,7 @@ impl<T, MulService> BoundsOut<MulService> for T
 where T: 'static + Sink<MulService, SinkError=Error> + Unpin {}
 
 impl<T> BoundsMulService for T
-where T: 'static + Message<Result=()> + MultiService {}
+where T: 'static + Message<Return=()> + MultiService {}
 
 
 /// Represents a connection to another process over which you can send actor messages.

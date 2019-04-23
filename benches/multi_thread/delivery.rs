@@ -17,8 +17,8 @@ use
 struct Add (u64);
 struct Show     ;
 
-impl Message for Add  { type Result = () ; }
-impl Message for Show { type Result = u64; }
+impl Message for Add  { type Return = () ; }
+impl Message for Show { type Return = u64; }
 
 
 impl Handler< Add > for Sum
