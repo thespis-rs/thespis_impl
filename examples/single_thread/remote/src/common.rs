@@ -35,10 +35,10 @@ pub type MyPeer  = Peer<TheSink, MS>                                            
 
 #[ derive( Serialize, Deserialize, Debug ) ]
 //
-pub struct ResponseA { pub resp: String }
+pub struct ReturnA { pub resp: String }
 
 
-impl Message for ServiceA { type Result = ResponseA; }
+impl Message for ServiceA { type Result = ReturnA; }
 impl Message for ServiceB { type Result = ()       ; }
 
 

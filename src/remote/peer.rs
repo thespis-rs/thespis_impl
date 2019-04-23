@@ -97,7 +97,7 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 	where Out        : BoundsOut<MulService> ,
 	      MulService : BoundsMulService      ,
 {
-	// fn started ( &mut self ) -> Response<()>
+	// fn started ( &mut self ) -> Return<()>
 	// {
 	// 	async move
 	// 	{
@@ -107,7 +107,7 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 	// }
 
 
-	// fn stopped ( &mut self ) -> Response<()>
+	// fn stopped ( &mut self ) -> Return<()>
 	// {
 	// 	async move
 	// 	{
@@ -256,7 +256,7 @@ impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
 	      MulService : BoundsMulService      ,
 
 {
-	fn handle( &mut self, msg: MulService ) -> Response<()>
+	fn handle( &mut self, msg: MulService ) -> Return<()>
 	{
 		async move
 		{

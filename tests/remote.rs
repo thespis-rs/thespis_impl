@@ -313,7 +313,7 @@ pub struct Parallel
 
 impl Handler< Show > for Parallel
 {
-	fn handle( &mut self, _: Show ) -> Response<u64> { async move
+	fn handle( &mut self, _: Show ) -> Return<u64> { async move
 	{
 		await!( self.sum.call( Show ) ).expect( "call sum" )
 

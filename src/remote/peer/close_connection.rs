@@ -27,7 +27,7 @@ impl<Out, MulService> Handler<CloseConnection> for Peer<Out, MulService>
 	      MulService : BoundsMulService      ,
 
 {
-	fn handle( &mut self, _: CloseConnection ) -> Response<()>
+	fn handle( &mut self, _: CloseConnection ) -> Return<()>
 	{
 		async move
 		{

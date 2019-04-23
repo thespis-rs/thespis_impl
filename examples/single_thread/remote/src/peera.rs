@@ -55,7 +55,7 @@ pub struct HandleA;
 
 impl Actor for HandleA
 {
-	fn started ( &mut self ) -> Response<()>
+	fn started ( &mut self ) -> Return<()>
 	{
 		async move
 		{
@@ -65,7 +65,7 @@ impl Actor for HandleA
 	}
 
 
-	fn stopped ( &mut self ) -> Response<()>
+	fn stopped ( &mut self ) -> Return<()>
 	{
 		async move
 		{
@@ -77,18 +77,18 @@ impl Actor for HandleA
 
 impl Handler<ServiceA> for HandleA
 {
-	fn handle( &mut self, msg: ServiceA ) -> Response<ResponseA> { async move
+	fn handle( &mut self, msg: ServiceA ) -> Return<ReturnA> { async move
 	{
 		dbg!( msg );
 
-		ResponseA{ resp: "pong".into() }
+		ReturnA{ resp: "pong".into() }
 
 	}.boxed() }
 }
 
 impl Handler<ServiceB> for HandleA
 {
-	fn handle( &mut self, msg: ServiceB ) -> Response<()> { async move
+	fn handle( &mut self, msg: ServiceB ) -> Return<()> { async move
 	{
 		dbg!( msg );
 

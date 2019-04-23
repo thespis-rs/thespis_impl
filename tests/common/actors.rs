@@ -20,7 +20,7 @@ impl Message for Show { type Result = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Response<()> { async move
+	fn handle( &mut self, msg: Add ) -> Return<()> { async move
 	{
 		trace!( "called sum with: {:?}", msg );
 
@@ -33,7 +33,7 @@ impl Handler< Add > for Sum
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Response<u64> { async move
+	fn handle( &mut self, _msg: Show ) -> Return<u64> { async move
 	{
 		trace!( "called sum with: Show" );
 

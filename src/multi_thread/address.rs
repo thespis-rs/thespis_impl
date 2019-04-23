@@ -31,7 +31,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 	where A: Actor,
 
 {
-	fn send<M>( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<()> >
+	fn send<M>( &mut self, msg: M ) -> ThreadSafeReturn< ThesRes<()> >
 
 		where  A                    : Handler< M >   ,
 		       M                    : Message + Send ,
@@ -53,7 +53,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 	// TODO: Why do actor and address have to be static here? The single threaded version doesn't require static here for actor
 	//
-	fn call<M>( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<<M as Message>::Result> >
+	fn call<M>( &mut self, msg: M ) -> ThreadSafeReturn< ThesRes<<M as Message>::Result> >
 
 		where  A                    : Handler< M >   ,
 		       M                    : Message + Send ,
@@ -113,14 +113,14 @@ impl<A, M> Recipient<M> for Receiver<A>
 	      <M as Message>::Result: Send           ,
 
 {
-	default fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
+	default fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
 		self.addr.send( msg )
 	}
 
 
 
-	default fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
+	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
 	}

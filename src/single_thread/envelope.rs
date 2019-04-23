@@ -24,7 +24,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Response<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
 		async move
 		{
@@ -57,7 +57,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Response<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
 		async move
 		{

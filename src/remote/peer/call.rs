@@ -35,7 +35,7 @@ impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
 	where Out       : BoundsOut<MulService>,
 	      MulService: BoundsMulService     ,
 {
-	fn handle( &mut self, call: Call<MulService> ) -> Response< <Call<MulService> as Message>::Result >
+	fn handle( &mut self, call: Call<MulService> ) -> Return< <Call<MulService> as Message>::Result >
 	{
 		trace!( "peer: starting Handler<Call<MulService>>" );
 

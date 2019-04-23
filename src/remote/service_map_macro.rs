@@ -297,7 +297,7 @@ impl<S> Recipient<S> for ServicesRecipient
 {
 	/// Send any thespis::Service message that has a impl Message to a remote actor.
 	//
-	fn send( &mut self, msg: S ) -> Response< ThesRes<()> >
+	fn send( &mut self, msg: S ) -> Return< ThesRes<()> >
 	{
 		self.send_gen( msg ).boxed()
 	}
@@ -307,7 +307,7 @@ impl<S> Recipient<S> for ServicesRecipient
 	/// TODO: does this return type have must use or should we specify that ourselves. Maybe on the
 	///       type alias...
 	//
-	fn call( &mut self, msg: S ) -> Response< ThesRes<<S as Message>::Result> >
+	fn call( &mut self, msg: S ) -> Return< ThesRes<<S as Message>::Result> >
 	{
 		self.call_gen( msg ).boxed()
 	}

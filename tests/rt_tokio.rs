@@ -42,7 +42,7 @@ impl Listener
 
 impl Handler< Next > for Listener
 {
-	fn handle( &mut self, _msg: Next ) -> Response<Option< String >>
+	fn handle( &mut self, _msg: Next ) -> Return<Option< String >>
 	{
 		async move
 		{

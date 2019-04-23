@@ -21,7 +21,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 	where Out       : BoundsOut<MulService>,
 	      MulService: BoundsMulService     ,
 {
-	fn handle( &mut self, incoming: Incoming<MulService> ) -> Response<()>
+	fn handle( &mut self, incoming: Incoming<MulService> ) -> Return<()>
 	{
 		trace!( "Peer: Incoming message!" );
 
@@ -49,9 +49,9 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			// CID   absent  -> Send
 			// CID   unknown -> Call
 			//
-			// CID   present -> Response/Error
+			// CID   present -> Return/Error
 			//
-			// (leaves Response/Error)
+			// (leaves Return/Error)
 			//
 			// sid null      -> ConnectionError
 			//
@@ -157,7 +157,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 			{
 				if !sid.is_null()
 				{
-					trace!( "Incoming Response" );
+					trace!( "Incoming Return" );
 
 					// TODO: verify our error handling story here. Normally if this
 					// fails it means the receiver of the channel was dropped... so

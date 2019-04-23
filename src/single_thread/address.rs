@@ -109,7 +109,7 @@ impl<A> Address<A> for Addr<A>
 	where A: Actor,
 
 {
-	fn send<M>( &mut self, msg: M ) -> Response< ThesRes<()> >
+	fn send<M>( &mut self, msg: M ) -> Return< ThesRes<()> >
 
 		where A: Handler< M >,
 		      M: Message,
@@ -130,7 +130,7 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message>( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
+	fn call<M: Message>( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
 
 		where A: Handler< M > ,
 
@@ -195,7 +195,7 @@ impl<M: Message> Rcpnt<M>
 
 impl<M: Message> Recipient<M> for Rcpnt<M>
 {
-	fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
+	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
 		async move
 		{
@@ -206,7 +206,7 @@ impl<M: Message> Recipient<M> for Rcpnt<M>
 
 
 
-	fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
+	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
 	{
 		async move
 		{
@@ -229,7 +229,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 	      M: Message     ,
 
 {
-	default fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
+	default fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 
 		where M: Message,
 	{
@@ -238,7 +238,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	default fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
+	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
 	}
