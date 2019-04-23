@@ -112,7 +112,7 @@ impl<A> Address<A> for Addr<A>
 	fn send<M>( &mut self, msg: M ) -> Response< ThesRes<()> >
 
 		where A: Handler< M >,
-		      M: Message<Result = ()>,
+		      M: Message,
 
 	{
 		async move
@@ -196,8 +196,6 @@ impl<M: Message> Rcpnt<M>
 impl<M: Message> Recipient<M> for Rcpnt<M>
 {
 	fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
-
-		where M: Message<Result = ()>,
 	{
 		async move
 		{
@@ -233,7 +231,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 {
 	default fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
 
-		where M: Message<Result = ()>,
+		where M: Message,
 	{
 		self.addr.send( msg )
 	}

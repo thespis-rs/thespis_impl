@@ -41,17 +41,9 @@ macro_rules! service_map
 	//
 	multi_service: $ms_type: path;
 
-	/// Comma separated list of Services you want to include that can be both Send to and Called. These
-	/// must implement thespis::Message with `type Result = ();`. Otherwise send is not possible. There
-	/// can not be any overlap with the list `call_only`, otherwise it won't compile.
+	/// Comma separated list of Services you want to include. They must be in scope.
 	//
-	send_and_call: $($send_and_call: path),* $(,)?;
-
-	/// Comma separated list of Services that don't have a tuple as their result type, and thus can be
-	/// called but not send to.
-	//
-	call_only: $($call_only: path),* $(,)?;
-
+	services: $($services: path),+ $(,)? $(;)?
 ) =>
 
 {
@@ -65,7 +57,7 @@ use
 	// we should not have a leading comma before the next item, but if the comma is after the closing
 	// parenthesis, it will not output a trailing comma, which will be needed to separate from the next item.
 	//
-	super :: { $( $send_and_call, )* $( $call_only, )* $peer_type, $ms_type } ,
+	super :: { $( $services, )+ $peer_type, $ms_type } ,
 	$crate:: { *, remote::*, single_thread::*, runtime::rt                  } ,
 	std   :: { any::Any                                                     } ,
 
@@ -85,9 +77,9 @@ pub trait MarkServices {}
 
 $
 (
-	impl MarkServices for $send_and_call {}
+	impl MarkServices for $services {}
 
-	impl Service<self::Services> for $send_and_call
+	impl Service<self::Services> for $services
 	{
 		type UniqueID = ServiceID;
 
@@ -97,32 +89,11 @@ $
 
 			INSTANCE.get_or_init( ||
 			{
-				ServiceID::from_seed( &[ stringify!( $send_and_call ), Services::NAMESPACE ].concat().as_bytes() )
+				ServiceID::from_seed( &[ stringify!( $services ), Services::NAMESPACE ].concat().as_bytes() )
 			})
 		}
 	}
-)*
-
-$
-(
-	impl MarkServices for $call_only {}
-
-	impl Service<self::Services> for $call_only
-	{
-		type UniqueID = ServiceID;
-
-		fn sid() -> &'static Self::UniqueID
-		{
-			static INSTANCE: OnceCell<ServiceID> = OnceCell::INIT;
-
-			INSTANCE.get_or_init( ||
-			{
-				ServiceID::from_seed( &[ stringify!( $call_only ), Services::NAMESPACE ].concat().as_bytes() )
-			})
-		}
-	}
-)*
-
+)+
 
 
 /// The actual service map.
@@ -154,8 +125,8 @@ impl Services
 	//
 	fn send_service_gen<S>( msg: $ms_type, receiver: &Box< dyn Any > )
 
-		where S                     : Service<self::Services>   + Message<Result=()>,
-		      <S as Message>::Result: Serialize + DeserializeOwned  ,
+		where  S                    : Service<self::Services> + Message ,
+		      <S as Message>::Return: Serialize + DeserializeOwned      ,
 
 	{
 		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
@@ -221,9 +192,11 @@ impl ServiceMap<$ms_type> for Services
 
 		match x
 		{
-			$( _ if x == *<$send_and_call as Service<self::Services>>::sid() =>
+			$(
+				_ if x == *<$services as Service<self::Services>>::sid() =>
 
-				Self::send_service_gen::<$send_and_call>( msg, receiver ) , )*
+					Self::send_service_gen::<$services>( msg, receiver ) ,
+			)+
 
 			_ => panic!( "got wrong service: {:?}", x ),
 		}
@@ -246,15 +219,11 @@ impl ServiceMap<$ms_type> for Services
 
 		match x
 		{
+			$(
+				_ if x == *<$services as Service<self::Services>>::sid() =>
 
-			$( _ if x == *<$send_and_call as Service<self::Services>>::sid() =>
-
-				Self::call_service_gen::<$send_and_call>( msg, receiver, return_addr ) , )*
-
-
-			$( _ if x == *<$call_only as Service<self::Services>>::sid() =>
-
-				Self::call_service_gen::<$call_only>( msg, receiver, return_addr ) , )*
+					Self::call_service_gen::<$services>( msg, receiver, return_addr ) ,
+			)+
 
 
 			_ => panic!( "got wrong service: {:?}", x ),
@@ -326,7 +295,7 @@ impl<S> Recipient<S> for ServicesRecipient
 	      <S as Message>::Result: Serialize + DeserializeOwned                                              ,
 
 {
-	/// Send any thespis::Service message that has a impl Message<Result=()> to a remote actor.
+	/// Send any thespis::Service message that has a impl Message to a remote actor.
 	//
 	fn send( &mut self, msg: S ) -> Response< ThesRes<()> >
 	{

@@ -118,11 +118,10 @@ pub async fn connect_return_stream( socket: &str ) ->
 
 service_map!
 (
-	namespace:     remote   ;
-	peer_type:     MyPeer   ;
-	multi_service: MS       ;
-	send_and_call: Add      ;
-	call_only:     Show     ;
+	namespace:     remote    ;
+	peer_type:     MyPeer    ;
+	multi_service: MS        ;
+	services     : Add, Show ;
 );
 
 
@@ -324,11 +323,10 @@ impl Handler< Show > for Parallel
 
 service_map!
 (
-	namespace:     parallel ;
-	peer_type:     MyPeer   ;
-	multi_service: MS       ;
-	send_and_call:          ;
-	call_only:     Show     ;
+	namespace     : parallel ;
+	peer_type     : MyPeer   ;
+	multi_service : MS       ;
+	services      : Show     ;
 );
 
 

@@ -48,8 +48,11 @@ service_map!
 	namespace:     peer_a   ;
 	peer_type:     MyPeer   ;
 	multi_service: MS       ;
-	send_and_call: ServiceB ;
-	call_only:     ServiceA ;
+	services     :
+
+		ServiceB ,
+		ServiceA ,
+	;
 );
 
 

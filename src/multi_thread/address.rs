@@ -33,9 +33,9 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 {
 	fn send<M>( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<()> >
 
-		where  A                    : Handler< M >                ,
-		       M                    : Message<Result = ()> + Send ,
-		      <M as Message>::Result: Send                        ,
+		where  A                    : Handler< M >   ,
+		       M                    : Message + Send ,
+		      <M as Message>::Result: Send           ,
 
 	{
 		async move
@@ -77,7 +77,7 @@ impl<A> ThreadSafeAddress<A> for Addr<A>
 
 
 
-	fn recipient<M>( &self ) -> Box< dyn ThreadSafeRecipient<M> >
+	fn recipient<M>( &self ) -> Box< dyn Recipient<M> >
 
 		where  M                    : Message + Send  ,
 		       A                    : Handler<M>      ,
@@ -106,28 +106,27 @@ impl<A: Actor> Clone for Receiver<A>
 
 
 
-impl<A, M> ThreadSafeRecipient<M> for Receiver<A>
+impl<A, M> Recipient<M> for Receiver<A>
 
-	where  A                    : Handler< M >    ,
-	       M                    : Message + Send  ,
-	      <M as Message>::Result: Send            ,
+	where  A                    : Handler< M >   ,
+	       M                    : Message + Send ,
+	      <M as Message>::Result: Send           ,
 
 {
-	default fn send( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<()> >
-
-		where M: Message<Result = ()>,
+	default fn send( &mut self, msg: M ) -> Response< ThesRes<()> >
 	{
 		self.addr.send( msg )
 	}
 
 
 
-	default fn call( &mut self, msg: M ) -> ThreadSafeResponse< ThesRes<<M as Message>::Result> >
+	default fn call( &mut self, msg: M ) -> Response< ThesRes<<M as Message>::Result> >
 	{
 		self.addr.call( msg )
 	}
 
-	fn clone_box( &self ) -> Box< dyn ThreadSafeRecipient<M> >
+
+	fn clone_box( &self ) -> Box< dyn Recipient<M> >
 	{
 		box Self { addr: self.addr.clone() }
 	}
