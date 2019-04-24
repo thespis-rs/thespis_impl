@@ -1,4 +1,6 @@
 use crate :: { import::*, single_thread::* };
+use thespis::thread_safe::{ BoxEnvelope, BoxRecipient, Return };
+
 
 
 /// Reference implementation of thespis::Address.
@@ -6,7 +8,7 @@ use crate :: { import::*, single_thread::* };
 //
 pub struct Addr< A: Actor >
 {
-	mb: mpsc::UnboundedSender<Box<dyn Envelope<A>>>,
+	mb: mpsc::UnboundedSender< BoxEnvelope<A> >,
 }
 
 
@@ -39,7 +41,7 @@ impl<A> Addr<A> where A: Actor
 	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
 	// ditch channels or write some channels that implement sink.
 	//
-	pub fn new( mb: mpsc::UnboundedSender<Box< dyn Envelope<A> >> ) -> Self
+	pub fn new( mb: mpsc::UnboundedSender<BoxEnvelope<A>> ) -> Self
 	{
 		trace!( "CREATE address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
 		Self{ mb }
@@ -104,20 +106,17 @@ impl<A: Actor> Drop for Addr<A>
 
 
 
-impl<A> Address<A> for Addr<A>
+impl<A, M> Recipient<M> for Addr<A>
 
-	where A: Actor,
+	where A: Actor + Handler<M>,
+	      M: Message           ,
 
 {
-	fn send<M>( &mut self, msg: M ) -> Return< ThesRes<()> >
-
-		where A: Handler< M >,
-		      M: Message,
-
+	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
 		async move
 		{
-			let envl: Box< dyn Envelope<A> >= Box::new( SendEnvelope::new( msg ) );
+			let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
 			await!( self.mb.send( envl ) )?;
 			trace!( "sent to mailbox" );
@@ -130,16 +129,13 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn call<M: Message>( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
-
-		where A: Handler< M > ,
-
+	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		async move
 		{
 			let (ret_tx, ret_rx) = oneshot::channel::<M::Return>();
 
-			let envl: Box< dyn Envelope<A> > = Box::new( CallEnvelope::new( msg, ret_tx ) );
+			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
 			// trace!( "Sending envl to Mailbox" );
 
@@ -153,7 +149,20 @@ impl<A> Address<A> for Addr<A>
 
 
 
-	fn recipient<M>( &self ) -> Box< dyn Recipient<M> > where M: Message, A: Handler<M>
+	fn clone_box( &self ) -> BoxRecipient<M>
+	{
+		box self.clone()
+	}
+}
+
+
+impl<A, M> Address<A, M> for Addr<A>
+
+	where A: Actor + Handler<M>,
+	      M: Message           ,
+
+{
+	fn recipient( &self ) -> BoxRecipient<M>
 	{
 		box Receiver{ addr: self.clone() }
 	}
@@ -180,12 +189,12 @@ impl<A: Actor> Clone for Receiver<A>
 
 pub struct Rcpnt<M: Message>
 {
-	rec: Box< dyn Recipient<M> >
+	rec: BoxRecipient<M>
 }
 
 impl<M: Message> Rcpnt<M>
 {
-	pub fn new( rec: Box< dyn Recipient<M> > ) -> Self
+	pub fn new( rec: BoxRecipient<M> ) -> Self
 	{
 		Self { rec }
 	}
@@ -215,7 +224,7 @@ impl<M: Message> Recipient<M> for Rcpnt<M>
 		}.boxed()
 	}
 
-	fn clone_box( &self ) -> Box< dyn Recipient<M> >
+	fn clone_box( &self ) -> BoxRecipient<M>
 	{
 		box Self { rec: self.rec.clone_box() }
 	}
@@ -245,7 +254,7 @@ impl<A, M> Recipient<M> for Receiver<A>
 
 
 
-	fn clone_box( &self ) -> Box< dyn Recipient<M> >
+	fn clone_box( &self ) -> BoxRecipient<M>
 	{
 		box Self { addr: self.addr.clone() }
 	}

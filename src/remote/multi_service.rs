@@ -83,9 +83,9 @@ const HEADER_LEN: usize = 36;
 //
 pub struct MultiServiceImpl<SID, CID, Codec>
 
-	where SID  : 'static,
-	      CID  : 'static,
-	      Codec: 'static,
+	where SID  : 'static + Send,
+	      CID  : 'static + Send,
+	      Codec: 'static + Send,
 {
 	bytes: Bytes,
 
@@ -96,6 +96,11 @@ pub struct MultiServiceImpl<SID, CID, Codec>
 
 
 impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
+
+	where Codec: Send,
+	      CID  : Send,
+	      SID  : Send,
+
 {
 	type Return = ();
 }
@@ -104,9 +109,9 @@ impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + Into< Bytes >,
-	      CID  : UniqueID + Into< Bytes >,
-	      SID  : UniqueID + Into< Bytes >,
+	where Codec: CodecAlg + Into< Bytes > + Send,
+	      CID  : UniqueID + Into< Bytes > + Send,
+	      SID  : UniqueID + Into< Bytes > + Send,
 
 {
 	/// Beware: This can panic because of Buf.put
@@ -127,9 +132,9 @@ impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error >,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error >,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error >,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send,
+	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
+	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
          Self : From< Bytes >                           ,
 {
 	type ServiceID = SID   ;
@@ -169,6 +174,11 @@ impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
 
 impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
+
+	where Codec: Send,
+	      CID  : Send,
+	      SID  : Send,
+
 {
 	fn into( self ) -> Bytes
 	{
@@ -180,9 +190,9 @@ impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> From< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error >,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error >,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error >,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send,
+	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
+	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
 
 {
 	fn from( bytes: Bytes ) -> Self

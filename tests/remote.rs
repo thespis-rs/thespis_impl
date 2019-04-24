@@ -154,8 +154,8 @@ fn remote()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Add >() );
-		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service::<Add >( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -222,8 +222,8 @@ fn relay()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Add >() );
-		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service::<Add >( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -364,7 +364,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( <Show as Service<parallel::Services>>::sid(), box parallel::Services, addr_handler.recipient::<Show>() );
+		peer.register_service( <Show as Service<parallel::Services>>::sid(), box parallel::Services, addr_handler.recipient() );
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -390,7 +390,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient::<Show>() );
+		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 

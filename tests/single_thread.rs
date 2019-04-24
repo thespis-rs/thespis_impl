@@ -11,9 +11,9 @@ use
 
 // We are testing single thread after all
 //
-impl !Send for Sum  {}
-impl !Send for Add  {}
-impl !Send for Show {}
+// impl !Send for Sum  {}
+// impl !Send for Add  {}
+// impl !Send for Show {}
 
 
 

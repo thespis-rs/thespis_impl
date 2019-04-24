@@ -1,4 +1,6 @@
 use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
+use thespis::thread_safe::{ BoxRecipient };
+
 
 mod close_connection;
 mod connection_error;
@@ -15,7 +17,7 @@ pub use call             :: Call            ;
 //
 pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
 pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
-pub trait BoundsMulService     : 'static + Message<Return=()> + MultiService                  {}
+pub trait BoundsMulService     : 'static + Message<Return=()> + MultiService + Send           {}
 
 impl<T, MulService> BoundsIn<MulService> for T
 where T: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
@@ -173,7 +175,7 @@ impl<Out, MulService> Peer<Out, MulService>
 		&mut self                                             ,
 		     sid    : &'static <MulService as MultiService>::ServiceID ,
 		     sm     : Box< dyn ServiceMap<MulService> >       ,
-		     handler: Box< dyn Recipient <Service   > >       ,
+		     handler: BoxRecipient<Service>       ,
 	)
 	{
 		self.services.insert( sid, (box Rcpnt::new( handler ), sm) );

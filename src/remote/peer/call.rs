@@ -11,7 +11,7 @@ pub struct Call<MulService: MultiService>
 	mesg: MulService,
 }
 
-impl<MulService: 'static +  MultiService> Message for Call<MulService>
+impl<MulService: 'static +  MultiService + Send> Message for Call<MulService>
 {
 	type Return = ThesRes< oneshot::Receiver<MulService> >;
 }

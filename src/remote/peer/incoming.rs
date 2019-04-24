@@ -8,7 +8,7 @@ pub(super) struct Incoming<MulService: MultiService>
 	pub mesg: MulService,
 }
 
-impl<MulService: 'static + MultiService> Message for Incoming<MulService>
+impl<MulService: 'static + MultiService + Send> Message for Incoming<MulService>
 {
 	type Return = ();
 }
@@ -192,7 +192,7 @@ impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
 
 						// Call actor
 						//
-						sm.call_service( frame, handler, self_addr.recipient::<MulService>() );
+						sm.call_service( frame, handler, self_addr.recipient() );
 					}
 
 

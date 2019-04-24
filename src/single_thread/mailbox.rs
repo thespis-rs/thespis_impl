@@ -1,4 +1,5 @@
 use crate :: { import::*, single_thread::*, runtime::rt };
+use thespis::thread_safe::{ BoxEnvelope };
 
 
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
@@ -11,8 +12,8 @@ use crate :: { import::*, single_thread::*, runtime::rt };
 //
 pub struct Inbox<A> where A: Actor
 {
-	handle: mpsc::UnboundedSender  <Box< dyn Envelope<A> >> ,
-	msgs  : mpsc::UnboundedReceiver<Box< dyn Envelope<A> >> ,
+	handle: mpsc::UnboundedSender  <BoxEnvelope<A>> ,
+	msgs  : mpsc::UnboundedReceiver<BoxEnvelope<A>> ,
 }
 
 impl<A> Inbox<A> where A: Actor
@@ -24,7 +25,7 @@ impl<A> Inbox<A> where A: Actor
 		Self { handle, msgs }
 	}
 
-	pub fn sender( &self ) -> mpsc::UnboundedSender<Box< dyn Envelope<A> >>
+	pub fn sender( &self ) -> mpsc::UnboundedSender<BoxEnvelope<A>>
 	{
 		self.handle.clone()
 	}
