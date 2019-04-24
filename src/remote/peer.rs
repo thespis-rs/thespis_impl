@@ -172,10 +172,10 @@ impl<Out, MulService> Peer<Out, MulService>
 	//
 	pub fn register_service<Service: Message>
 	(
-		&mut self                                             ,
+		&mut self                                                      ,
 		     sid    : &'static <MulService as MultiService>::ServiceID ,
-		     sm     : Box< dyn ServiceMap<MulService> >       ,
-		     handler: BoxRecipient<Service>       ,
+		     sm     : Box< dyn ServiceMap<MulService> >                ,
+		     handler: BoxRecipient<Service>                            ,
 	)
 	{
 		self.services.insert( sid, (box Rcpnt::new( handler ), sm) );
