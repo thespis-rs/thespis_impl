@@ -119,8 +119,7 @@ impl<A: Actor> Drop for Addr<A>
 impl<A, M> Recipient<M> for Addr<A>
 
 	where  A                     : Actor + Handler<M> ,
-	       M                     : Message + Send     ,
-	      <M as Message>::Return : Send               ,
+	       M                     : Message            ,
 
 {
 	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
@@ -210,10 +209,6 @@ impl<M: Message> Clone for Receiver<M>
 
 
 impl<M: Message> Recipient<M> for Receiver<M>
-
-	where  M                     : Message + Send,
-	      <M as Message>::Return : Send          ,
-
 {
 	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
