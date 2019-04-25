@@ -26,7 +26,6 @@
 	box_syntax             ,
 	core_intrinsics        ,
 	decl_macro             ,
-	futures_api            ,
 	never_type             ,
 	nll                    ,
 	optin_builtin_traits   ,
@@ -38,11 +37,11 @@
 	unboxed_closures       ,
 )]
 
-
+    mod address;
+    mod envelope;
+    mod mailbox;
     mod error;
-pub mod multi_thread;
 pub mod runtime;
-pub mod single_thread;
 
 pub mod remote;
 
@@ -50,6 +49,8 @@ pub mod remote;
 pub use
 {
 	error::*,
+	address::*,
+	mailbox::*,
 };
 
 // needed for macro

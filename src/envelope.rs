@@ -1,4 +1,4 @@
-use crate :: { import::*, single_thread::* };
+use crate :: { import::* };
 
 
 
@@ -20,11 +20,11 @@ impl<M> SendEnvelope<M> where M: Message
 
 impl<A, M> Envelope<A> for SendEnvelope<M>
 
-	where A: Actor,
-	      M: Message,
-	      A: Handler<M>,
+	where  A                     : Actor + Handler<M>,
+	       M                     : Message + Send    ,
+	      <M as Message>::Return : Send              ,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
 	{
 		async move
 		{
@@ -57,7 +57,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
 	{
 		async move
 		{

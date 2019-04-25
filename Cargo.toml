@@ -98,39 +98,6 @@ default-features = false
 features = ["async-await-preview", "rt-full", "tcp", "codec"]
 path = "../../tokio/tokio"
 
-[[example]]
-name = "single_thread_basic"
-path = "examples/single_thread/basic.rs"
-
-[[example]]
-name = "single_thread_across"
-path = "examples/single_thread/across_yields.rs"
-
-[[example]]
-name = "single_thread_recipient"
-path = "examples/single_thread/recipient.rs"
-
-[[example]]
-name = "single_thread_perf"
-path = "examples/single_thread/perf.rs"
-
-[[example]]
-name = "single_thread_no_rt"
-path = "examples/single_thread/no_rt.rs"
-
-[[example]]
-name = "single_thread_tokio"
-path = "examples/single_thread/tokio.rs"
-required-features = ["tokio"]
-
-[[example]]
-name = "multi_thread_basic"
-path = "examples/multi_thread/basic.rs"
-
-[[example]]
-name = "multi_thread_move_fut"
-path = "examples/multi_thread/move_fut.rs"
-
 [features]
 default = ["tokio", "remote", "ws"]
 remote = ["serde", "serde_cbor", "thespis/remote", "bytes", "hashbrown", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]

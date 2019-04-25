@@ -1,5 +1,4 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, single_thread::{ Addr, Rcpnt } } };
-use thespis::thread_safe::{ BoxRecipient };
+use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, Addr, Receiver } };
 
 
 mod close_connection;
@@ -15,17 +14,17 @@ pub use call             :: Call            ;
 
 // Reduce trait bound boilerplate, since we have to repeat them all over
 //
-pub trait BoundsIn <MulService>: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
-pub trait BoundsOut<MulService>: 'static + Sink<MulService, SinkError=Error> + Unpin          {}
-pub trait BoundsMulService     : 'static + Message<Return=()> + MultiService + Send           {}
+pub trait BoundsIn <MS>: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
+pub trait BoundsOut<MS>: 'static + Sink<MS, SinkError=Error> + Unpin + Send   {}
+pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send   {}
 
-impl<T, MulService> BoundsIn<MulService> for T
-where T: 'static + Stream< Item = Result<MulService, Error> > + Unpin {}
+impl<T, MS> BoundsIn<MS> for T
+where T: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
 
-impl<T, MulService> BoundsOut<MulService> for T
-where T: 'static + Sink<MulService, SinkError=Error> + Unpin {}
+impl<T, MS> BoundsOut<MS> for T
+where T: 'static + Sink<MS, SinkError=Error> + Unpin + Send {}
 
-impl<T> BoundsMulService for T
+impl<T> BoundsMS for T
 where T: 'static + Message<Return=()> + MultiService {}
 
 
@@ -54,10 +53,10 @@ where T: 'static + Message<Return=()> + MultiService {}
 /// ### Actor shutdown
 ///
 //
-pub struct Peer<Out, MulService>
+pub struct Peer<Out, MS>
 
-	where Out        : BoundsOut<MulService> ,
-	      MulService : BoundsMulService      ,
+	where Out        : BoundsOut<MS> ,
+	      MS : BoundsMS      ,
 
 {
 	/// The sink
@@ -77,27 +76,27 @@ pub struct Peer<Out, MulService>
 	//
 	listen_handle : Option< RemoteHandle<()> >,
 
-	/// Information required to process incoming messages. The first element is a boxed Rcpnt, and the second is
+	/// Information required to process incoming messages. The first element is a boxed Receiver, and the second is
 	/// the service map that takes care of this service type.
 	//
-	services      : HashMap< &'static <MulService as MultiService>::ServiceID , (Box<Any>, Box< dyn ServiceMap<MulService> >) >,
+	services      : HashMap<&'static <MS as MultiService>::ServiceID ,(BoxAny, BoxServiceMap<MS>)>,
 
 	/// All services that we relay to another peer. It has to be of the same type for now since there is
 	/// no trait for peers.
 	//
-	relay         : HashMap< &'static <MulService as MultiService>::ServiceID, Addr<Self> >,
+	relay         : HashMap< &'static <MS as MultiService>::ServiceID, Addr<Self> >,
 
 	/// We use onshot channels to give clients a future that will resolve to their response.
 	//
-	responses     : HashMap< <MulService as MultiService>::ConnID, oneshot::Sender<MulService> >,
+	responses     : HashMap< <MS as MultiService>::ConnID, oneshot::Sender<MS> >,
 }
 
 
 
-impl<Out, MulService> Actor for Peer<Out, MulService>
+impl<Out, MS> Actor for Peer<Out, MS>
 
-	where Out        : BoundsOut<MulService> ,
-	      MulService : BoundsMulService      ,
+	where Out        : BoundsOut<MS> ,
+	      MS : BoundsMS      ,
 {
 	// fn started ( &mut self ) -> Return<()>
 	// {
@@ -121,15 +120,15 @@ impl<Out, MulService> Actor for Peer<Out, MulService>
 
 
 
-impl<Out, MulService> Peer<Out, MulService>
+impl<Out, MS> Peer<Out, MS>
 
-	where Out        : BoundsOut<MulService> ,
-	      MulService : BoundsMulService      ,
+	where Out        : BoundsOut<MS> ,
+	      MS : BoundsMS      ,
 
 {
 	/// Create a new peer to represent a connection to some remote.
 	//
-	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MulService>, outgoing: Out ) -> Self
+	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> Self
 	{
 		let listen = Self::listen( addr.clone(), incoming );
 
@@ -173,30 +172,30 @@ impl<Out, MulService> Peer<Out, MulService>
 	pub fn register_service<Service: Message>
 	(
 		&mut self                                                      ,
-		     sid    : &'static <MulService as MultiService>::ServiceID ,
-		     sm     : Box< dyn ServiceMap<MulService> >                ,
+		     sid    : &'static <MS as MultiService>::ServiceID ,
+		     sm     : Box< dyn ServiceMap<MS> + Send + Sync >  ,
 		     handler: BoxRecipient<Service>                            ,
 	)
 	{
-		self.services.insert( sid, (box Rcpnt::new( handler ), sm) );
+		self.services.insert( sid, (box Receiver::new( handler ), sm) );
 	}
 
 
 	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
 	/// For relaying services from other processes.
 	//
-	pub fn register_relayed_service<Service: Message>( &mut self, sid: &'static <MulService as MultiService>::ServiceID, peer: Addr<Self> )
+	pub fn register_relayed_service<Service: Message>( &mut self, sid: &'static <MS as MultiService>::ServiceID, peer: Addr<Self> )
 	{
 		self.relay.insert( sid, peer );
 	}
 
 
 
-	async fn listen( mut self_addr: Addr<Self>, mut incoming: impl BoundsIn<MulService> )
+	async fn listen( mut self_addr: Addr<Self>, mut incoming: impl BoundsIn<MS> )
 	{
 		loop
 		{
-			let event: Option< Result< MulService, _ > > = await!( incoming.next() );
+			let event: Option< Result< MS, _ > > = await!( incoming.next() );
 
 			trace!( "got incoming event on stream" );
 
@@ -236,7 +235,7 @@ impl<Out, MulService> Peer<Out, MulService>
 
 	// actually send the message accross the wire
 	//
-	async fn send_msg( &mut self, msg: MulService ) -> ThesRes<()>
+	async fn send_msg( &mut self, msg: MS ) -> ThesRes<()>
 	{
 		match &mut self.outgoing
 		{
@@ -252,13 +251,13 @@ impl<Out, MulService> Peer<Out, MulService>
 //
 // On outgoing call made by a local actor, store in the oneshot sender in self.responses
 //
-impl<Out, MulService> Handler<MulService> for Peer<Out, MulService>
+impl<Out, MS> Handler<MS> for Peer<Out, MS>
 
-	where Out        : BoundsOut<MulService> ,
-	      MulService : BoundsMulService      ,
+	where Out        : BoundsOut<MS> ,
+	      MS : BoundsMS      ,
 
 {
-	fn handle( &mut self, msg: MulService ) -> Return<()>
+	fn handle( &mut self, msg: MS ) -> Return<()>
 	{
 		async move
 		{

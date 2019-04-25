@@ -12,7 +12,8 @@
 /// documentation on using remote actors, and there is a remote example and unit tests in the repository
 /// which you can look at for a more fully fledged example.
 ///
-/// TODO: document the types made available to the user by this macro.
+/// TODO: - document the types made available to the user by this macro.
+///       - this is not generic at all, cbor is hardcoded, ServiceID as well...
 //
 #[ macro_export ]
 //
@@ -58,8 +59,8 @@ use
 	// parenthesis, it will not output a trailing comma, which will be needed to separate from the next item.
 	//
 	super :: { $( $services, )+ $peer_type, $ms_type } ,
-	$crate:: { *, remote::*, single_thread::*, runtime::rt                  } ,
-	std   :: { any::Any                                                     } ,
+	$crate:: { *, remote::*, runtime::rt             } ,
+	std   :: { any::Any                              } ,
 
 	$crate::external_deps::
 	{
@@ -113,8 +114,8 @@ impl Services
 	//
 	pub fn recipient<S>( peer: Addr<$peer_type> ) -> impl Recipient<S>
 
-	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Return: Serialize + DeserializeOwned                                              ,
+	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send                                         ,
 	{
 		ServicesRecipient::new( peer )
 	}
@@ -123,13 +124,13 @@ impl Services
 
 	// Helper function for send_service below
 	//
-	fn send_service_gen<S>( msg: $ms_type, receiver: &Box< dyn Any > )
+	fn send_service_gen<S>( msg: $ms_type, receiver: &BoxAny )
 
-		where  S                    : Service<self::Services> + Message ,
-		      <S as Message>::Return: Serialize + DeserializeOwned      ,
+		where  S: MarkServices + Service<self::Services> + Message + Send,
+		      <S as Message>::Return: Serialize + DeserializeOwned + Send                    ,
 
 	{
-		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
+		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
 		let mut rec               = backup.clone_box();
 
 		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
@@ -147,16 +148,16 @@ impl Services
 	//
 	fn call_service_gen<S>
 	(
-		     msg        :  $ms_type                        ,
-		     receiver   : &Box< dyn Any >                  ,
-		 mut return_addr:  Box< dyn Recipient< $ms_type >> ,
+		     msg        :  $ms_type               ,
+		     receiver   : &BoxAny                 ,
+		 mut return_addr:  BoxRecipient<$ms_type> ,
 
 	)
 
-	where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-	      <S as Message>::Return: Serialize + DeserializeOwned,
+	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Send,
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send                              ,
 	{
-		let     backup: &Rcpnt<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
+		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
 		let mut rec               = backup.clone_box();
 
 		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
@@ -186,7 +187,7 @@ impl ServiceMap<$ms_type> for Services
 {
 	// Will match the type of the service id to deserialize the message and send it to the handling actor
 	//
-	fn send_service( &self, msg: $ms_type, receiver: &Box< dyn Any > )
+	fn send_service( &self, msg: $ms_type, receiver: &BoxAny )
 	{
 		let x = msg.service().expect( "get service" );
 
@@ -208,10 +209,10 @@ impl ServiceMap<$ms_type> for Services
 	//
 	fn call_service
 	(
-		&self                                          ,
-		 msg        :  $ms_type                        ,
-		 receiver   : &Box< dyn Any >                  ,
-		 return_addr:  Box< dyn Recipient< $ms_type >> ,
+		&self                                 ,
+		 msg        :  $ms_type               ,
+		 receiver   : &BoxAny                 ,
+		 return_addr:  BoxRecipient<$ms_type> ,
 
 	)
 	{
@@ -253,15 +254,15 @@ impl ServicesRecipient
 
 	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
 
-		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-				<S as Message>::Return: Serialize + DeserializeOwned,
+		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
 		let cid        = ConnID::null();
 		let serialized = serde_cbor::to_vec( &msg )?;
 
-		let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized.into() );
+		let mul        = <$ms_type>::new( sid, cid, Codecs::CBOR, serialized.into() );
 
 		await!( self.peer.send( mul ) )
 	}
@@ -269,15 +270,15 @@ impl ServicesRecipient
 
 	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Return>
 
-		where  S                    : Service<self::Services, UniqueID=ServiceID> ,
-				<S as Message>::Return: Serialize + DeserializeOwned,
+		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
 		let cid        = ConnID::default();
 		let serialized = serde_cbor::to_vec( &msg )?.into();
 
-		let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized );
+		let mul        = <$ms_type>::new( sid, cid, Codecs::CBOR, serialized );
 
 		let call = Call::new( mul );
 		let re   = await!( await!( self.peer.call( call ) )?? )?;
@@ -291,8 +292,8 @@ impl ServicesRecipient
 
 impl<S> Recipient<S> for ServicesRecipient
 
-	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned ,
-	      <S as Message>::Return: Serialize + DeserializeOwned                                              ,
+	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 {
 	/// Send any thespis::Service message that has a impl Message to a remote actor.
@@ -315,7 +316,7 @@ impl<S> Recipient<S> for ServicesRecipient
 
 	/// Obtain a clone of this recipient as a trait object.
 	//
-	fn clone_box( &self ) -> Box< dyn Recipient<S> >
+	fn clone_box( &self ) -> BoxRecipient<S>
 	{
 		box Self { peer: self.peer.clone() }
 	}

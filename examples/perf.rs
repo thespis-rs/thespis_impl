@@ -1,13 +1,11 @@
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
-// #![ allow( dead_code, unused_imports )]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 
 use
 {
-	futures       :: { future::{ FutureExt }          } ,
-	thespis       :: { *                              } ,
-	thespis_impl  :: { single_thread::*, runtime::rt  } ,
+	futures       :: { future::{ FutureExt } } ,
+	thespis       :: { *                     } ,
+	thespis_impl  :: { *, runtime::rt  } ,
 };
 
 
@@ -47,15 +45,8 @@ fn main()
 {
 	let program = async move
 	{
-		let     sum              = Sum(5)      ;
-
-		let mb  : Inbox<Sum> = Inbox::new();
-		let send             = mb.sender ();
-
-		mb.start( sum ).expect( "Failed to start mailbox" );
-
-		let mut addr  = Addr::new( send.clone() );
-
+		let     sum  = Sum(5);
+		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
 
 		for _i in 0..10_000_000usize
 		{
@@ -69,6 +60,5 @@ fn main()
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
-
 	rt::run();
 }

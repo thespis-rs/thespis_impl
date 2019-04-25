@@ -1,19 +1,17 @@
-#![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
-
+// TODO: cleanup and test sending the future from call to another thread rather than just the address.
 
 mod common;
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt, LocalSpawnExt } } ,
-	futures       :: { executor::LocalPool, channel::oneshot                                               } ,
-	thespis       :: { * } ,
-	log           :: { * } ,
-	thespis_impl  :: { multi_thread::*, runtime::rt } ,
-	std           :: { pin::Pin, thread } ,
-	common        :: actors::{ Sum, Add, Show   } ,
+	futures       :: { channel::oneshot           } ,
+	thespis       :: { *                          } ,
+	log           :: { *                          } ,
+	thespis_impl  :: { *, runtime::rt             } ,
+	std           :: { thread                     } ,
+	common        :: { actors::{ Sum, Add, Show } } ,
 };
 
 
@@ -91,7 +89,7 @@ fn test_basic_send()
 {
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		trace!( "start program" );
 
@@ -113,7 +111,7 @@ fn test_basic_call()
 {
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		trace!( "start program" );
 

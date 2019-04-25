@@ -1,10 +1,10 @@
 pub use
 {
-	log          :: { *                                                                         } ,
-	thespis      :: { *                                                                         } ,
-	thespis_impl :: { single_thread::*, remote::*, service_map, runtime::{ rt, tokio::TokioRT } } ,
-	serde        :: { Serialize, Deserialize, de::DeserializeOwned                              } ,
-	std          :: { net::SocketAddr                                                           } ,
+	log          :: { *                                                          } ,
+	thespis      :: { *                                                          } ,
+	thespis_impl :: { *, remote::*, service_map, runtime::{ rt, tokio::TokioRT } } ,
+	serde        :: { Serialize, Deserialize, de::DeserializeOwned               } ,
+	std          :: { net::SocketAddr                                            } ,
 
 
 	futures      ::

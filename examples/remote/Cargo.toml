@@ -25,14 +25,14 @@ features = ["derive"]
 version = "^1"
 
 [dependencies.thespis]
-path = "../../../../thespis_iface/"
+path = "../../../thespis_iface/"
 
 [dependencies.thespis_impl]
-path = "../../../"
+path = "../../"
 
 [dependencies.tokio]
 features = ["async-await-preview", "rt-full", "codec"]
-path = "../../../../../tokio/tokio"
+path = "../../../../tokio/tokio"
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]

@@ -1,14 +1,14 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::*, single_thread::{ Addr, Rcpnt } } };
+use { crate :: { import::*, ThesError, runtime::rt, remote::*, Addr, Receiver } };
 
 
 /// Type representing Messages coming in over the wire, for internal use only.
 //
-pub(super) struct Incoming<MulService: MultiService>
+pub(super) struct Incoming<MS: MultiService>
 {
-	pub mesg: MulService,
+	pub mesg: MS,
 }
 
-impl<MulService: 'static + MultiService + Send> Message for Incoming<MulService>
+impl<MS: 'static + MultiService + Send> Message for Incoming<MS>
 {
 	type Return = ();
 }
@@ -16,12 +16,12 @@ impl<MulService: 'static + MultiService + Send> Message for Incoming<MulService>
 
 /// Handler for incoming messages
 //
-impl<Out, MulService> Handler<Incoming<MulService>> for Peer<Out, MulService>
+impl<Out, MS> Handler<Incoming<MS>> for Peer<Out, MS>
 
-	where Out       : BoundsOut<MulService>,
-	      MulService: BoundsMulService     ,
+	where Out: BoundsOut<MS>,
+	      MS : BoundsMS     ,
 {
-	fn handle( &mut self, incoming: Incoming<MulService> ) -> Return<()>
+	fn handle( &mut self, incoming: Incoming<MS> ) -> Return<()>
 	{
 		trace!( "Peer: Incoming message!" );
 

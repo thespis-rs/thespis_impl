@@ -1,5 +1,5 @@
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 mod common;
 
@@ -9,7 +9,7 @@ use
 	futures       :: { executor::LocalPool, channel::oneshot                                               } ,
 	thespis       :: { * } ,
 	log           :: { * } ,
-	thespis_impl  :: { multi_thread::*  } ,
+	thespis_impl  :: { *  } ,
 	std           :: { pin::Pin, thread } ,
 	common        :: actors::{ Sum, Add, Show   } ,
 };

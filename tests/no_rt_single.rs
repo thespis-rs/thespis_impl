@@ -1,5 +1,5 @@
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 mod common;
 
@@ -8,16 +8,10 @@ use
 	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt, LocalSpawnExt }, executor::LocalPool } ,
 	thespis       :: { * } ,
 	log           :: { * } ,
-	thespis_impl  :: { single_thread::* } ,
+	thespis_impl  :: { * } ,
 	std           :: { pin::Pin         } ,
 	common        :: actors::{ Sum, Add, Show   } ,
 };
-
-// We are testing single thread after all
-//
-// impl !Send for Sum  {}
-// impl !Send for Add  {}
-// impl !Send for Show {}
 
 
 

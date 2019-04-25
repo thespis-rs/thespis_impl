@@ -90,42 +90,6 @@ bench:
     path   : benches/multi_thread/delivery.rs
     harness: false
 
-example:
-
-  # Single thread
-  #
-  - name   : single_thread_basic
-    path   : examples/single_thread/basic.rs
-
-  - name   : single_thread_across
-    path   : examples/single_thread/across_yields.rs
-
-  - name   : single_thread_recipient
-    path   : examples/single_thread/recipient.rs
-
-  - name   : single_thread_perf
-    path   : examples/single_thread/perf.rs
-
-  - name   : single_thread_no_rt
-    path   : examples/single_thread/no_rt.rs
-
-  # - name             : remote
-  #   path             : examples/single_thread/remote/src/peera.rs
-  #   required-features: [ remote ]
-
-  - name             : single_thread_tokio
-    path             : examples/single_thread/tokio.rs
-    required-features: [ tokio ]
-
-
-  # Multi thread
-  #
-  - name   : multi_thread_basic
-    path   : examples/multi_thread/basic.rs
-
-  - name   : multi_thread_move_fut
-    path   : examples/multi_thread/move_fut.rs
-
 
 profile:
 

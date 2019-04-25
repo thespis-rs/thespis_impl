@@ -1,5 +1,4 @@
-use crate :: { import::*, single_thread::*, runtime::rt };
-use thespis::thread_safe::{ BoxEnvelope };
+use crate :: { import::*, runtime::rt };
 
 
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
@@ -42,7 +41,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 	}
 
 
-	fn start_fut( self, mut actor: A ) -> Pin<Box< dyn Future<Output = ()> >>
+	fn start_fut( self, mut actor: A ) -> ReturnNoSend<'static, ()>
 	{
 		async move
 		{

@@ -83,9 +83,9 @@ const HEADER_LEN: usize = 36;
 //
 pub struct MultiServiceImpl<SID, CID, Codec>
 
-	where SID  : 'static + Send,
-	      CID  : 'static + Send,
-	      Codec: 'static + Send,
+	where SID  : 'static + Send + Sync,
+	      CID  : 'static + Send + Sync,
+	      Codec: 'static + Send + Sync,
 {
 	bytes: Bytes,
 
@@ -97,9 +97,9 @@ pub struct MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: Send,
-	      CID  : Send,
-	      SID  : Send,
+	where Codec: Send + Sync,
+	      CID  : Send + Sync,
+	      SID  : Send + Sync,
 
 {
 	type Return = ();
@@ -109,9 +109,9 @@ impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + Into< Bytes > + Send,
-	      CID  : UniqueID + Into< Bytes > + Send,
-	      SID  : UniqueID + Into< Bytes > + Send,
+	where Codec: CodecAlg + Into< Bytes > + Send + Sync,
+	      CID  : UniqueID + Into< Bytes > + Send + Sync,
+	      SID  : UniqueID + Into< Bytes > + Send + Sync,
 
 {
 	/// Beware: This can panic because of Buf.put
@@ -132,9 +132,9 @@ impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
          Self : From< Bytes >                           ,
 {
 	type ServiceID = SID   ;
@@ -175,9 +175,9 @@ impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: Send,
-	      CID  : Send,
-	      SID  : Send,
+	where Codec: Send + Sync,
+	      CID  : Send + Sync,
+	      SID  : Send + Sync,
 
 {
 	fn into( self ) -> Bytes
@@ -190,9 +190,9 @@ impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> From< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
 
 {
 	fn from( bytes: Bytes ) -> Self

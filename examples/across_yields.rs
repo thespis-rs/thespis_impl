@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -6,10 +6,10 @@
 use
 {
 	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
-	std           :: { pin::Pin                                                                            } ,
-	log           :: { *                                                                                   } ,
-	thespis       :: { *                                                                                   } ,
-	thespis_impl  :: { single_thread::*, runtime::rt                                                       } ,
+	std           :: { pin::Pin        } ,
+	log           :: { *               } ,
+	thespis       :: { *               } ,
+	thespis_impl  :: { *, runtime::rt  } ,
 };
 
 
@@ -63,18 +63,10 @@ fn main()
 
 	let program = async move
 	{
-		let a = MyActor{ seed: "seed".into() };
+		let     a    = MyActor{ seed: "seed".into() }                          ;
+		let mut addr = Addr::try_from( a ).expect( "Failed to create address" );
 
-		// Create mailbox
-		//
-		let mb  : Inbox<MyActor> = Inbox::new();
-		let send                 = mb.sender ();
-
-		mb.start( a ).expect( "Failed to start mailbox" );
-
-		trace!( "calling mb.addr()" );
-		let mut addr  = Addr::new( send.clone() );
-		let mut addr2 = Addr::new( send.clone() );
+		let mut addr2 = addr.clone();
 
 		trace!( "calling addr.call( Ping( 'ping' ) )" );
 		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
@@ -90,6 +82,5 @@ fn main()
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
-
 	rt::run();
 }

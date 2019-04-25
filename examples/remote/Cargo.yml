@@ -20,9 +20,9 @@ bin:
 
 dependencies:
 
-  thespis             : { path: ../../../../thespis_iface/ }
-  thespis_impl        : { path: ../../../                  }
-  tokio               : { path: ../../../../../tokio/tokio, features: [ async-await-preview, rt-full, codec ] }
+  thespis             : { path: ../../../thespis_iface/ }
+  thespis_impl        : { path: ../../                  }
+  tokio               : { path: ../../../../tokio/tokio, features: [ async-await-preview, rt-full, codec ] }
   serde               : { version: ^1, features: [ derive ] }
   futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
   flexi_logger        : ^0.11

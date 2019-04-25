@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -6,10 +6,10 @@
 use
 {
 	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
-	std           :: { pin::Pin, thread                                                                                   } ,
-	log           :: { *                                                                                                  } ,
-	thespis       :: { *                                                                                                  } ,
-	thespis_impl  :: { multi_thread::*, runtime::rt                                                                       } ,
+	std           :: { pin::Pin, thread } ,
+	log           :: { *                } ,
+	thespis       :: { *                } ,
+	thespis_impl  :: { *, runtime::rt   } ,
 };
 
 
@@ -42,14 +42,8 @@ fn main()
 {
 	let program = async move
 	{
-		let a = MyActor;
-
-		// Create mailbox
-		//
-		let mb  : Inbox<MyActor> = Inbox::new();
-		let mut addr             = Addr::new( mb.sender () );
-
-		mb.start( a ).expect( "Failed to start mailbox" );
+		let     a    = MyActor;
+		let mut addr = Addr::try_from( a ).expect( "Failed to create address" );
 
 		thread::spawn( move ||
 		{

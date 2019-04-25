@@ -1,10 +1,10 @@
-use crate :: { import::*, single_thread::* };
-use thespis::thread_safe::{ BoxEnvelope, BoxRecipient, Return };
+use crate :: { import::*, *, mailbox::*, envelope::* };
 
 
 
-/// Reference implementation of thespis::Address.
+/// Reference implementation of thespis::Address<A, M>.
 /// It can receive all message types the actor implements thespis::Handler for.
+/// An actor will be dropped when all addresses to it are dropped.
 //
 pub struct Addr< A: Actor >
 {
@@ -35,11 +35,28 @@ impl<A: Actor> fmt::Debug for Addr<A>
 }
 
 
+fn clean_name( name: &str ) -> String
+{
+	use regex::Regex;
+
+	let re = Regex::new( r"\w+::" ).unwrap();
+
+	let s = re.replace_all( name, "" );
+
+	// this is just a specific one when using the Peer from remote
+	//
+	s.replace( "Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>", "Peer" )
+}
+
+
 
 impl<A> Addr<A> where A: Actor
 {
-	// TODO: take a impl trait instead of a concrete type. This can be fixed once we
-	// ditch channels or write some channels that implement sink.
+	/// Create a new address. The simplest way is to use Addr::try_from( Actor ).
+	/// This way allows more control. You need to manually make the mailbox. See the
+	/// no_rt example in the repository.
+	///
+	// TODO: take a impl trait instead of a concrete type. This leaks impl details.
 	//
 	pub fn new( mb: mpsc::UnboundedSender<BoxEnvelope<A>> ) -> Self
 	{
@@ -52,8 +69,12 @@ impl<A> Addr<A> where A: Actor
 	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
 	/// Will consume your actor and return an address.
 	///
+	/// TODO: have doc examples tested by rustdoc
+	///
+	/// ```ignore
 	/// let addr = Addr::try_from( MyActor{} )?;
 	/// await!( addr.call( MyMessage{} ) )?;
+	/// ```
 	//
 	pub fn try_from( actor: A ) -> ThesRes<Self>
 	{
@@ -83,19 +104,8 @@ impl<A> Addr<A> where A: Actor
 // }
 
 
-
-fn clean_name( name: &str ) -> String
-{
-	use regex::Regex;
-
-	let re = Regex::new( r"\w+::" ).unwrap();
-
-	let s = re.replace_all( name, "" );
-
-	s.replace( "Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>", "Peer" )
-}
-
-
+// For debugging
+//
 impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
@@ -108,8 +118,9 @@ impl<A: Actor> Drop for Addr<A>
 
 impl<A, M> Recipient<M> for Addr<A>
 
-	where A: Actor + Handler<M>,
-	      M: Message           ,
+	where  A                     : Actor + Handler<M> ,
+	       M                     : Message + Send     ,
+	      <M as Message>::Return : Send               ,
 
 {
 	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
@@ -119,8 +130,7 @@ impl<A, M> Recipient<M> for Addr<A>
 			let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
 			await!( self.mb.send( envl ) )?;
-			trace!( "sent to mailbox" );
-
+			// trace!( "sent envelope to mailbox" );
 
 			Ok(())
 
@@ -137,10 +147,9 @@ impl<A, M> Recipient<M> for Addr<A>
 
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
-			// trace!( "Sending envl to Mailbox" );
+			// trace!( "Sending envl to Mailbox in call" );
 
 			await!( self.mb.send( envl ) )?;
-			trace!( "call to mailbox" );
 
 			Ok( await!( ret_rx )? )
 
@@ -158,42 +167,30 @@ impl<A, M> Recipient<M> for Addr<A>
 
 impl<A, M> Address<A, M> for Addr<A>
 
-	where A: Actor + Handler<M>,
-	      M: Message           ,
+	where  A                     : Actor + Handler<M>,
+	       M                     : Message           ,
 
 {
 	fn recipient( &self ) -> BoxRecipient<M>
 	{
-		box Receiver{ addr: self.clone() }
+		box self.clone()
 	}
 }
 
 
 
-
-struct Receiver<A: Actor>
-{
-	addr: Addr<A>
-}
-
-
-impl<A: Actor> Clone for Receiver<A>
-{
-	fn clone( &self ) -> Self
-	{
-		Self { addr: self.addr.clone() }
-	}
-}
-
-
-
-pub struct Rcpnt<M: Message>
+/// This type can be used when you need a concrete type as Recipient<M>. Eg,
+/// you can store this as BoxAny and then use down_cast from std::any::Any.
+//
+pub struct Receiver<M: Message>
 {
 	rec: BoxRecipient<M>
 }
 
-impl<M: Message> Rcpnt<M>
+impl<M: Message> Receiver<M>
 {
+	/// Create a new Receiver
+	//
 	pub fn new( rec: BoxRecipient<M> ) -> Self
 	{
 		Self { rec }
@@ -202,7 +199,21 @@ impl<M: Message> Rcpnt<M>
 
 
 
-impl<M: Message> Recipient<M> for Rcpnt<M>
+impl<M: Message> Clone for Receiver<M>
+{
+	fn clone( &self ) -> Self
+	{
+		Self { rec: self.rec.clone_box() }
+	}
+}
+
+
+
+impl<M: Message> Recipient<M> for Receiver<M>
+
+	where  M                     : Message + Send,
+	      <M as Message>::Return : Send          ,
+
 {
 	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
@@ -224,43 +235,11 @@ impl<M: Message> Recipient<M> for Rcpnt<M>
 		}.boxed()
 	}
 
-	fn clone_box( &self ) -> BoxRecipient<M>
-	{
-		box Self { rec: self.rec.clone_box() }
-	}
-
-}
-
-
-impl<A, M> Recipient<M> for Receiver<A>
-
-	where A: Handler<M>  ,
-	      M: Message     ,
-
-{
-	default fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
-
-		where M: Message,
-	{
-		self.addr.send( msg )
-	}
-
-
-
-	default fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
-	{
-		self.addr.call( msg )
-	}
-
 
 
 	fn clone_box( &self ) -> BoxRecipient<M>
 	{
-		box Self { addr: self.addr.clone() }
+		box self.clone()
 	}
+
 }
-
-
-
-
-

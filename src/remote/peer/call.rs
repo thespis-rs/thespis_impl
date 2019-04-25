@@ -1,24 +1,24 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::*, single_thread::{ Addr, Rcpnt } } };
+use { crate :: { import::*, ThesError, runtime::rt, remote::*, Addr, Receiver } };
 
 
 /// Type representing the outgoing call. Used by a recipient to a remote service to communicate
 /// an outgoing call to [Peer]. Also used by [Peer] to call a remote service when relaying.
 ///
-/// MulService must be of the same type as the type parameter on [Peer].
+/// MS must be of the same type as the type parameter on [Peer].
 //
-pub struct Call<MulService: MultiService>
+pub struct Call<MS: MultiService>
 {
-	mesg: MulService,
+	mesg: MS,
 }
 
-impl<MulService: 'static +  MultiService + Send> Message for Call<MulService>
+impl<MS: 'static +  MultiService + Send> Message for Call<MS>
 {
-	type Return = ThesRes< oneshot::Receiver<MulService> >;
+	type Return = ThesRes< oneshot::Receiver<MS> >;
 }
 
-impl<MulService: MultiService> Call<MulService>
+impl<MS: MultiService> Call<MS>
 {
-	pub fn new( mesg: MulService ) -> Self
+	pub fn new( mesg: MS ) -> Self
 	{
 		Self{ mesg }
 	}
@@ -30,18 +30,18 @@ impl<MulService: MultiService> Call<MulService>
 //
 // we use channels to create an async response.
 //
-impl<Out, MulService> Handler<Call<MulService>> for Peer<Out, MulService>
+impl<Out, MS> Handler<Call<MS>> for Peer<Out, MS>
 
-	where Out       : BoundsOut<MulService>,
-	      MulService: BoundsMulService     ,
+	where Out: BoundsOut<MS>,
+	      MS : BoundsMS     ,
 {
-	fn handle( &mut self, call: Call<MulService> ) -> Return< <Call<MulService> as Message>::Return >
+	fn handle( &mut self, call: Call<MS> ) -> Return< <Call<MS> as Message>::Return >
 	{
-		trace!( "peer: starting Handler<Call<MulService>>" );
+		trace!( "peer: starting Handler<Call<MS>>" );
 
 		async move
 		{
-			let (sender, receiver) = oneshot::channel::< MulService >() ;
+			let (sender, receiver) = oneshot::channel::< MS >() ;
 			let conn_id            = call.mesg.conn_id()?               ;
 
 			self.responses.insert( conn_id, sender );

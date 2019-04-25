@@ -1,14 +1,12 @@
-#![ feature( await_macro, async_await, futures_api, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 use
 {
-	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ FutureExt, TryFutureExt }, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
-	thespis           :: { *                                                     } ,
-	thespis_impl      :: { single_thread::*                                                     } ,
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
-	tokio             :: { await as await01                                       },
-
+	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
+	futures           :: { future::{ FutureExt, TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
+	thespis           :: { *                } ,
+	thespis_impl      :: { *, runtime::rt   } ,
 };
 
 
@@ -134,6 +132,50 @@ fn call()
 }
 
 
+
+fn send_rt()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5);
+		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+
+		for _i in 0..100usize
+		{
+			await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+		}
+
+		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	rt::spawn( bench ).expect( "spawn bench" );
+	rt::run();
+}
+
+
+
+fn call_rt()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5);
+		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+
+		for _i in 0..100usize
+		{
+			await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+		}
+
+		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	rt::spawn( bench ).expect( "spawn bench" );
+	rt::run();
+}
+
+
 fn actix_dosend()
 {
 	actix::System::run( ||
@@ -148,7 +190,7 @@ fn actix_dosend()
 				addr.do_send( AxAdd( 10 ) );
 			}
 
-			let res = await01!( addr.send( AxShow{} ) ).unwrap();
+			let res = await!( addr.send( AxShow{} ).compat() ).unwrap();
 
 			assert_eq!( 1005, res );
 
@@ -173,10 +215,10 @@ fn actix_send()
 
 			for _i in 0..100usize
 			{
-				await01!( addr.send( AxAdd( 10 ) ) ).unwrap();
+				await!( addr.send( AxAdd( 10 ) ).compat() ).unwrap();
 			}
 
-			let res = await01!( addr.send( AxShow{} ) ).unwrap();
+			let res = await!( addr.send( AxShow{} ).compat() ).unwrap();
 
 			assert_eq!( 1005, res );
 
@@ -267,6 +309,8 @@ fn bench_calls( c: &mut Criterion )
 
 		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
 			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
+			.with_function( "Send RT x100"            , |b| b.iter( || send_rt      () ) )
+			.with_function( "Call RT x100"            , |b| b.iter( || call_rt      () ) )
 			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
 			.with_function( "async inline method x100", |b| b.iter( || inline_method() ) )
 			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
