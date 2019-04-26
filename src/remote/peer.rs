@@ -15,8 +15,8 @@ pub use call             :: Call            ;
 // Reduce trait bound boilerplate, since we have to repeat them all over
 //
 pub trait BoundsIn <MS>: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
-pub trait BoundsOut<MS>: 'static + Sink<MS, SinkError=Error> + Unpin + Send   {}
-pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send   {}
+pub trait BoundsOut<MS>: 'static + Sink<MS, SinkError=Error> + Unpin + Send {}
+pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send + Sync {}
 
 impl<T, MS> BoundsIn<MS> for T
 where T: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
@@ -55,7 +55,7 @@ where T: 'static + Message<Return=()> + MultiService {}
 //
 pub struct Peer<Out, MS>
 
-	where Out        : BoundsOut<MS> ,
+	where Out: BoundsOut<MS> ,
 	      MS : BoundsMS      ,
 
 {
@@ -122,7 +122,7 @@ impl<Out, MS> Actor for Peer<Out, MS>
 
 impl<Out, MS> Peer<Out, MS>
 
-	where Out        : BoundsOut<MS> ,
+	where Out: BoundsOut<MS> ,
 	      MS : BoundsMS      ,
 
 {
@@ -171,10 +171,10 @@ impl<Out, MS> Peer<Out, MS>
 	//
 	pub fn register_service<Service: Message>
 	(
-		&mut self                                                      ,
+		&mut self                                              ,
 		     sid    : &'static <MS as MultiService>::ServiceID ,
 		     sm     : Box< dyn ServiceMap<MS> + Send + Sync >  ,
-		     handler: BoxRecipient<Service>                            ,
+		     handler: BoxRecipient<Service>                    ,
 	)
 	{
 		self.services.insert( sid, (box Receiver::new( handler ), sm) );

@@ -122,7 +122,7 @@ impl<A, M> Recipient<M> for Addr<A>
 	       M                     : Message            ,
 
 {
-	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
+	fn sendr( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
 		async move
 		{
@@ -164,6 +164,66 @@ impl<A, M> Recipient<M> for Addr<A>
 }
 
 
+
+impl<A, M> Sink<M> for Addr<A>
+
+	where A                     : Actor + Handler<M> ,
+	      M                     : Message            ,
+
+{
+	type SinkError = Error;
+
+	fn poll_ready( self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		match self.mb.poll_ready( cx )
+		{
+			Poll::Ready( p ) => match p
+			{
+				Ok (_) => Poll::Ready( Ok(())          ),
+				Err(e) => Poll::Ready( Err( e.into() ) ),
+			}
+
+			Poll::Pending => Poll::Pending
+		}
+	}
+
+
+	fn start_send( mut self: Pin<&mut Self>, msg: M ) -> Result<(), Self::SinkError>
+	{
+		let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
+
+		self.mb.start_send( envl ).map_err( |e| e.into() )
+	}
+
+
+	fn poll_flush( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		Poll::Ready(Ok(()))
+
+		// The following does not compile, but it seems this method always responds as above on UnboundedSender
+		//
+		// match self.mb.poll_flush( cx )
+		// {
+		// 	Poll::Ready( p ) => match p
+		// 	{
+		// 		Ok (_) => Poll::Ready( Ok ( ()       ) ),
+		// 		Err(e) => Poll::Ready( Err( e.into() ) ),
+		// 	}
+
+		// 	Poll::Pending => Poll::Pending
+		// }
+	}
+
+
+	/// Will only close when dropped, this method can never return ready
+	//
+	fn poll_close( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		Poll::Pending
+	}
+}
+
+
 impl<A, M> Address<A, M> for Addr<A>
 
 	where  A                     : Actor + Handler<M>,
@@ -183,7 +243,7 @@ impl<A, M> Address<A, M> for Addr<A>
 //
 pub struct Receiver<M: Message>
 {
-	rec: BoxRecipient<M>
+	rec: Pin<BoxRecipient<M>>
 }
 
 impl<M: Message> Receiver<M>
@@ -192,7 +252,7 @@ impl<M: Message> Receiver<M>
 	//
 	pub fn new( rec: BoxRecipient<M> ) -> Self
 	{
-		Self { rec }
+		Self { rec: Pin::from( rec ) }
 	}
 }
 
@@ -202,19 +262,21 @@ impl<M: Message> Clone for Receiver<M>
 {
 	fn clone( &self ) -> Self
 	{
-		Self { rec: self.rec.clone_box() }
+		Self { rec: Pin::from( self.rec.clone_box() ) }
 	}
 }
 
 
+use std::ops::DerefMut;
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	fn send( &mut self, msg: M ) -> Return< ThesRes<()> >
+	fn sendr( &mut self, msg: M ) -> Return< ThesRes<()> >
 	{
 		async move
 		{
-			await!( self.rec.send( msg ) )
+
+			await!( self.rec.deref_mut().sendr( msg ) )
 
 		}.boxed()
 	}
@@ -225,7 +287,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 	{
 		async move
 		{
-			await!( self.rec.call( msg ) )
+			await!( self.rec.deref_mut().call( msg ) )
 
 		}.boxed()
 	}
@@ -236,5 +298,36 @@ impl<M: Message> Recipient<M> for Receiver<M>
 	{
 		box self.clone()
 	}
+}
 
+
+
+impl<M: Message> Sink<M> for Receiver<M>
+{
+	type SinkError = Error;
+
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		self.rec.as_mut().poll_ready( cx )
+	}
+
+
+	fn start_send( mut self: Pin<&mut Self>, msg: M ) -> Result<(), Self::SinkError>
+	{
+		self.rec.as_mut().start_send( msg )
+	}
+
+
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		self.rec.as_mut().poll_flush( cx )
+	}
+
+
+	/// Will only close when dropped, this method can never return ready
+	//
+	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		self.rec.as_mut().poll_close( cx )
+	}
 }

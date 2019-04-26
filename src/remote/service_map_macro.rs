@@ -54,21 +54,22 @@ pub mod $ns
 
 use
 {
-	// It's important the comma be inside the parenthesis, because these lists might be empty, in which
+	// It's important the comma be inside the parenthesis, because the list might be empty, in which
 	// we should not have a leading comma before the next item, but if the comma is after the closing
 	// parenthesis, it will not output a trailing comma, which will be needed to separate from the next item.
 	//
 	super :: { $( $services, )+ $peer_type, $ms_type } ,
 	$crate:: { *, remote::*, runtime::rt             } ,
-	std   :: { any::Any                              } ,
+	std   :: { pin::Pin                              } ,
 
 	$crate::external_deps::
 	{
 		once_cell    :: { sync::OnceCell                               } ,
-		futures      :: { future::FutureExt                            } ,
+		futures      :: { future::FutureExt, task::{ Context, Poll }   } ,
 		thespis      :: { *                                            } ,
 		serde_cbor   :: { self, from_slice as des                      } ,
 		serde        :: { Serialize, Deserialize, de::DeserializeOwned } ,
+		failure      :: { Error                                        } ,
 	},
 };
 
@@ -127,13 +128,13 @@ impl Services
 	fn send_service_gen<S>( msg: $ms_type, receiver: &BoxAny )
 
 		where  S: MarkServices + Service<self::Services> + Message + Send,
-		      <S as Message>::Return: Serialize + DeserializeOwned + Send                    ,
+		      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 	{
 		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
-		let mut rec               = backup.clone_box();
+		let mut rec                  = backup.clone_box();
 
-		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+		let message = des( &msg.mesg() ).expect( "deserialize serviceA" );
 
 		rt::spawn( async move
 		{
@@ -158,9 +159,9 @@ impl Services
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send                              ,
 	{
 		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
-		let mut rec               = backup.clone_box();
+		let mut rec                  = backup.clone_box();
 
-		let message = serde_cbor::from_slice( &msg.mesg() ).expect( "deserialize serviceA" );
+		let message = des( &msg.mesg() ).expect( "deserialize serviceA" );
 
 		rt::spawn( async move
 		{
@@ -240,7 +241,7 @@ impl ServiceMap<$ms_type> for Services
 //
 pub struct ServicesRecipient
 {
-	peer: Addr<$peer_type>
+	peer: Pin<Box< Addr<$peer_type> >>
 }
 
 
@@ -248,11 +249,11 @@ impl ServicesRecipient
 {
 	pub fn new( peer: Addr<$peer_type> ) -> Self
 	{
-		Self { peer }
+		Self { peer: Box::pin( peer ) }
 	}
 
 
-	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
+	fn build_ms<S>( msg: S ) -> ThesRes< $ms_type >
 
 		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
 				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
@@ -262,9 +263,17 @@ impl ServicesRecipient
 		let cid        = ConnID::null();
 		let serialized = serde_cbor::to_vec( &msg )?;
 
-		let mul        = <$ms_type>::new( sid, cid, Codecs::CBOR, serialized.into() );
+		Ok( <$ms_type>::new( sid, cid, Codecs::CBOR, serialized.into() ) )
+	}
 
-		await!( self.peer.send( mul ) )
+
+	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
+
+		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
+
+	{
+		await!( self.peer.send( Self::build_ms( msg )? ) )
 	}
 
 
@@ -298,7 +307,7 @@ impl<S> Recipient<S> for ServicesRecipient
 {
 	/// Send any thespis::Service message that has a impl Message to a remote actor.
 	//
-	fn send( &mut self, msg: S ) -> Return< ThesRes<()> >
+	fn sendr( &mut self, msg: S ) -> Return< ThesRes<()> >
 	{
 		self.send_gen( msg ).boxed()
 	}
@@ -322,6 +331,45 @@ impl<S> Recipient<S> for ServicesRecipient
 	}
 }
 
+
+
+
+impl<S> Sink<S> for ServicesRecipient
+
+	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
+
+
+{
+	type SinkError = Error;
+
+
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		<Addr<$peer_type> as Sink<$ms_type>>::poll_ready( self.peer.as_mut(), cx )
+	}
+
+
+	fn start_send( mut self: Pin<&mut Self>, msg: S ) -> Result<(), Self::SinkError>
+	{
+		<Addr<$peer_type> as Sink<$ms_type>>::start_send( self.peer.as_mut(), Self::build_ms( msg )? )
+	}
+
+
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		<Addr<$peer_type> as Sink<$ms_type>>::poll_flush( self.peer.as_mut(), cx )
+	}
+
+
+	/// Will only close when dropped, this method can never return ready
+	//
+	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	{
+		Poll::Pending
+	}
 }
 
-}} // End of macro
+
+
+}}} // End of macro

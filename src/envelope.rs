@@ -21,8 +21,7 @@ impl<M> SendEnvelope<M> where M: Message
 impl<A, M> Envelope<A> for SendEnvelope<M>
 
 	where  A                     : Actor + Handler<M>,
-	       M                     : Message + Send    ,
-	      <M as Message>::Return : Send              ,
+	       M                     : Message           ,
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
 	{

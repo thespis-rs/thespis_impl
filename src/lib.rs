@@ -22,6 +22,7 @@
 	arbitrary_self_types   ,
 	async_await            ,
 	await_macro            ,
+	box_into_pin           ,
 	box_patterns           ,
 	box_syntax             ,
 	core_intrinsics        ,
@@ -62,6 +63,7 @@ pub mod external_deps
 	pub use thespis;
 	pub use serde_cbor;
 	pub use serde;
+	pub use failure;
 }
 
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
@@ -85,7 +87,7 @@ mod import
 			convert :: { TryFrom, TryInto } ,
 			future  :: { Future           } ,
 			marker  :: { PhantomData      } ,
-			ops     :: { Try              } ,
+			ops     :: { Try, DerefMut    } ,
 			pin     :: { Pin              } ,
 			rc      :: { Rc               } ,
 			sync    :: { Arc              } ,
@@ -97,7 +99,7 @@ mod import
 			prelude :: { Stream, StreamExt, Sink, SinkExt           } ,
 			channel :: { oneshot, mpsc                              } ,
 			future  :: { FutureExt, TryFutureExt                    } ,
-			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, Context, Poll } ,
 
 			executor::
 			{
