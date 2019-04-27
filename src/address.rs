@@ -254,7 +254,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 	{
 		async move
 		{
-			await!( self.rec.deref_mut().call( msg ) )
+			await!( self.rec.call( msg ) )
 
 		}.boxed()
 	}

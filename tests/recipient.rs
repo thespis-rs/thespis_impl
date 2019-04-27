@@ -14,7 +14,7 @@
 //
 //   when unit tested:
 //   - ✔ remove sendr method from recipient?
-//   - clean up all the sync, unpin, 'static we added to make this compile
+//   - ✔ clean up all the sync, unpin, 'static we added to make this compile
 //   - some examples with sink?
 //   - error handling on peer with the new send interface
 //     - unit test peer error handling
