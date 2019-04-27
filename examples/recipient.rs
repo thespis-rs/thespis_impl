@@ -1,15 +1,10 @@
 #![ feature( await_macro, async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
-#![ allow( dead_code, unused_imports )]
-
-
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
-	std           :: { pin::Pin       } ,
-	log           :: { *              } ,
-	thespis       :: { *              } ,
-	thespis_impl  :: { *, runtime::rt } ,
+	futures       :: { future::{ FutureExt }  } ,
+	thespis       :: { *                      } ,
+	thespis_impl  :: { *, runtime::rt         } ,
 };
 
 

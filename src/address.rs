@@ -196,22 +196,18 @@ impl<A, M> Sink<M> for Addr<A>
 	}
 
 
-	fn poll_flush( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
 	{
-		Poll::Ready(Ok(()))
+		match Pin::new( &mut self.mb ).poll_flush( cx )
+		{
+			Poll::Ready( p ) => match p
+			{
+				Ok (_) => Poll::Ready( Ok ( ()       ) ),
+				Err(e) => Poll::Ready( Err( e.into() ) ),
+			}
 
-		// The following does not compile, but it seems this method always responds as above on UnboundedSender
-		//
-		// match self.mb.poll_flush( cx )
-		// {
-		// 	Poll::Ready( p ) => match p
-		// 	{
-		// 		Ok (_) => Poll::Ready( Ok ( ()       ) ),
-		// 		Err(e) => Poll::Ready( Err( e.into() ) ),
-		// 	}
-
-		// 	Poll::Pending => Poll::Pending
-		// }
+			Poll::Pending => Poll::Pending
+		}
 	}
 
 
@@ -267,7 +263,6 @@ impl<M: Message> Clone for Receiver<M>
 }
 
 
-use std::ops::DerefMut;
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
@@ -275,7 +270,6 @@ impl<M: Message> Recipient<M> for Receiver<M>
 	{
 		async move
 		{
-
 			await!( self.rec.deref_mut().sendr( msg ) )
 
 		}.boxed()
@@ -296,7 +290,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 	fn clone_box( &self ) -> BoxRecipient<M>
 	{
-		box self.clone()
+		self.rec.clone_box()
 	}
 }
 
