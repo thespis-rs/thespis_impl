@@ -305,14 +305,6 @@ impl<S> Recipient<S> for ServicesRecipient
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 {
-	/// Send any thespis::Service message that has a impl Message to a remote actor.
-	//
-	fn sendr( &mut self, msg: S ) -> Return< ThesRes<()> >
-	{
-		self.send_gen( msg ).boxed()
-	}
-
-
 	/// Call a remote actor.
 	/// TODO: does this return type have must use or should we specify that ourselves. Maybe on the
 	///       type alias...

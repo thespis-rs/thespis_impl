@@ -10,10 +10,10 @@
 // - ✔ Sink
 //   - ✔ send method
 //   - ✔ forward stream into it
-//   - ✔on both receiver and addr
+//   - ✔ on both receiver and addr
 //
 //   when unit tested:
-//   - remove sendr method from recipient?
+//   - ✔ remove sendr method from recipient?
 //   - clean up all the sync, unpin, 'static we added to make this compile
 //   - some examples with sink?
 //   - error handling on peer with the new send interface

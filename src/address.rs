@@ -122,22 +122,6 @@ impl<A, M> Recipient<M> for Addr<A>
 	       M                     : Message            ,
 
 {
-	fn sendr( &mut self, msg: M ) -> Return< ThesRes<()> >
-	{
-		async move
-		{
-			let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
-
-			await!( self.mb.send( envl ) )?;
-			// trace!( "sent envelope to mailbox" );
-
-			Ok(())
-
-		}.boxed()
-	}
-
-
-
 	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		async move
@@ -266,17 +250,6 @@ impl<M: Message> Clone for Receiver<M>
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	fn sendr( &mut self, msg: M ) -> Return< ThesRes<()> >
-	{
-		async move
-		{
-			await!( self.rec.deref_mut().sendr( msg ) )
-
-		}.boxed()
-	}
-
-
-
 	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
 		async move
