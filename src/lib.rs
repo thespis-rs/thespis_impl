@@ -83,14 +83,15 @@ mod import
 		std ::
 		{
 			fmt                             ,
-			cell    :: { RefCell          } ,
-			convert :: { TryFrom, TryInto } ,
-			future  :: { Future           } ,
-			marker  :: { PhantomData      } ,
-			ops     :: { Try, DerefMut    } ,
-			pin     :: { Pin              } ,
-			rc      :: { Rc               } ,
-			sync    :: { Arc              } ,
+			cell        :: { RefCell          } ,
+			convert     :: { TryFrom, TryInto } ,
+			future      :: { Future           } ,
+			marker      :: { PhantomData      } ,
+			ops         :: { Try, DerefMut    } ,
+			pin         :: { Pin              } ,
+			rc          :: { Rc               } ,
+			sync        :: { Arc              } ,
+			collections :: { HashMap          } ,
 		},
 
 
@@ -122,7 +123,6 @@ mod import
 		rand        :: { Rng                                                 } ,
 		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
 		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
-		hashbrown   :: { HashMap                                             } ,
 		futures     :: { future::RemoteHandle                                } ,
 
 	};
