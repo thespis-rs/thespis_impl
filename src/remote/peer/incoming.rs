@@ -1,11 +1,10 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::*, Addr, Receiver } };
-
+use crate::{ import::*, ThesError, runtime::rt, remote::*, Addr, Receiver };
 
 /// Type representing Messages coming in over the wire, for internal use only.
 //
-pub(super) struct Incoming<MS: MultiService>
+pub(super) struct Incoming<MS>
 {
-	pub mesg: MS,
+	pub msg: ThesRes<MS>
 }
 
 impl<MS: 'static + MultiService + Send> Message for Incoming<MS>
@@ -23,11 +22,34 @@ impl<Out, MS> Handler<Incoming<MS>> for Peer<Out, MS>
 {
 	fn handle( &mut self, incoming: Incoming<MS> ) -> Return<()>
 	{
-		trace!( "Peer: Incoming message!" );
+		trace!( "got incoming event on stream" );
+
+
 
 		async move
 		{
-			let frame = incoming.mesg;
+			let frame = match incoming.msg
+			{
+				Ok ( mesg  ) => mesg,
+
+				Err( error ) =>
+				{
+					error!( "Error extracting MultiService from stream: {:#?}", error );
+
+					// TODO: we should send an error to the remote before closing the connection.
+					//       we should also close the sending end.
+					//
+					// return Err( ThesError::CorruptFrame.into() );
+					//
+					if let Some( addr ) = &mut self.addr
+					{
+						await!( addr.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
+					}
+
+					return
+				}
+			};
+
 
 			// algorithm for incoming messages. Options are:
 			//

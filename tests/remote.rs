@@ -14,9 +14,9 @@
 
 use
 {
-	thespis      :: { *                                                                         } ,
+	thespis      :: { *                                          } ,
 	thespis_impl :: { *, remote::*, service_map, runtime::{ rt } } ,
-	std          :: { net::SocketAddr                                                           } ,
+	std          :: { net::SocketAddr                            } ,
 
 
 	futures      ::
@@ -28,8 +28,8 @@ use
 	tokio        ::
 	{
 		prelude :: { Stream as TokStream, stream::{ SplitStream as TokSplitStream, SplitSink as TokSplitSink } } ,
- 		net     :: { TcpStream, TcpListener                                                                                    } ,
-		codec   :: { Decoder, Framed                                                                                           } ,
+ 		net     :: { TcpStream, TcpListener                                                                    } ,
+		codec   :: { Decoder, Framed                                                                           } ,
 	},
 };
 

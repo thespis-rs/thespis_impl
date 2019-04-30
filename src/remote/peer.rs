@@ -3,14 +3,15 @@ use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::C
 
 mod close_connection;
 mod connection_error;
-mod call;
-mod incoming;
+mod peer_event      ;
+mod call            ;
+mod incoming        ;
 
 pub use close_connection :: CloseConnection ;
 pub use connection_error :: ConnectionError ;
+pub use peer_event       :: PeerEvent       ;
 pub use call             :: Call            ;
     use incoming         :: Incoming        ;
-
 
 // Reduce trait bound boilerplate, since we have to repeat them all over
 //
@@ -74,7 +75,7 @@ pub struct Peer<Out, MS>
 
 	/// The handle to the spawned listen function. If we drop this, the listen function immediately stops.
 	//
-	listen_handle : Option< RemoteHandle<()> >,
+	listen_handle : Option< RemoteHandle<()>>,
 
 	/// Information required to process incoming messages. The first element is a boxed Receiver, and the second is
 	/// the service map that takes care of this service type.
@@ -89,6 +90,10 @@ pub struct Peer<Out, MS>
 	/// We use onshot channels to give clients a future that will resolve to their response.
 	//
 	responses     : HashMap< <MS as MultiService>::ConnID, oneshot::Sender<MS> >,
+
+	/// The pharos allows us to have observers.
+	//
+	pharos: Pharos<PeerEvent>,
 }
 
 
@@ -130,14 +135,23 @@ impl<Out, MS> Peer<Out, MS>
 	//
 	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> Self
 	{
-		let listen = Self::listen( addr.clone(), incoming );
+		trace!( "create peer" );
 
-		// Only way to able to close the connection... if it's tokio underneath. Anyways, since
-		// we take any kind of sink and stream, it's probably best to specifically stop listening
-		// when we want to close rather than count on drop side-effects.
+		// Hook up the incoming stream to our address.
 		//
-		// https://users.rust-lang.org/t/tokio-tcp-connection-not-closed-when-sender-is-dropped-futures-0-3-compat-layer/26910
-		// https://github.com/tokio-rs/tokio/issues/852#issuecomment-459766144
+		let mut addr2 = addr.clone();
+
+		let listen = async move
+		{
+			// We need to map this to a custom type, since we had to impl Message for it.
+			//
+			let stream  = &mut incoming.map( |msg| Incoming{ msg } );
+			await!( addr2.send_all( stream ) ).expect( "Sendall incoming to recipient in Peer" );
+			await!( addr2.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
+		};
+
+		// When we need to stop listening, we have to drop this future, because it contains
+		// our address, and we won't be dropped as long as there are adresses around.
 		//
 		let (remote, handle) = listen.remote_handle();
 		rt::spawn( remote ).expect( "Failed to spawn listener" );
@@ -150,6 +164,7 @@ impl<Out, MS> Peer<Out, MS>
 			services     : HashMap::new()   ,
 			relay        : HashMap::new()   ,
 			listen_handle: Some( handle )   ,
+			pharos       : Pharos::new()    ,
 		}
 	}
 
@@ -173,7 +188,7 @@ impl<Out, MS> Peer<Out, MS>
 	(
 		&mut self                                              ,
 		     sid    : &'static <MS as MultiService>::ServiceID ,
-		     sm     : Box< dyn ServiceMap<MS> + Send + Sync >  ,
+		     sm     : BoxServiceMap<MS>                        ,
 		     handler: BoxRecipient<Service>                    ,
 	)
 	{
@@ -187,48 +202,6 @@ impl<Out, MS> Peer<Out, MS>
 	pub fn register_relayed_service<Service: Message>( &mut self, sid: &'static <MS as MultiService>::ServiceID, peer: Addr<Self> )
 	{
 		self.relay.insert( sid, peer );
-	}
-
-
-
-	async fn listen( mut self_addr: Addr<Self>, mut incoming: impl BoundsIn<MS> )
-	{
-		loop
-		{
-			let event: Option< Result< MS, _ > > = await!( incoming.next() );
-
-			trace!( "got incoming event on stream" );
-
-			match event
-			{
-				Some( conn ) => { match conn
-				{
-					Ok ( mesg  ) =>
-					{
-						await!( self_addr.send( Incoming { mesg } ) ).expect( "Send to self in peer" );
-					},
-
-					Err( error ) =>
-					{
-						error!( "Error extracting MultiService from stream: {:#?}", error );
-
-						// TODO: we should send an error to the remote before closing the connection.
-						//       we should also close the sending end.
-						//
-						// return Err( ThesError::CorruptFrame.into() );
-						//
-						return await!( self_addr.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
-					}
-				}},
-
-				None =>
-				{
-					trace!( "Connection closed" );
-
-					return await!( self_addr.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
-				}
-			};
-		}
 	}
 
 
@@ -268,6 +241,28 @@ impl<Out, MS> Handler<MS> for Peer<Out, MS>
 		}.boxed()
 	}
 }
+
+
+impl<Out, MS> Observable<PeerEvent> for Peer<Out, MS>
+
+	where Out: BoundsOut<MS> ,
+	      MS : BoundsMS      ,
+{
+
+	/// Register an observer to receive events from this connection. This will allow you to detect
+	/// Connection errors and loss. Note that the peer automatically goes in shut down mode if the
+	/// connection is closed. When that happens, you should drop all remaining addresses of this peer.
+	/// You can then create new connection, frame it, and create a new peer. This will send you
+	/// a PeerEvent::Drop event if the peer is in unsalvagable state and you should drop all addresses
+	/// the error causing the drop shall be the last event emitted from this stream, just after the Drop event.
+	/// See [PeerEvent] for more details on all possible events.
+	//
+	fn observe( &mut self, queue_size: usize ) -> mpsc::Receiver<PeerEvent>
+	{
+		self.pharos.observe( queue_size )
+	}
+}
+
 
 
 

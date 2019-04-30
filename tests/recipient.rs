@@ -12,6 +12,7 @@
 //   - ✔ send method
 //   - ✔ forward stream into it
 //   - ✔ on both receiver and addr
+//   - use send on &Addr<A> and &Receiver<M>
 //
 //   when unit tested:
 //   - ✔ remove sendr method from recipient?
@@ -68,6 +69,8 @@ impl Handler< Count > for Other
 
 
 
+// Verify we can box up recipients to different actors in one vector and use them.
+//
 #[ test ]
 //
 fn store_recipients()
@@ -97,6 +100,8 @@ fn store_recipients()
 
 
 
+// Use the Receiver struct (basic usage)
+//
 #[ test ]
 //
 fn receiver_basic_use()
@@ -126,6 +131,8 @@ fn receiver_basic_use()
 
 
 
+// Verify we can box Receiver as Box<Any> and downcast it.
+//
 #[ test ]
 //
 fn receiver_box_any()
@@ -159,6 +166,8 @@ fn receiver_box_any()
 
 
 
+// Use Recipient across threads
+//
 #[ test ]
 //
 fn multi_thread()
@@ -211,6 +220,8 @@ fn multi_thread()
 
 
 
+// Use send_all on a Recipient to forward all messages from a stream to Addr<A>
+//
 #[ test ]
 //
 fn stream_to_sink_addr()
@@ -241,7 +252,8 @@ fn stream_to_sink_addr()
 
 
 
-
+// Use send_all on a Recipient to forward all messages from a stream to Receiver<M>
+//
 #[ test ]
 //
 fn stream_to_sink_receiver()
