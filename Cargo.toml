@@ -65,7 +65,7 @@ path = "../thespis_iface"
 default-features = false
 features = ["async-await-preview", "rt-full", "codec"]
 optional = true
-path = "../../tokio/tokio"
+version = "^0.1"
 
 [dependencies.tokio-tungstenite]
 optional = true
@@ -93,7 +93,7 @@ version = "^0.3.0-alpha.15"
 [dev-dependencies.tokio]
 default-features = false
 features = ["async-await-preview", "rt-full", "tcp", "codec"]
-path = "../../tokio/tokio"
+version = "^0.1"
 
 [features]
 default = ["tokio", "remote", "ws"]
