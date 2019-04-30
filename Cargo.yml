@@ -39,7 +39,7 @@ dependencies:
   # crossbeam-channel: { path: ../../crossbeam-channel, features: [ async  ]                          }
   thespis             : { path: ../thespis_iface }
   failure             : ^0.1
-  futures-preview     : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
+  futures-preview     : { version: ^0.3.0-alpha.15, features: [ std, compat, nightly ], default-features: false }
   log                 : ^0.4
   simple_logger       : ^1
   regex               : { version: ^1, features: [ pattern ] }
@@ -73,8 +73,8 @@ dev-dependencies:
 
   actix            : ^0.7.9
   criterion        : { version: ^0.2                 , features: [ real_blackbox        ]                          }
-  futures-preview  : { version: ^0.3.0-alpha.14, features: [ std, compat, nightly ], default-features: false }
   tokio            : { path: ../../tokio/tokio , features: [ async-await-preview, rt-full, tcp, codec ], default-features: false }
+  futures-preview  : { version: ^0.3.0-alpha.15, default-features: false, features: [ std, compat, nightly ] }
   pretty_assertions: ^0.6
   serde_cbor       : ^0.9
   flexi_logger        : ^0.11

@@ -43,7 +43,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 
 	fn start_fut( self, mut actor: A ) -> ReturnNoSend<'static, ()>
 	{
-		async move
+		Box::pin( async move
 		{
 			// TODO: Clean this up...
 			// We need to drop the handle, otherwise the channel will never close and the program will not
@@ -67,7 +67,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			await!( actor.stopped() );
 			trace!( "Mailbox stopped actor" );
 
-		}.boxed()
+		})
 	}
 }
 

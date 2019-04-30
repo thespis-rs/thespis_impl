@@ -26,13 +26,13 @@ version = "^0.4"
 [dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
-version = "^0.3.0-alpha.14"
 
 [dependencies.hashbrown]
 default-features = false
 features = ["nightly"]
 optional = true
 version = "^0.2"
+version = "^0.3.0-alpha.15"
 
 [dependencies.num-derive]
 optional = true
@@ -91,7 +91,7 @@ version = "^0.2"
 [dev-dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
-version = "^0.3.0-alpha.14"
+version = "^0.3.0-alpha.15"
 
 [dev-dependencies.tokio]
 default-features = false

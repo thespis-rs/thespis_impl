@@ -123,7 +123,7 @@ mod import
 		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
 		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
 		hashbrown   :: { HashMap                                             } ,
-		futures     :: { future::RemoteHandle } ,
+		futures     :: { future::RemoteHandle                                } ,
 
 	};
 

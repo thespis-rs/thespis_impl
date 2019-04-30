@@ -126,7 +126,7 @@ pub fn spawn_pinned( fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> T
 //
 pub fn spawn( fut: impl Future< Output = () > + 'static ) -> ThesRes<()>
 {
-	spawn_pinned( fut.boxed() )
+	spawn_pinned( Box::pin( fut ) )
 }
 
 

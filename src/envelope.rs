@@ -25,12 +25,12 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
 	{
-		async move
+		Box::pin( async move
 		{
 
 			let _ = await!( < A as Handler<M> >::handle( actor, self.msg ) );
 
-		}.boxed()
+		})
 	}
 }
 
@@ -58,7 +58,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
 	{
-		async move
+		Box::pin( async move
 		{
 			let result = await!( < A as Handler<M> >::handle( actor, self.msg ) );
 
@@ -70,7 +70,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 				Err(_) => { error!( "failed to send from envelope, receiving end dropped" ) },
 			};
 
-		}.boxed()
+		})
 	}
 }
 

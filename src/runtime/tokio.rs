@@ -45,7 +45,7 @@ impl Executor for TokioRT
 
 			for fut in v.drain(..)
 			{
-				trt::spawn( async { await!( fut ); Ok(()) }.boxed().compat() );
+				trt::spawn( Box::pin( async { await!( fut ); Ok(()) } ).compat() );
 			}
 
 			Ok(())
@@ -54,7 +54,7 @@ impl Executor for TokioRT
 
 		{ *self.running.borrow_mut() = true; }
 
-		trt::run( task.boxed().compat() );
+		trt::run( Box::pin( task ).compat() );
 	}
 
 
@@ -64,7 +64,7 @@ impl Executor for TokioRT
 	{
 		if *self.running.borrow()
 		{
-			trt::spawn( async { await!( fut ); Ok(()) }.boxed().compat() );
+			trt::spawn( Box::pin( async { await!( fut ); Ok(()) } ).compat() );
 		}
 
 		else
