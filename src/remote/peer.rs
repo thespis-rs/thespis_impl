@@ -146,8 +146,25 @@ impl<Out, MS> Peer<Out, MS>
 			// We need to map this to a custom type, since we had to impl Message for it.
 			//
 			let stream  = &mut incoming.map( |msg| Incoming{ msg } );
-			await!( addr2.send_all( stream ) ).expect( "Sendall incoming to recipient in Peer" );
-			await!( addr2.send( CloseConnection ) ).expect( "Send Drop to self in Peer" );
+
+			// This can fail if:
+			// - channel is full (TODO: currently we use unbounded, so that won't happen, but it might
+			//   use unbounded amounts of memory.)
+			// - the receiver is dropped. The receiver is our mailbox, so it should never be dropped
+			//   as long as we have an address to it.
+			//
+			// So, I think we can unwrap for now.
+			//
+			await!( addr2.send_all( stream ) ).expect( "peer send to self");
+
+			// TODO: When we close the connection locally, this future is dropped and will never be polled
+			// again, so we can't get here. However if the connection drops, the stream above will end
+			// and we reach this statement. We should let the observers know that we lost the connection
+			// here, but we can't use pharos...
+
+			// Same as above.
+			//
+			await!( addr2.send( CloseConnection{ remote: true } ) ).expect( "peer send to self");
 		};
 
 		// When we need to stop listening, we have to drop this future, because it contains
@@ -230,7 +247,7 @@ impl<Out, MS> Peer<Out, MS>
 //
 impl<Out, MS> Handler<MS> for Peer<Out, MS>
 
-	where Out        : BoundsOut<MS> ,
+	where Out: BoundsOut<MS> ,
 	      MS : BoundsMS      ,
 
 {
@@ -256,9 +273,11 @@ impl<Out, MS> Observable<PeerEvent> for Peer<Out, MS>
 	/// Register an observer to receive events from this connection. This will allow you to detect
 	/// Connection errors and loss. Note that the peer automatically goes in shut down mode if the
 	/// connection is closed. When that happens, you should drop all remaining addresses of this peer.
-	/// You can then create new connection, frame it, and create a new peer. This will send you
-	/// a PeerEvent::Drop event if the peer is in unsalvagable state and you should drop all addresses
-	/// the error causing the drop shall be the last event emitted from this stream, just after the Drop event.
+	/// An actor does not get dropped as long as you have adresses to it.
+	///
+	/// You can then create a new connection, frame it, and create a new peer. This will send you
+	/// a PeerEvent::ConnectionClosed if the peer is in unsalvagable state and you should drop all addresses
+	///
 	/// See [PeerEvent] for more details on all possible events.
 	//
 	fn observe( &mut self, queue_size: usize ) -> mpsc::Receiver<PeerEvent>

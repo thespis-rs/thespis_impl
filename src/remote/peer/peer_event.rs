@@ -4,7 +4,7 @@ use crate::{ import::*, remote::* };
 //
 pub enum PeerEvent
 {
-	ConnectionClosed                   ,
-	ConnectionClosedByRemote           ,
-	ConnectionError( ConnectionError ) ,
+	Closed                   ,
+	ClosedByRemote           ,
+	Error( ConnectionError ) ,
 }

@@ -2,5 +2,8 @@
 //
 pub enum ConnectionError
 {
-	DeserializationFailure,
+	DeserializationFailure  ,
+	LostRelayBeforeCall     ,
+	LostRelayBeforeSend     ,
+	LostRelayBeforeResponse ,
 }

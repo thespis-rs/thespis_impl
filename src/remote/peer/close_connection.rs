@@ -17,7 +17,14 @@ use { crate :: { import::*, remote::peer::* }};
 ///
 /// If the remote closes the connection, all of this will happen automatically.
 //
-pub struct CloseConnection;
+pub struct CloseConnection
+{
+	/// informs the peer whether the connection was closed remotely. If you close
+	/// manually, set to false. The main effect of this is that the peer will send
+	/// PeerEvents::ConnectionClosedByRemote to observers instead of PeerEvent::ConnectionClosed.
+	//
+	pub remote: bool,
+}
 
 impl Message for CloseConnection { type Return = (); }
 
@@ -27,11 +34,19 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 	      MS : BoundsMS      ,
 
 {
-	fn handle( &mut self, _: CloseConnection ) -> Return<()>
+	fn handle( &mut self, msg: CloseConnection ) -> Return<()>
 	{
 		async move
 		{
 			trace!( "CloseConnection self in peer");
+
+
+			match msg.remote
+			{
+				true  => await!( self.pharos.notify( &PeerEvent::ClosedByRemote ) ),
+				false => await!( self.pharos.notify( &PeerEvent::Closed         ) ),
+			}
+
 
 			// Try to close the connection properly
 			//

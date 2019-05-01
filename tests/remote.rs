@@ -178,7 +178,7 @@ fn remote()
 		let resp = await!( show.call( Show ) ).expect( "Call failed" );
 		assert_eq!( 10, resp );
 
-		await!( peera.send( CloseConnection ) ).expect( "close connection to peera" );
+		await!( peera.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 	};
 
 
@@ -280,7 +280,7 @@ fn relay()
 			let resp = await!( show.call( Show ) ).expect( "Call failed" );
 			assert_eq!( 10, resp );
 
-			await!( peerb.send( CloseConnection ) ).expect( "close connection to peera" );
+			await!( peerb.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 		};
 
 		// we need to spawn this after peerb, otherwise peerb is not listening yet when we try to connect.
@@ -291,7 +291,7 @@ fn relay()
 		// If the peerc closes the connection, close our connection to peera.
 		//
 		await!( relay_outcome );
-		await!( peera.send( CloseConnection ) ).expect( "close connection to peera" );
+		await!( peera.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 	};
 
 	rt::spawn( peera  ).expect( "Spawn peera"  );
@@ -404,7 +404,7 @@ fn parallel()
 
 		// dbg!( resp );
 
-		await!( peer_addr.send( CloseConnection ) ).expect( "close connection to peera" );
+		await!( peer_addr.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 	};
 
 
