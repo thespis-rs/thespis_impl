@@ -17,7 +17,7 @@ pub use call             :: Call            ;
 //
 pub trait BoundsIn <MS>: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
 pub trait BoundsOut<MS>: 'static + Sink<MS, SinkError=Error> + Unpin + Send {}
-pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send + Sync {}
+pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send {}
 
 impl<T, MS> BoundsIn<MS> for T
 where T: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
