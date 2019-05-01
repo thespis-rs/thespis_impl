@@ -93,7 +93,7 @@ pub struct Peer<Out, MS>
 
 	/// The pharos allows us to have observers.
 	//
-	pharos: Pharos<PeerEvent>,
+	pharos        : Pharos<PeerEvent>,
 }
 
 
@@ -133,7 +133,7 @@ impl<Out, MS> Peer<Out, MS>
 {
 	/// Create a new peer to represent a connection to some remote.
 	//
-	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> Self
+	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> ThesRes< Self >
 	{
 		trace!( "create peer" );
 
@@ -154,9 +154,9 @@ impl<Out, MS> Peer<Out, MS>
 		// our address, and we won't be dropped as long as there are adresses around.
 		//
 		let (remote, handle) = listen.remote_handle();
-		rt::spawn( remote ).expect( "Failed to spawn listener" );
+		rt::spawn( remote )?;
 
-		Self
+		Ok( Self
 		{
 			outgoing     : Some( outgoing ) ,
 			addr         : Some( addr )     ,
@@ -165,7 +165,7 @@ impl<Out, MS> Peer<Out, MS>
 			relay        : HashMap::new()   ,
 			listen_handle: Some( handle )   ,
 			pharos       : Pharos::new()    ,
-		}
+		})
 	}
 
 

@@ -106,7 +106,7 @@ pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
 
 	// create peer with stream/sink + service map
 	//
-	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
 
 	mb.start( peer ).expect( "Failed to start mailbox" );
 

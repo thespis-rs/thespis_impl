@@ -5,8 +5,8 @@
 // What is tested:
 //
 // 1. basic remote functionality
-// 2. relays -> TODO
-// 3. verify we work in paralell. A calls B, B calls A back for some extra info before answering the first call. -> TODO
+// 2. relays
+// 3. verify we work in paralell. A calls B, B calls A back for some extra info before answering the first call.
 // 4. use the same connection for services on both ends -> probably combine this with 3.
 
 
@@ -87,7 +87,7 @@ pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
 
 	// create peer with stream/sink + service map
 	//
-	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
 
 	mb.start( peer ).expect( "Failed to start mailbox" );
 
@@ -150,7 +150,7 @@ fn remote()
 
 		// create peer with stream/sink
 		//
-		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
+		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
 
 		// register Sum with peer as handler for Add and Show
 		//
@@ -218,7 +218,7 @@ fn relay()
 
 		// create peer with stream/sink
 		//
-		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() );
+		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
 
 		// register Sum with peer as handler for Add and Show
 		//
@@ -249,7 +249,7 @@ fn relay()
 
 			// create peer with stream/sink + service map
 			//
-			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
+			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
 
 			peer.register_relayed_service( <Add  as Service<remote::Services>>::sid(), peera2.clone() );
 			peer.register_relayed_service( <Show as Service<remote::Services>>::sid(), peera2         );
@@ -352,7 +352,7 @@ fn parallel()
 
 		// create peer with stream/sink
 		//
-		let mut peer = Peer::new( peer_addr.clone(), stream_a.compat(), sink_a.sink_compat() );
+		let mut peer = Peer::new( peer_addr.clone(), stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
 
 		// Create recipients
 		//
@@ -381,7 +381,7 @@ fn parallel()
 
 		// create peer with stream/sink
 		//
-		let mut peer = Peer::new( peer_addr.clone(), stream_b.compat(), sink_b.sink_compat() );
+		let mut peer = Peer::new( peer_addr.clone(), stream_b.compat(), sink_b.sink_compat() ).expect( "spawn peer" );
 
 		// Create mailbox for our handler
 		//

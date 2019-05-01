@@ -26,10 +26,10 @@ fn main()
 
 			// create peer with stream/sink
 			//
-			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
+			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
 
-			peer.register_relayed_service::<ServiceA>( <ServiceA as Service<peer_a::Services>>::sid(), peera2.clone() );
-			peer.register_relayed_service::<ServiceB>( <ServiceB as Service<peer_a::Services>>::sid(), peera2         );
+			peer.register_relayed_service( <ServiceA as Service<peer_a::Services>>::sid(), peera2.clone() );
+			peer.register_relayed_service( <ServiceB as Service<peer_a::Services>>::sid(), peera2         );
 
 			await!( mb_peer.start_fut( peer ) );
 		};
