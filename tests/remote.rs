@@ -251,8 +251,8 @@ fn relay()
 			//
 			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() );
 
-			peer.register_relayed_service::<Add >( <Add  as Service<remote::Services>>::sid(), peera2.clone() );
-			peer.register_relayed_service::<Show>( <Show as Service<remote::Services>>::sid(), peera2         );
+			peer.register_relayed_service( <Add  as Service<remote::Services>>::sid(), peera2.clone() );
+			peer.register_relayed_service( <Show as Service<remote::Services>>::sid(), peera2         );
 
 			await!( mb_peer.start_fut( peer ) );
 		};

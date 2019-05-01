@@ -198,8 +198,12 @@ impl<Out, MS> Peer<Out, MS>
 
 	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
 	/// For relaying services from other processes.
+	///
+	/// TODO: verify we can relay services unknown at compile time. Eg. could a remote process ask in runtime
+	///       could you please relay for me. We just removed a type parameter here, which should help, but we
+	///       need to test it to make sure it works.
 	//
-	pub fn register_relayed_service<Service: Message>( &mut self, sid: &'static <MS as MultiService>::ServiceID, peer: Addr<Self> )
+	pub fn register_relayed_service( &mut self, sid: &'static <MS as MultiService>::ServiceID, peer: Addr<Self> )
 	{
 		self.relay.insert( sid, peer );
 	}
