@@ -263,7 +263,7 @@ fn stream_to_sink_receiver()
 		let a = MyActor { count: 0 };
 
 		let addr        = Addr::try_from( a ).expect( "Failed to create address" );
-		let mut rec     = Receiver::new( addr.clone_box() );
+		let mut rec     = Receiver::new( addr.recipient() );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
 		await!( rec.send_all( &mut stream ) ).expect( "drain stream" );
@@ -277,6 +277,44 @@ fn stream_to_sink_receiver()
 		// await!( stream.forward( &mut addr ) ).expect( "forward to sink" );
 
 		assert_eq!( 4, await!( rec.call( Count ) ).expect( "Call failed" ) );
+	};
+
+	rt::spawn( program ).expect( "Spawn program" );
+	rt::run();
+}
+
+
+
+// Verify we can box up recipients to different actors in one vector and use them.
+//
+#[ test ]
+//
+fn actor_id()
+{
+	let program = async move
+	{
+		let a = MyActor { count: 0 };
+		let b = MyActor { count: 0 };
+
+		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
+		let addrb = Addr::try_from( b ).expect( "Failed to create address" );
+		let rec   = addr.recipient();
+
+		// return same value on subsequent calls
+		//
+		assert_eq!( addr.actor_id(), addr.actor_id() );
+
+		// return same value on clone
+		//
+		assert_eq!( addr.actor_id(), addr.clone().actor_id() );
+
+		// return same value on Box<Recipient<_>>
+		//
+		assert_eq!( addr.actor_id(), rec.actor_id() );
+
+		// return different value for different actor
+		//
+		assert_ne!( addr.actor_id(), addrb.actor_id() );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

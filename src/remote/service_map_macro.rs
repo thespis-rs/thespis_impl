@@ -255,8 +255,8 @@ impl ServicesRecipient
 
 	fn build_ms<S>( msg: S ) -> ThesRes< $ms_type >
 
-		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
-				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
+		where  S: Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
@@ -269,8 +269,8 @@ impl ServicesRecipient
 
 	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
 
-		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
-				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
+		where  S: Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 	{
 		await!( self.peer.send( Self::build_ms( msg )? ) )
@@ -279,8 +279,8 @@ impl ServicesRecipient
 
 	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Return>
 
-		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
-				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
+		where  S: Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
+				<S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 	{
 		let sid        = <S as Service<self::Services>>::sid().clone();
@@ -320,6 +320,14 @@ impl<S> Recipient<S> for ServicesRecipient
 	fn clone_box( &self ) -> BoxRecipient<S>
 	{
 		box Self { peer: self.peer.clone() }
+	}
+
+
+	/// Unique id of the peer this sends over
+	//
+	fn actor_id( &self ) -> usize
+	{
+		< Addr<$peer_type> as Recipient<$ms_type> >::actor_id( &self.peer )
 	}
 }
 

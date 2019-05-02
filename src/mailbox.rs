@@ -13,20 +13,31 @@ pub struct Inbox<A> where A: Actor
 {
 	handle: mpsc::UnboundedSender  <BoxEnvelope<A>> ,
 	msgs  : mpsc::UnboundedReceiver<BoxEnvelope<A>> ,
+
+	/// This creates a unique id for every mailbox in the program. This way recipients
+	/// can impl Eq to say whether they refer to the same actor.
+	//
+	id    : usize,
 }
 
 impl<A> Inbox<A> where A: Actor
 {
 	pub fn new() -> Self
 	{
+		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 0 );
+
 		let (handle, msgs) = mpsc::unbounded();
 
-		Self { handle, msgs }
+		// TODO: do we need SeqCst or is AcqRel enough?
+		//
+		let id             = MB_COUNTER.fetch_add( 1, Ordering::SeqCst );
+
+		Self { handle, msgs, id }
 	}
 
-	pub fn sender( &self ) -> mpsc::UnboundedSender<BoxEnvelope<A>>
+	pub fn sender( &self ) -> (usize, mpsc::UnboundedSender<BoxEnvelope<A>>)
 	{
-		self.handle.clone()
+		(self.id, self.handle.clone())
 	}
 }
 
@@ -49,7 +60,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			// We need to drop the handle, otherwise the channel will never close and the program will not
 			// terminate. Like this when the user drops all their handles, this loop will automatically break.
 			//
-			let Inbox{ mut msgs, handle } = self;
+			let Inbox{ mut msgs, handle, .. } = self;
 			drop( handle );
 
 			await!( actor.started() );

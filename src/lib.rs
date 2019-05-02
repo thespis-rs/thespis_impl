@@ -38,32 +38,34 @@
 	unboxed_closures       ,
 )]
 
-    mod address;
-    mod envelope;
-    mod mailbox;
-    mod error;
-pub mod runtime;
+    mod address  ;
+    mod envelope ;
+    mod mailbox  ;
+    mod error    ;
+    mod receiver ;
 
-pub mod remote;
+pub mod runtime  ;
+pub mod remote   ;
 
 
 pub use
 {
-	error::*,
-	address::*,
-	mailbox::*,
+	error    :: * ,
+	address  :: * ,
+	mailbox  :: * ,
+	receiver :: * ,
 };
 
 // needed for macro
 //
 pub mod external_deps
 {
-	pub use once_cell;
-	pub use futures;
-	pub use thespis;
-	pub use serde_cbor;
-	pub use serde;
-	pub use failure;
+	pub use once_cell  ;
+	pub use futures    ;
+	pub use thespis    ;
+	pub use serde_cbor ;
+	pub use serde      ;
+	pub use failure    ;
 }
 
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
@@ -82,16 +84,17 @@ mod import
 
 		std ::
 		{
-			fmt                             ,
-			cell        :: { RefCell          } ,
-			convert     :: { TryFrom, TryInto } ,
-			future      :: { Future           } ,
-			marker      :: { PhantomData      } ,
-			ops         :: { Try, DerefMut    } ,
-			pin         :: { Pin              } ,
-			rc          :: { Rc               } ,
-			sync        :: { Arc              } ,
-			collections :: { HashMap          } ,
+			fmt                                                       ,
+			cell        :: { RefCell                                } ,
+			convert     :: { TryFrom, TryInto                       } ,
+			future      :: { Future                                 } ,
+			marker      :: { PhantomData                            } ,
+			ops         :: { Try, DerefMut                          } ,
+			pin         :: { Pin                                    } ,
+			rc          :: { Rc                                     } ,
+			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
+			collections :: { HashMap                                } ,
+
 		},
 
 
