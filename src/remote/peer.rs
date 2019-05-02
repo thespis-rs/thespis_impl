@@ -219,9 +219,56 @@ impl<Out, MS> Peer<Out, MS>
 	/// TODO: verify we can relay services unknown at compile time. Eg. could a remote process ask in runtime
 	///       could you please relay for me. We just removed a type parameter here, which should help, but we
 	///       need to test it to make sure it works.
+	///
+	// Design:
+	// - take a peer with a vec of services to relay over that peer.
+	// - store in a hashmap, but put the peer address in an Rc? + a unique id (addr doesn't have Eq)
 	//
-	pub fn register_relayed_service( &mut self, sid: &'static <MS as MultiService>::ServiceID, peer: Addr<Self> )
+	pub fn register_relayed_service
+	(
+		&mut self                                                   ,
+		     sid         : &'static <MS as MultiService>::ServiceID ,
+		     peer        : Addr<Self>                               ,
+		     // relay_events: mpsc::Receiver<PeerEvent>                ,
+	)
 	{
+		// Hook up the incoming stream to our address.
+		//
+		// let mut addr2 = addr.clone();
+
+		// let listen = async move
+		// {
+		// 	// We need to map this to a custom type, since we had to impl Message for it.
+		// 	//
+		// 	let stream  = &mut incoming.map( |msg| Incoming{ msg } );
+
+		// 	// This can fail if:
+		// 	// - channel is full (TODO: currently we use unbounded, so that won't happen, but it might
+		// 	//   use unbounded amounts of memory.)
+		// 	// - the receiver is dropped. The receiver is our mailbox, so it should never be dropped
+		// 	//   as long as we have an address to it.
+		// 	//
+		// 	// So, I think we can unwrap for now.
+		// 	//
+		// 	await!( addr2.send_all( stream ) ).expect( "peer send to self");
+
+		// 	// TODO: When we close the connection locally, this future is dropped and will never be polled
+		// 	// again, so we can't get here. However if the connection drops, the stream above will end
+		// 	// and we reach this statement. We should let the observers know that we lost the connection
+		// 	// here, but we can't use pharos...
+
+		// 	// Same as above.
+		// 	//
+		// 	await!( addr2.send( CloseConnection{ remote: true } ) ).expect( "peer send to self");
+		// };
+
+		// // When we need to stop listening, we have to drop this future, because it contains
+		// // our address, and we won't be dropped as long as there are adresses around.
+		// //
+		// let (remote, handle) = listen.remote_handle();
+		// rt::spawn( remote )?;
+
+
 		self.relay.insert( sid, peer );
 	}
 
