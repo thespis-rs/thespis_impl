@@ -20,7 +20,7 @@ impl<Out, MS> Handler<Incoming<MS>> for Peer<Out, MS>
 	where Out: BoundsOut<MS>,
 	      MS : BoundsMS     ,
 {
-fn handle( &mut self, incoming: Incoming<MS> ) -> Return<()>
+fn handle( &mut self, incoming: Incoming<MS> ) -> ReturnNoSend<()>
 {
 trace!( "got incoming event on stream" );
 

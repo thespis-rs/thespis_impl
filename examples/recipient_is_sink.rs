@@ -17,7 +17,7 @@ impl Message for Count { type Return = u8; }
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
+	fn handle( &mut self, _msg: Count ) -> ReturnNoSend<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count

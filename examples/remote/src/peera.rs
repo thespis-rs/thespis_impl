@@ -77,7 +77,7 @@ impl Actor for HandleA
 
 impl Handler<ServiceA> for HandleA
 {
-	fn handle( &mut self, msg: ServiceA ) -> Return<ReturnA> { Box::pin( async move
+	fn handle( &mut self, msg: ServiceA ) -> ReturnNoSend<ReturnA> { Box::pin( async move
 	{
 		dbg!( msg );
 
@@ -88,7 +88,7 @@ impl Handler<ServiceA> for HandleA
 
 impl Handler<ServiceB> for HandleA
 {
-	fn handle( &mut self, msg: ServiceB ) -> Return<()> { Box::pin( async move
+	fn handle( &mut self, msg: ServiceB ) -> ReturnNoSend<()> { Box::pin( async move
 	{
 		dbg!( msg );
 

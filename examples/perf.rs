@@ -19,7 +19,7 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	fn handle( &mut self, msg: Add ) -> ReturnNoSend<()> { Box::pin( async move
 	{
 
 		self.0 += msg.0;
@@ -30,7 +30,7 @@ impl Handler< Add > for Sum
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	fn handle( &mut self, _msg: Show ) -> ReturnNoSend<u64> { Box::pin( async move
 	{
 
 		self.0

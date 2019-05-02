@@ -35,7 +35,7 @@ impl<Out, MS> Handler<Call<MS>> for Peer<Out, MS>
 	where Out: BoundsOut<MS>,
 	      MS : BoundsMS     ,
 {
-	fn handle( &mut self, call: Call<MS> ) -> Return< <Call<MS> as Message>::Return >
+	fn handle( &mut self, call: Call<MS> ) -> ReturnNoSend< <Call<MS> as Message>::Return >
 	{
 		trace!( "peer: starting Handler<Call<MS>>" );
 

@@ -34,7 +34,7 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 	      MS : BoundsMS      ,
 
 {
-	fn handle( &mut self, msg: CloseConnection ) -> Return<()>
+	fn handle( &mut self, msg: CloseConnection ) -> ReturnNoSend<()>
 	{
 		Box::pin( async move
 		{

@@ -21,7 +21,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	fn handle( &mut self, _msg: Ping ) -> ReturnNoSend<String> { Box::pin( async move
 	{
 		"MyActor".into()
 
@@ -31,7 +31,7 @@ impl Handler< Ping > for MyActor
 
 impl Handler< Ping > for Other
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	fn handle( &mut self, _msg: Ping ) -> ReturnNoSend<String> { Box::pin( async move
 	{
 		"Other".into()
 
