@@ -36,7 +36,7 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 {
 	fn handle( &mut self, msg: CloseConnection ) -> Return<()>
 	{
-		async move
+		Box::pin( async move
 		{
 			trace!( "CloseConnection self in peer");
 
@@ -76,6 +76,6 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 			self.relay    .clear();
 			self.responses.clear();
 
-		}.boxed()
+		})
 	}
 }

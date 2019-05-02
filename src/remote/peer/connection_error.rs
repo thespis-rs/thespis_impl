@@ -1,4 +1,6 @@
-#[ derive( Debug, Clone, PartialEq ) ]
+use crate :: { import::* };
+
+#[ derive( Debug, Clone, PartialEq, Serialize, Deserialize ) ]
 //
 pub enum ConnectionError
 {
@@ -6,4 +8,5 @@ pub enum ConnectionError
 	LostRelayBeforeCall     ,
 	LostRelayBeforeSend     ,
 	LostRelayBeforeResponse ,
+	UnkownService(Vec<u8>)    ,
 }

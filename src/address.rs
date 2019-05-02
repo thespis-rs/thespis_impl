@@ -124,7 +124,7 @@ impl<A, M> Recipient<M> for Addr<A>
 {
 	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
-		async move
+		Box::pin( async move
 		{
 			let (ret_tx, ret_rx) = oneshot::channel::<M::Return>();
 
@@ -136,7 +136,7 @@ impl<A, M> Recipient<M> for Addr<A>
 
 			Ok( await!( ret_rx )? )
 
-		}.boxed()
+		})
 	}
 
 
@@ -252,11 +252,11 @@ impl<M: Message> Recipient<M> for Receiver<M>
 {
 	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
 	{
-		async move
+		Box::pin( async move
 		{
 			await!( self.rec.call( msg ) )
 
-		}.boxed()
+		})
 	}
 
 

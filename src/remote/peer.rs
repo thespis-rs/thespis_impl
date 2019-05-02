@@ -1,4 +1,4 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::ServiceID, remote::ConnID, Addr, Receiver } };
+use { crate :: { import::*, ThesError, runtime::rt, remote::{ ServiceID, ConnID, Codecs }, Addr, Receiver } };
 
 
 mod close_connection;
@@ -237,6 +237,33 @@ impl<Out, MS> Peer<Out, MS>
 			None        => Err( ThesError::PeerSendAfterCloseConnection.into() ) ,
 		}
 	}
+
+
+
+	// actually send the message accross the wire
+	//
+	fn prep_error( cid: <MS as MultiService>::ConnID, err: ConnectionError ) -> MS
+	{
+		// it's important that the sid is null here, because a response with both cid and sid
+		// not null is interpreted as an error.
+		//
+		let serialized   = serde_cbor::to_vec( &err ).expect( "serialize response" );
+		let codec: Bytes = Codecs::CBOR.into();
+
+		let codec2 = match <MS as MultiService>::CodecAlg::try_from( codec )
+		{
+			Ok ( c ) => c,
+			Err( _ ) => panic!( "Failed to create codec from bytes" ),
+		};
+
+		MS::create
+		(
+			<MS as MultiService>::ServiceID::null(),
+			cid,
+			codec2,
+			serialized.into()
+		)
+	}
 }
 
 
@@ -253,13 +280,13 @@ impl<Out, MS> Handler<MS> for Peer<Out, MS>
 {
 	fn handle( &mut self, msg: MS ) -> Return<()>
 	{
-		async move
+		Box::pin( async move
 		{
 			trace!( "Peer sending OUT" );
 
 			let _ = await!( self.send_msg( msg ) );
 
-		}.boxed()
+		})
 	}
 }
 

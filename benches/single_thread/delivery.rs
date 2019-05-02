@@ -4,7 +4,7 @@ use
 {
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
 	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ FutureExt, TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
+	futures           :: { future::{ TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
 	thespis           :: { *                } ,
 	thespis_impl      :: { *, runtime::rt   } ,
 };
@@ -22,23 +22,23 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { async move
+	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
 	{
 
 		self.0 += msg.0;
 
-	}.boxed() }
+	})}
 }
 
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { async move
+	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
 	{
 
 		self.0
 
-	}.boxed() }
+	})}
 }
 
 
@@ -180,7 +180,7 @@ fn actix_dosend()
 {
 	actix::System::run( ||
 	{
-		Arbiter::spawn( async
+		Arbiter::spawn( Box::pin( async
 		{
 			let sum  = AxSum(5)    ;
 			let addr = sum.start() ;
@@ -198,7 +198,7 @@ fn actix_dosend()
 
 			Ok(())
 
-		}.boxed().compat());
+		}).compat());
 
 	});
 }
@@ -208,7 +208,7 @@ fn actix_send()
 {
 	actix::System::run( ||
 	{
-		Arbiter::spawn( async
+		Arbiter::spawn( Box::pin( async
 		{
 			let sum  = AxSum(5)    ;
 			let addr = sum.start() ;
@@ -226,7 +226,7 @@ fn actix_send()
 
 			Ok(())
 
-		}.boxed().compat());
+		}).compat());
 
 	});
 }

@@ -39,7 +39,7 @@ impl<Out, MS> Handler<Call<MS>> for Peer<Out, MS>
 	{
 		trace!( "peer: starting Handler<Call<MS>>" );
 
-		async move
+		Box::pin( async move
 		{
 			let (sender, receiver) = oneshot::channel::< MS >() ;
 			let conn_id            = call.mesg.conn_id()?               ;
@@ -50,6 +50,6 @@ impl<Out, MS> Handler<Call<MS>> for Peer<Out, MS>
 
 			Ok( receiver )
 
-		}.boxed()
+		})
 	}
 }

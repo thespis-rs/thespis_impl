@@ -26,10 +26,10 @@
 
 use
 {
-	std           :: { any::Any, thread                                           } ,
-	futures       :: { future::FutureExt, channel::oneshot, stream, sink::SinkExt } ,
-	thespis       :: { *                                                          } ,
-	thespis_impl  :: { *, runtime::rt                                             } ,
+	std           :: { any::Any, thread                        } ,
+	futures       :: { channel::oneshot, stream, sink::SinkExt } ,
+	thespis       :: { *                                       } ,
+	thespis_impl  :: { *, runtime::rt                          } ,
 };
 
 
@@ -48,23 +48,23 @@ impl Message for Count
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { async move
+	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count
 
-	}.boxed() }
+	})}
 }
 
 
 impl Handler< Count > for Other
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { async move
+	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count
 
-	}.boxed() }
+	})}
 }
 
 

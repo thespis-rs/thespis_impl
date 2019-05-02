@@ -117,7 +117,7 @@ mod tests
 		let mut buf = BytesMut::with_capacity( 1 );
 		buf.put( 0u8 );
 
-		MultiServiceImpl::new( ServiceID::from_seed( b"Empty Message" ), ConnID::default(), Codecs::CBOR, buf.into() )
+		MultiServiceImpl::create( ServiceID::from_seed( b"Empty Message" ), ConnID::default(), Codecs::CBOR, buf.into() )
 	}
 
 	fn full_data() -> MulServ
@@ -125,7 +125,7 @@ mod tests
 		let mut buf = BytesMut::with_capacity( 5 );
 		buf.put( b"hello".to_vec() );
 
-		MultiServiceImpl::new( ServiceID::from_seed( b"Full Message" ), ConnID::default(), Codecs::CBOR, buf.into() )
+		MultiServiceImpl::create( ServiceID::from_seed( b"Full Message" ), ConnID::default(), Codecs::CBOR, buf.into() )
 	}
 
 

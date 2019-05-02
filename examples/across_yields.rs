@@ -40,7 +40,7 @@ impl Handler< Ping > for MyActor
 {
 	// If you forget the move on the end, it won't compile and error messages will be shit!!!
 	//
-	fn handle( &mut self, msg: Ping ) -> Return<String> { async move
+	fn handle( &mut self, msg: Ping ) -> Return<String> { Box::pin( async move
 	{
 		trace!( "Ping handler called" );
 
@@ -52,7 +52,7 @@ impl Handler< Ping > for MyActor
 
 		self.seed.clone()
 
-	}.boxed() }
+	})}
 }
 
 

@@ -3,8 +3,7 @@
 
 use
 {
-	futures       :: { future::{ FutureExt } } ,
-	thespis       :: { *                     } ,
+	thespis       :: { *               } ,
 	thespis_impl  :: { *, runtime::rt  } ,
 };
 
@@ -20,23 +19,23 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { async move
+	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
 	{
 
 		self.0 += msg.0;
 
-	}.boxed() }
+	}) }
 }
 
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { async move
+	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
 	{
 
 		self.0
 
-	}.boxed() }
+	})}
 }
 
 

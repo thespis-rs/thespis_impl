@@ -313,11 +313,11 @@ pub struct Parallel
 
 impl Handler< Show > for Parallel
 {
-	fn handle( &mut self, _: Show ) -> Return<u64> { async move
+	fn handle( &mut self, _: Show ) -> Return<u64> { Box::pin( async move
 	{
 		await!( self.sum.call( Show ) ).expect( "call sum" )
 
-	}.boxed() }
+	})}
 }
 
 

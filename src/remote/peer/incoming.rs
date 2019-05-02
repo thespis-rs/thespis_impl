@@ -24,7 +24,7 @@ fn handle( &mut self, incoming: Incoming<MS> ) -> Return<()>
 {
 trace!( "got incoming event on stream" );
 
-async move
+Box::pin( async move
 {
 	let frame = match incoming.msg
 	{
@@ -102,41 +102,50 @@ async move
 		Ok ( sid ) => sid,
 		Err( err ) =>
 		{
-			// TODO: Send error back to remote saying that deserialization failed
-			//
+
 			error!( "Fail to get service_id from incoming frame: {}", err );
 
 			await!( self.pharos.notify( &PeerEvent::Error( ConnectionError::DeserializationFailure ) ) );
 
 
+			// Send an error back to the remote peer and close the connection
+			//
 			if let Some( ref mut addr ) = self.addr
 			{
+				let cid = <MS as MultiService>::ConnID::null();
+				let err = Self::prep_error( cid, ConnectionError::DeserializationFailure );
+
 				// until we have bounded channels, this should never fail, so I'm leaving the expect.
 				//
-				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection");
+				await!( addr.send( err                              ) ).expect( "send ms to self"       );
+				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection" );
 			}
 
 			return
 		}
 	};
+
 
 	let cid = match frame.conn_id()
 	{
 		Ok ( cid ) => cid,
 		Err( err ) =>
 		{
-			// TODO: Send error back to remote saying that deserialization failed
-			//
 			error!( "Fail to get conn_id from incoming frame: {}", err );
 
 			await!( self.pharos.notify( &PeerEvent::Error( ConnectionError::DeserializationFailure ) ) );
 
-
+			// Send an error back to the remote peer and to the observers
+			//
 			if let Some( ref mut addr ) = self.addr
 			{
+				let cid = <MS as MultiService>::ConnID::null();
+				let err = Self::prep_error( cid, ConnectionError::DeserializationFailure );
+
 				// until we have bounded channels, this should never fail, so I'm leaving the expect.
 				//
-				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection");
+				await!( addr.send( err                              ) ).expect( "send ms to self"       );
+				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection" );
 			}
 
 			return
@@ -144,9 +153,20 @@ async move
 	};
 
 
+
+	// It's a connection error from the remote peer
+	//
+	// This includes failing to deserialize our messages, failing to relay, unknown service, ...
+	//
+	if sid.is_null()
+	{
+
+	}
+
+
 	// it's an incoming send
 	//
-	if cid.is_null()
+	else if cid.is_null()
 	{
 		trace!( "Incoming Send" );
 
@@ -171,11 +191,21 @@ async move
 		}
 
 		// service_id unknown => send back and log error
-		// TODO: send error back
 		//
 		else
 		{
-			error!( "Incoming Call for unknown Service: {}", &sid );
+			error!( "Incoming Send for unknown Service: {}", &sid );
+
+			// Send an error back to the remote peer and to the observers
+			//
+			if let Some( ref mut addr ) = self.addr
+			{
+				let err = Self::prep_error( cid, ConnectionError::UnkownService(sid.into().to_vec()) );
+
+				// until we have bounded channels, this should never fail, so I'm leaving the expect.
+				//
+				await!( addr.send( err ) ).expect( "send ms to self" );
+			}
 		}
 	}
 
@@ -186,24 +216,14 @@ async move
 	{
 		// It's a response
 		//
-		if !sid.is_null()
-		{
-			trace!( "Incoming Return" );
+		trace!( "Incoming Return" );
 
-			// TODO: verify our error handling story here. Normally if this
-			// fails it means the receiver of the channel was dropped... so
-			// they are no longer interested in the reponse? Should we log?
-			// Have a different behaviour in release than debug?
-			//
-			let _ = channel.send( frame );
-		}
-
-		// TODO: it's an error deserialize it and send it to observers
+		// TODO: verify our error handling story here. Normally if this
+		// fails it means the receiver of the channel was dropped... so
+		// they are no longer interested in the reponse? Should we log?
+		// Have a different behaviour in release than debug?
 		//
-		else
-		{
-			trace!( "Incoming Error" );
-		}
+		let _ = channel.send( frame );
 	}
 
 
@@ -231,6 +251,13 @@ async move
 			//
 			// service_id in self.relay   => Create Call and send to recipient found in self.relay.
 			//
+			// What could possibly go wrong???
+			// - relay peer has been shut down (eg. remote closed connection)
+			//   TODO: We should observe remotes to know when that happens, so we can drop their address
+			//         and report to our remotes that we are no longer relaying for those services.
+			// - we manage to call, but then when we await the response, the relay goes down, so the
+			//   sender of the channel for the response will come back as a disconnected error.
+			//
 			else if let Some( peer ) = self.relay.get_mut( &sid )
 			{
 				trace!( "Incoming Call for relayed Actor" );
@@ -253,6 +280,7 @@ async move
 					{
 						Ok( receiver ) =>	{	match await!( receiver )
 						{
+
 							Ok( resp ) =>
 							{
 								trace!( "Got response from relayed call, sending out" );
@@ -262,17 +290,32 @@ async move
 								await!( self_addr.send( resp ) ).expect( "Failed to send response from relay out on connection" );
 							},
 
-							// TODO: This can only happen if the sender got dropped. Eg, if the remote relay goes down
+
+							// This can only happen if the sender got dropped. Eg, if the remote relay goes down
 							// Inform peer that their call failed because we lost connection to the relay after
 							// it was sent out.
 							//
-							Err( _err ) => {}
+							Err( _err ) =>
+							{
+								// Send an error back to the remote peer
+								//
+								let err = Self::prep_error( cid, ConnectionError::LostRelayBeforeResponse );
+
+								await!( self_addr.send( err ) ).expect( "send ms to self" );;
+							}
 						}},
 
 						// Sending out call by relay failed
 						// TODO: inform remote
 						//
-						Err( _err ) => {}
+						Err( _err ) =>
+						{
+							// Send an error back to the remote peer
+							//
+							let err = Self::prep_error( cid, ConnectionError::LostRelayBeforeCall );
+
+							await!( self_addr.send( err ) ).expect( "send ms to self" );;
+						}
 					}
 
 
@@ -284,21 +327,32 @@ async move
 			//
 			else
 			{
-				trace!( "Incoming Call for unknown Actor" );
+				error!( "Incoming Call for unknown Actor: {}", sid );
+
+				// Send an error back to the remote peer and to the observers
+				//
+				if let Some( ref mut addr ) = self.addr
+				{
+					let err = Self::prep_error( cid, ConnectionError::UnkownService(sid.into().to_vec()) );
+
+					// until we have bounded channels, this should never fail, so I'm leaving the expect.
+					//
+					await!( addr.send( err ) ).expect( "send close connection" );
+				}
 			}
 		}
 
 		else
 		{
-			// we no longer have our address, we're shutting down.
-			// TODO: We should let the caller know by sending an error back.
-			//
-			// don't process frame any more
+			// we no longer have our address, we're shutting down. we can't really do anything
+			// without our address we won't have the sink for the connection either. We can
+			// no longer send outgoing messages
 			//
 			return
 		}
 	}
 
-}.boxed()
-}
-}
+}) // End of Box::pin( async move
+
+} // end of handle
+} // end of impl Handler

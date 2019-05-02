@@ -13,7 +13,7 @@
 /// which you can look at for a more fully fledged example.
 ///
 /// TODO: - document the types made available to the user by this macro.
-///       - this is not generic at all, cbor is hardcoded, ServiceID as well...
+///       - this is not generic at all, cbor is hardcoded, <<$ms_type> as MultiService>::ServiceID as well...
 //
 #[ macro_export ]
 //
@@ -83,15 +83,15 @@ $
 
 	impl Service<self::Services> for $services
 	{
-		type UniqueID = ServiceID;
+		type UniqueID = <$ms_type as MultiService>::ServiceID;
 
 		fn sid() -> &'static Self::UniqueID
 		{
-			static INSTANCE: OnceCell<ServiceID> = OnceCell::INIT;
+			static INSTANCE: OnceCell< <$ms_type as MultiService>::ServiceID > = OnceCell::INIT;
 
 			INSTANCE.get_or_init( ||
 			{
-				ServiceID::from_seed( &[ stringify!( $services ), Services::NAMESPACE ].concat().as_bytes() )
+				<$ms_type as MultiService>::ServiceID::from_seed( &[ stringify!( $services ), Services::NAMESPACE ].concat().as_bytes() )
 			})
 		}
 	}
@@ -115,7 +115,7 @@ impl Services
 	//
 	pub fn recipient<S>( peer: Addr<$peer_type> ) -> impl Recipient<S>
 
-	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	where  S: MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Serialize + DeserializeOwned + Send,
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send                                         ,
 	{
 		ServicesRecipient::new( peer )
@@ -155,7 +155,7 @@ impl Services
 
 	)
 
-	where  S                    : MarkServices + Service<self::Services, UniqueID=ServiceID> + Send,
+	where  S                    : MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send                              ,
 	{
 		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
@@ -174,7 +174,7 @@ impl Services
 			let cid        = msg.conn_id().expect( "get conn_id" );
 			let serialized = serde_cbor::to_vec( &resp ).expect( "serialize response" );
 
-			let mul        = MultiServiceImpl::new( sid, cid, Codecs::CBOR, serialized.into() );
+			let mul        = <$ms_type>::create( sid, cid, Codecs::CBOR, serialized.into() );
 
 			await!( return_addr.send( mul ) ).expect( "send response back to peer" );
 
@@ -255,7 +255,7 @@ impl ServicesRecipient
 
 	fn build_ms<S>( msg: S ) -> ThesRes< $ms_type >
 
-		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
 				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
 
 	{
@@ -263,13 +263,13 @@ impl ServicesRecipient
 		let cid        = ConnID::null();
 		let serialized = serde_cbor::to_vec( &msg )?;
 
-		Ok( <$ms_type>::new( sid, cid, Codecs::CBOR, serialized.into() ) )
+		Ok( <$ms_type>::create( sid, cid, Codecs::CBOR, serialized.into() ) )
 	}
 
 
 	async fn send_gen<S>( &mut self, msg: S ) -> ThesRes<()>
 
-		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
 				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
 
 	{
@@ -279,7 +279,7 @@ impl ServicesRecipient
 
 	async fn call_gen<S>( &mut self, msg: S ) -> ThesRes<<S as Message>::Return>
 
-		where  S                    : Service<self::Services, UniqueID=ServiceID> + Send,
+		where  S                    : Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
 				<S as Message>::Return: Serialize + DeserializeOwned                + Send,
 
 	{
@@ -287,7 +287,7 @@ impl ServicesRecipient
 		let cid        = ConnID::default();
 		let serialized = serde_cbor::to_vec( &msg )?.into();
 
-		let mul        = <$ms_type>::new( sid, cid, Codecs::CBOR, serialized );
+		let mul        = <$ms_type>::create( sid, cid, Codecs::CBOR, serialized );
 
 		let call = Call::new( mul );
 		let re   = await!( await!( self.peer.call( call ) )?? )?;
@@ -301,7 +301,7 @@ impl ServicesRecipient
 
 impl<S> Recipient<S> for ServicesRecipient
 
-	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	where  S: MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Serialize + DeserializeOwned + Send,
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 {
@@ -311,7 +311,7 @@ impl<S> Recipient<S> for ServicesRecipient
 	//
 	fn call( &mut self, msg: S ) -> Return< ThesRes<<S as Message>::Return> >
 	{
-		self.call_gen( msg ).boxed()
+		Box::pin( self.call_gen( msg ) )
 	}
 
 
@@ -328,7 +328,7 @@ impl<S> Recipient<S> for ServicesRecipient
 
 impl<S> Sink<S> for ServicesRecipient
 
-	where  S: MarkServices + Service<self::Services, UniqueID=ServiceID> + Serialize + DeserializeOwned + Send,
+	where  S: MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Serialize + DeserializeOwned + Send,
 	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 

@@ -57,42 +57,42 @@ impl Actor for HandleA
 {
 	fn started ( &mut self ) -> Return<()>
 	{
-		async move
+		Box::pin( async move
 		{
 			trace!( "Started HandleA actor" );
 
-		}.boxed()
+		})
 	}
 
 
 	fn stopped ( &mut self ) -> Return<()>
 	{
-		async move
+		Box::pin( async move
 		{
 			trace!( "Stopped HandleA actor" );
 
-		}.boxed()
+		})
 	}
 }
 
 impl Handler<ServiceA> for HandleA
 {
-	fn handle( &mut self, msg: ServiceA ) -> Return<ReturnA> { async move
+	fn handle( &mut self, msg: ServiceA ) -> Return<ReturnA> { Box::pin( async move
 	{
 		dbg!( msg );
 
 		ReturnA{ resp: "pong".into() }
 
-	}.boxed() }
+	})}
 }
 
 impl Handler<ServiceB> for HandleA
 {
-	fn handle( &mut self, msg: ServiceB ) -> Return<()> { async move
+	fn handle( &mut self, msg: ServiceB ) -> Return<()> { Box::pin( async move
 	{
 		dbg!( msg );
 
-	}.boxed() }
+	})}
 }
 
 

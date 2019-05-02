@@ -76,8 +76,8 @@ const HEADER_LEN: usize = 36;
 /// - Destination unknown (since an address is like a capability,
 ///   we don't distinguish between not permitted and unknown)
 /// - Fail to deserialize message
-///
 /// ```
+/// TODO: Do we really need sync here?
 //
 #[ derive( Debug, Clone, PartialEq, Eq ) ]
 //
@@ -114,19 +114,7 @@ impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 	      SID  : UniqueID + Into< Bytes > + Send + Sync,
 
 {
-	/// Beware: This can panic because of Buf.put
-	//
-	pub fn new( service: SID, conn_id: CID, encoding: Codec, mesg: Bytes ) -> Self
-	{
-		let mut bytes = BytesMut::with_capacity( HEADER_LEN + mesg.len() );
 
-		bytes.put( service .into() );
-		bytes.put( conn_id .into() );
-		bytes.put( encoding.into() );
-		bytes.put( mesg            );
-
-		Self { bytes: bytes.into(), p1: PhantomData, p2: PhantomData, p3: PhantomData }
-	}
 }
 
 
@@ -140,6 +128,21 @@ impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 	type ServiceID = SID   ;
 	type ConnID    = CID   ;
 	type CodecAlg  = Codec ;
+
+
+	/// Beware: This can panic because of Buf.put
+	//
+	fn create( service: SID, conn_id: CID, encoding: Codec, mesg: Bytes ) -> Self
+	{
+		let mut bytes = BytesMut::with_capacity( HEADER_LEN + mesg.len() );
+
+		bytes.put( service .into() );
+		bytes.put( conn_id .into() );
+		bytes.put( encoding.into() );
+		bytes.put( mesg            );
+
+		Self { bytes: bytes.into(), p1: PhantomData, p2: PhantomData, p3: PhantomData }
+	}
 
 
 	fn service ( &self ) -> Result< Self::ServiceID, Error >
