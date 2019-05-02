@@ -30,7 +30,7 @@ impl<A> Inbox<A> where A: Actor
 
 		// TODO: do we need SeqCst or is AcqRel enough?
 		//
-		let id             = MB_COUNTER.fetch_add( 1, Ordering::SeqCst );
+		let id = MB_COUNTER.fetch_add( 1, Ordering::SeqCst );
 
 		Self { handle, msgs, id }
 	}

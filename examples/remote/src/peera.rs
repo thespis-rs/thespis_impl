@@ -7,7 +7,7 @@ use common::*;
 
 fn main()
 {
-	flexi_logger::Logger::with_str( "peera=trace, thespis_impl=trace, tokio=debug" ).start().unwrap();
+	flexi_logger::Logger::with_str( "peera=trace, thespis_impl=trace, tokio=warn" ).start().unwrap();
 
 	let program = async move
 	{

@@ -1,17 +1,20 @@
 use { crate :: { import::*, ThesError, runtime::rt, remote::{ ServiceID, ConnID, Codecs }, Addr, Receiver } };
 
 
-mod close_connection;
-mod connection_error;
-mod peer_event      ;
-mod call            ;
-mod incoming        ;
+mod close_connection  ;
+mod connection_error  ;
+mod peer_event        ;
+mod call              ;
+mod incoming          ;
+mod register_relay    ;
 
-pub use close_connection :: CloseConnection ;
-pub use connection_error :: ConnectionError ;
-pub use peer_event       :: PeerEvent       ;
-pub use call             :: Call            ;
-    use incoming         :: Incoming        ;
+pub use call              :: Call             ;
+pub use close_connection  :: CloseConnection  ;
+pub use connection_error  :: ConnectionError  ;
+pub use peer_event        :: PeerEvent        ;
+pub use register_relay    :: RegisterRelay    ;
+    use incoming          :: Incoming         ;
+    use peer_event        :: RelayEvent       ;
 
 // Reduce trait bound boilerplate, since we have to repeat them all over
 //
@@ -84,8 +87,15 @@ pub struct Peer<Out, MS>
 
 	/// All services that we relay to another peer. It has to be of the same type for now since there is
 	/// no trait for peers.
+	///
+	/// We store a map of the sid to the actor_id and then a map from actor_id to both addr and
+	/// remote handle for the PeerEvents.
+	///
+	/// These two fields should be kept in sync. Eg, we call unwrap on the get_mut on relays if
+	/// we found the id in relayed.
 	//
-	relay         : HashMap< &'static <MS as MultiService>::ServiceID, Addr<Self> >,
+	relayed       : HashMap< &'static <MS as MultiService>::ServiceID, usize >,
+	relays        : HashMap< usize, (Addr<Self>, RemoteHandle<()>)           >,
 
 	/// We use onshot channels to give clients a future that will resolve to their response.
 	//
@@ -157,11 +167,6 @@ impl<Out, MS> Peer<Out, MS>
 			//
 			await!( addr2.send_all( stream ) ).expect( "peer send to self");
 
-			// TODO: When we close the connection locally, this future is dropped and will never be polled
-			// again, so we can't get here. However if the connection drops, the stream above will end
-			// and we reach this statement. We should let the observers know that we lost the connection
-			// here, but we can't use pharos...
-
 			// Same as above.
 			//
 			await!( addr2.send( CloseConnection{ remote: true } ) ).expect( "peer send to self");
@@ -179,7 +184,8 @@ impl<Out, MS> Peer<Out, MS>
 			addr         : Some( addr )     ,
 			responses    : HashMap::new()   ,
 			services     : HashMap::new()   ,
-			relay        : HashMap::new()   ,
+			relayed      : HashMap::new()   ,
+			relays       : HashMap::new()   ,
 			listen_handle: Some( handle )   ,
 			pharos       : Pharos::new()    ,
 		})
@@ -210,66 +216,6 @@ impl<Out, MS> Peer<Out, MS>
 	)
 	{
 		self.services.insert( sid, (box Receiver::new( handler ), sm) );
-	}
-
-
-	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
-	/// For relaying services from other processes.
-	///
-	/// TODO: verify we can relay services unknown at compile time. Eg. could a remote process ask in runtime
-	///       could you please relay for me. We just removed a type parameter here, which should help, but we
-	///       need to test it to make sure it works.
-	///
-	// Design:
-	// - take a peer with a vec of services to relay over that peer.
-	// - store in a hashmap, but put the peer address in an Rc? + a unique id (addr doesn't have Eq)
-	//
-	pub fn register_relayed_service
-	(
-		&mut self                                                   ,
-		     sid         : &'static <MS as MultiService>::ServiceID ,
-		     peer        : Addr<Self>                               ,
-		     // relay_events: mpsc::Receiver<PeerEvent>                ,
-	)
-	{
-		// Hook up the incoming stream to our address.
-		//
-		// let mut addr2 = addr.clone();
-
-		// let listen = async move
-		// {
-		// 	// We need to map this to a custom type, since we had to impl Message for it.
-		// 	//
-		// 	let stream  = &mut incoming.map( |msg| Incoming{ msg } );
-
-		// 	// This can fail if:
-		// 	// - channel is full (TODO: currently we use unbounded, so that won't happen, but it might
-		// 	//   use unbounded amounts of memory.)
-		// 	// - the receiver is dropped. The receiver is our mailbox, so it should never be dropped
-		// 	//   as long as we have an address to it.
-		// 	//
-		// 	// So, I think we can unwrap for now.
-		// 	//
-		// 	await!( addr2.send_all( stream ) ).expect( "peer send to self");
-
-		// 	// TODO: When we close the connection locally, this future is dropped and will never be polled
-		// 	// again, so we can't get here. However if the connection drops, the stream above will end
-		// 	// and we reach this statement. We should let the observers know that we lost the connection
-		// 	// here, but we can't use pharos...
-
-		// 	// Same as above.
-		// 	//
-		// 	await!( addr2.send( CloseConnection{ remote: true } ) ).expect( "peer send to self");
-		// };
-
-		// // When we need to stop listening, we have to drop this future, because it contains
-		// // our address, and we won't be dropped as long as there are adresses around.
-		// //
-		// let (remote, handle) = listen.remote_handle();
-		// rt::spawn( remote )?;
-
-
-		self.relay.insert( sid, peer );
 	}
 
 

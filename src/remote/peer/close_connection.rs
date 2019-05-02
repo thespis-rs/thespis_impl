@@ -73,7 +73,7 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 			// alive. This breaks that cycle.
 			//
 			self.services .clear();
-			self.relay    .clear();
+			self.relays   .clear();
 			self.responses.clear();
 
 		})

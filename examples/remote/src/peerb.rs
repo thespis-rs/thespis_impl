@@ -10,8 +10,23 @@ fn main()
 	let program = async move
 	{
 		trace!( "Starting peerB" );
-		let mut peera  = await!( connect_to_tcp( "127.0.0.1:8998" ) );
-		let     peera2 = peera.clone();
+
+		let (srv_sink, srv_stream) = await!( connect_return_stream( "127.0.0.1:8998" ) );
+
+
+		// Create mailbox for peer
+		//
+		let     mb_peera  : Inbox<MyPeer> = Inbox::new()                   ;
+		let mut peera_addr                = Addr ::new( mb_peera.sender() );
+		let     peera_addr2               = peera_addr.clone()             ;
+
+		// create peer with stream/sink + service map
+		//
+		let mut peeraa = Peer::new( peera_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
+
+		let peera_evts = peeraa.observe( 10 );
+
+		mb_peera.start( peeraa ).expect( "spawn peer for peera" );
 
 		// Relay part ---------------------
 
@@ -22,14 +37,21 @@ fn main()
 			// Create mailbox for peer
 			//
 			let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
-			let peer_addr                = Addr ::new( mb_peer.sender() );
-
+			let mut peer_addr            = Addr ::new( mb_peer.sender() );
 			// create peer with stream/sink
 			//
-			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
+			let peer = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
 
-			peer.register_relayed_service( <ServiceA as Service<peer_a::Services>>::sid(), peera2.clone() );
-			peer.register_relayed_service( <ServiceB as Service<peer_a::Services>>::sid(), peera2         );
+			let registration = async move
+			{
+				let add  = <ServiceA as Service<peer_a::Services>>::sid();
+				let show = <ServiceB as Service<peer_a::Services>>::sid();
+				let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera_addr2 };
+
+				await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
+			};
+
+			rt::spawn( registration ).expect( "spawn registration" );
 
 			await!( mb_peer.start_fut( peer ) );
 		};
@@ -44,8 +66,8 @@ fn main()
 
 		// Call the service and receive the response
 		//
-		let mut service_a = peer_a::Services::recipient::<ServiceA>( peera.clone() );
-		let mut service_b = peer_a::Services::recipient::<ServiceB>( peera.clone() );
+		let mut service_a = peer_a::Services::recipient::<ServiceA>( peera_addr.clone() );
+		let mut service_b = peer_a::Services::recipient::<ServiceB>( peera_addr.clone() );
 
 
 
@@ -81,7 +103,7 @@ fn main()
 		// If the peerc closes the connection, we might as well terminate as well, because we did all our work.
 		//
 		await!( relay_outcome );
-		await!( peera.send( CloseConnection ) ).expect( "close connection to peera" );
+		await!( peera_addr.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 
 		trace!( "After close connection" );
 	};

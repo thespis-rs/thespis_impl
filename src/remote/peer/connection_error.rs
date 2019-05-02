@@ -8,5 +8,5 @@ pub enum ConnectionError
 	LostRelayBeforeCall     ,
 	LostRelayBeforeSend     ,
 	LostRelayBeforeResponse ,
-	UnkownService(Vec<u8>)    ,
+	UnkownService(Vec<u8>)  ,
 }

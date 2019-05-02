@@ -5,6 +5,7 @@ pub use
 	thespis_impl :: { *, remote::*, service_map, runtime::{ rt, tokio::TokioRT } } ,
 	serde        :: { Serialize, Deserialize, de::DeserializeOwned               } ,
 	std          :: { net::SocketAddr                                            } ,
+	pharos       :: { Observable                                                 } ,
 
 
 	futures      ::
@@ -113,3 +114,21 @@ pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
 	addr
 }
 
+
+
+pub async fn connect_return_stream( socket: &str ) ->
+
+	(TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, TokSplitStream<Framed<TcpStream, MulServTokioCodec<MS>>>)
+
+{
+	// Connect to tcp server
+	//
+	let socket = socket.parse::<SocketAddr>().unwrap();
+	let stream = await!( TcpStream::connect( &socket ).compat() ).expect( "connect address" );
+
+	// frame the connection with codec for multiservice
+	//
+	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
+
+	codec.framed( stream ).split()
+}

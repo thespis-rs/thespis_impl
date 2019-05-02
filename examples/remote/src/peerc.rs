@@ -42,7 +42,7 @@ fn main()
 		//
 		await!( service_b.send( ServiceB{ msg: "SEND AGAIN from peerC".to_string() } ) ).expect( "Send failed" );
 
-		await!( peerb.send( CloseConnection ) ).expect( "close connection to peera" );
+		await!( peerb.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

@@ -181,13 +181,15 @@ Box::pin( async move
 
 		// service_id in self.relay => Create Call and send to recipient found in self.relay.
 		//
-		else if let Some( relay ) = self.relay.get_mut( &sid )
+		else if let Some( relay ) = self.relayed.get( &sid )
 		{
 			trace!( "Incoming Send for relayed Actor" );
 
 			// until we have bounded channels, this should never fail, so I'm leaving the expect.
+			// We are keeping our internal state consistent, so the unwrap is fine. if it's in
+			// self.relayed, it's in self.relays.
 			//
-			await!( relay.send( frame ) ).expect( "relaying send to other peer" );
+			await!( self.relays.get_mut( &relay ).unwrap().0.send( frame ) ).expect( "relaying send to other peer" );
 		}
 
 		// service_id unknown => send back and log error
@@ -258,11 +260,14 @@ Box::pin( async move
 			// - we manage to call, but then when we await the response, the relay goes down, so the
 			//   sender of the channel for the response will come back as a disconnected error.
 			//
-			else if let Some( peer ) = self.relay.get_mut( &sid )
+			else if let Some( peer ) = self.relayed.get( &sid )
 			{
 				trace!( "Incoming Call for relayed Actor" );
 
-				let mut peer      = peer     .clone();
+				// The unwrap is safe, because we just checked self.relayed and we shall keep both
+				// in sync
+				//
+				let mut peer      = self.relays.get_mut( &peer ).unwrap().0.clone();
 				let mut self_addr = self_addr.clone();
 
 				rt::spawn( async move

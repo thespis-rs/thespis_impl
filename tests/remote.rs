@@ -17,6 +17,7 @@ use
 	thespis      :: { *                                          } ,
 	thespis_impl :: { *, remote::*, service_map, runtime::{ rt } } ,
 	std          :: { net::SocketAddr                            } ,
+	pharos       :: { Observable                                 } ,
 
 
 	futures      ::
@@ -198,9 +199,9 @@ fn remote()
 //
 fn relay()
 {
-	// flexi_logger::Logger::with_str( "remote=trace, thespis_impl=trace, tokio=debug" ).start().unwrap();
+	// flexi_logger::Logger::with_str( "remote=trace, thespis_impl=trace, tokio=warn" ).start().unwrap();
 
-	let peera = async
+	let nodea = async
 	{
 		// get a framed connection
 		//
@@ -226,13 +227,36 @@ fn relay()
 		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
+
+		trace!( "End of nodea" );
 	};
 
 
-	let peerb = async
+
+
+
+	let nodeb = async
 	{
-		let mut peera  = await!( connect_to_tcp( "127.0.0.1:20000" ) );
-		let     peera2 = peera.clone();
+		let (sink_b, stream_b) = await!( connect_return_stream( "127.0.0.1:20000" ) );
+
+		// Create mailbox for peer
+		//
+		let     mb_peera   : Inbox<MyPeer> = Inbox::new()                  ;
+		let mut peera_addr                 = Addr ::new( mb_peera.sender() );
+
+		// create peer with stream/sink
+		//
+		let mut peera = Peer::new( peera_addr.clone(), stream_b.compat(), sink_b.sink_compat() )
+
+			.expect( "spawn peera" )
+		;
+
+
+		let     peera2  = peera_addr.clone();
+		let peera_evts  = peera.observe( 10 );
+
+
+		mb_peera.start( peera ).expect( "spawn peera" );
 
 
 		// Relay part ---------------------
@@ -244,15 +268,26 @@ fn relay()
 
 			// Create mailbox for peer
 			//
-			let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
-			let peer_addr                = Addr ::new( mb_peer.sender() );
+			let     mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
+			let mut peer_addr                = Addr ::new( mb_peer.sender() );
 
 			// create peer with stream/sink + service map
 			//
-			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
+			let peer = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
 
-			peer.register_relayed_service( <Add  as Service<remote::Services>>::sid(), peera2.clone() );
-			peer.register_relayed_service( <Show as Service<remote::Services>>::sid(), peera2         );
+
+			rt::spawn( async move
+			{
+				let add  = <Add   as Service<remote::Services>>::sid();
+				let show = <Show  as Service<remote::Services>>::sid();
+				let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera2 };
+
+				trace!( "sending register_relay" );
+
+				await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
+
+			}).expect( "spawn register relay" );
+
 
 			await!( mb_peer.start_fut( peer ) );
 		};
@@ -263,7 +298,7 @@ fn relay()
 
 		// --------------------------------------
 
-		let peerc = async
+		let nodec = async
 		{
 			let mut peerb  = await!( connect_to_tcp( "127.0.0.1:30000" ) );
 
@@ -285,17 +320,20 @@ fn relay()
 
 		// we need to spawn this after peerb, otherwise peerb is not listening yet when we try to connect.
 		//
-		rt::spawn( peerc ).expect( "Spawn peerc"  );
+		rt::spawn( nodec ).expect( "Spawn nodec"  );
 
 
-		// If the peerc closes the connection, close our connection to peera.
+		// If the nodec closes the connection, close our connection to peera.
 		//
 		await!( relay_outcome );
-		await!( peera.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
+		await!( peera_addr.send( CloseConnection{ remote: false } ) ).expect( "close connection to nodea" );
 	};
 
-	rt::spawn( peera  ).expect( "Spawn peera"  );
-	rt::spawn( peerb  ).expect( "Spawn peerb"  );
+
+
+
+	rt::spawn( nodea  ).expect( "Spawn nodea"  );
+	rt::spawn( nodeb  ).expect( "Spawn nodeb"  );
 
 	rt::run();
 }
