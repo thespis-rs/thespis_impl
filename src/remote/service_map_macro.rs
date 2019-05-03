@@ -186,6 +186,12 @@ impl Services
 
 impl ServiceMap<$ms_type> for Services
 {
+	fn boxed() -> BoxServiceMap<MS>
+	{
+		box Self
+	}
+
+
 	// Will match the type of the service id to deserialize the message and send it to the handling actor
 	//
 	fn send_service( &self, msg: $ms_type, receiver: &BoxAny )

@@ -211,16 +211,16 @@ impl<Out, MS> Peer<Out, MS>
 	//
 	pub fn register_service<S, NS>
 	(
-		&mut self                        ,
-		     sm     : BoxServiceMap<MS>  ,
-		     handler: BoxRecipient<S>    ,
+		&mut self                    ,
+		     handler: BoxRecipient<S>,
 	)
 
 		where  S                    : Service<NS, UniqueID=<MS as MultiService>::ServiceID>,
 		      <S as Message>::Return: Serialize + DeserializeOwned                         ,
+		       NS                   : ServiceMap<MS> + Send + Sync + 'static               ,
 
 	{
-		self.services.insert( <S as Service<NS>>::sid(), (box Receiver::new( handler ), sm) );
+		self.services.insert( <S as Service<NS>>::sid(), (box Receiver::new( handler ), NS::boxed()) );
 	}
 
 

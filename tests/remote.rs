@@ -163,8 +163,8 @@ fn remote()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Add , remote::Services>( box remote::Services, addr_handler.recipient() );
-		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Add , remote::Services>( addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -231,8 +231,8 @@ fn relay()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Add , remote::Services>( box remote::Services, addr_handler.recipient() );
-		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Add , remote::Services>( addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( addr_handler.recipient() );
 
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
@@ -399,7 +399,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Show, parallel::Services>( box parallel::Services, addr_handler.recipient() );
+		peer.register_service::<Show, parallel::Services>( addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -425,7 +425,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 
