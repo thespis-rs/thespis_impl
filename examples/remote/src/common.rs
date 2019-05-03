@@ -10,9 +10,10 @@ pub use
 
 	futures      ::
 	{
-		future :: { FutureExt                                                          } ,
-		compat :: { Future01CompatExt, Compat01As03, Compat01As03Sink, Stream01CompatExt, Sink01CompatExt } ,
-		stream :: { Stream                                                             } ,
+		channel :: { mpsc                                                    } ,
+		future  :: { FutureExt                                               } ,
+		stream  :: { Stream, StreamExt                                       } ,
+		compat  :: { Future01CompatExt, Compat01As03, Compat01As03Sink, Stream01CompatExt, Sink01CompatExt } ,
 	},
 
 
@@ -87,7 +88,7 @@ pub async fn listen_tcp( socket: &str ) ->
 //
 #[ allow( dead_code ) ]
 //
-pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
+pub async fn connect_to_tcp( socket: &str ) -> (Addr<MyPeer>, mpsc::Receiver<PeerEvent>)
 {
 	// Connect to tcp server
 	//
@@ -107,28 +108,12 @@ pub async fn connect_to_tcp( socket: &str ) -> Addr<MyPeer>
 
 	// create peer with stream/sink + service map
 	//
-	let peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
+	let mut peer = Peer::new( addr.clone(), stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
+
+	let evts = peer.observe( 10 );
 
 	mb.start( peer ).expect( "Failed to start mailbox" );
 
-	addr
+	(addr, evts)
 }
 
-
-
-pub async fn connect_return_stream( socket: &str ) ->
-
-	(TokSplitSink<Framed<TcpStream, MulServTokioCodec<MS>>>, TokSplitStream<Framed<TcpStream, MulServTokioCodec<MS>>>)
-
-{
-	// Connect to tcp server
-	//
-	let socket = socket.parse::<SocketAddr>().unwrap();
-	let stream = await!( TcpStream::connect( &socket ).compat() ).expect( "connect address" );
-
-	// frame the connection with codec for multiservice
-	//
-	let codec: MulServTokioCodec<MS> = MulServTokioCodec::new();
-
-	codec.framed( stream ).split()
-}

@@ -11,22 +11,8 @@ fn main()
 	{
 		trace!( "Starting peerB" );
 
-		let (srv_sink, srv_stream) = await!( connect_return_stream( "127.0.0.1:8998" ) );
-
-
-		// Create mailbox for peer
-		//
-		let     mb_peera  : Inbox<MyPeer> = Inbox::new()                   ;
-		let mut peera_addr                = Addr ::new( mb_peera.sender() );
-		let     peera_addr2               = peera_addr.clone()             ;
-
-		// create peer with stream/sink + service map
-		//
-		let mut peeraa = Peer::new( peera_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
-
-		let peera_evts = peeraa.observe( 10 );
-
-		mb_peera.start( peeraa ).expect( "spawn peer for peera" );
+		let (mut peera_addr, peera_evts) = await!( connect_to_tcp( "127.0.0.1:8998" ) );
+		let peera_addr2 = peera_addr.clone();
 
 		// Relay part ---------------------
 
@@ -36,24 +22,37 @@ fn main()
 
 			// Create mailbox for peer
 			//
-			let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
-			let mut peer_addr            = Addr ::new( mb_peer.sender() );
+			let     mb_peerc  : Inbox<MyPeer> = Inbox::new()                  ;
+			let mut peer_addr                 = Addr ::new( mb_peerc.sender() );
+
 			// create peer with stream/sink
 			//
-			let peer = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
+			let mut peerc = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() )
 
-			let registration = async move
-			{
-				let add  = <ServiceA as Service<peer_a::Services>>::sid();
-				let show = <ServiceB as Service<peer_a::Services>>::sid();
-				let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera_addr2 };
+				.expect( "spawn peerc" )
+			;
 
-				await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
-			};
+			// Get the event stream
+			//
+			let peerc_evts = peerc.observe( 10 );
 
-			rt::spawn( registration ).expect( "spawn registration" );
+			// Start the mailbox for peerc
+			//
+			mb_peerc.start( peerc ).expect( "spawn peerc mb" );
 
-			await!( mb_peer.start_fut( peer ) );
+			// Register the services to be relayed
+			//
+			let add  = <ServiceA as Service<peer_a::Services>>::sid();
+			let show = <ServiceB as Service<peer_a::Services>>::sid();
+			let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera_addr2 };
+
+			await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
+
+			// Wait until the connection closes. If you need more fine grained info from the peer,
+			// you can inspect the elements of this stream, but this is an easy trick to just detect
+			// the dropping of the peer.
+			//
+			await!( peerc_evts.into_future() );
 		};
 
 		let (relay, relay_outcome) = relay.remote_handle();

@@ -11,7 +11,7 @@ fn main()
 	{
 		trace!( "Starting peerC" );
 
-		let mut peerb = await!( connect_to_tcp( "127.0.0.1:8999" ) );
+		let (mut peerb, _peerb_evts) = await!( connect_to_tcp( "127.0.0.1:8999" ) );
 
 
 		// Call the service and receive the response

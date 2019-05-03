@@ -55,9 +55,9 @@ impl<Out, MS> Handler< RegisterRelay<Out, MS> > for Peer<Out, MS>
 
 		Box::pin( async move
 		{
-			let mut addr = match &self.addr
+			let mut self_addr = match &self.addr
 			{
-				Some( addr ) => addr.clone() ,
+				Some( self_addr ) => self_addr.clone() ,
 				None         => return Ok(()),
 			};
 
@@ -77,7 +77,7 @@ impl<Out, MS> Handler< RegisterRelay<Out, MS> > for Peer<Out, MS>
 				//
 				// So, I think we can unwrap for now.
 				//
-				await!( addr.send_all( stream ) ).expect( "peer send to self");
+				await!( self_addr.send_all( stream ) ).expect( "peer send to self" );
 
 				// Same as above.
 				// Normally relays shouldn't just dissappear, without notifying us, but it could
@@ -88,7 +88,7 @@ impl<Out, MS> Handler< RegisterRelay<Out, MS> > for Peer<Out, MS>
 				//
 				let evt = PeerEvent::Closed;
 
-				await!( addr.send( RelayEvent{ id: peer_id, evt } ) ).expect( "peer send to self");
+				await!( self_addr.send( RelayEvent{ id: peer_id, evt } ) ).expect( "peer send to self");
 			};
 
 			// When we need to stop listening, we have to drop this future, because it contains

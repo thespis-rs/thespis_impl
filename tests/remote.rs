@@ -8,6 +8,13 @@
 // 2. relays
 // 3. verify we work in paralell. A calls B, B calls A back for some extra info before answering the first call.
 // 4. use the same connection for services on both ends -> probably combine this with 3.
+//
+// TODO:
+//
+// - decide on relaying in runtime, without having the relayed types at compilation
+// - verify all events on the events stream are outputted correctly
+// - stop relaying if a relay goes down, afterwards bring it back up and relay again?
+// - return errors to remote.
 
 
 
