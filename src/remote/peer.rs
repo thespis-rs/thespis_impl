@@ -211,10 +211,9 @@ impl<Out, MS> Peer<Out, MS>
 	//
 	pub fn register_service<S, NS>
 	(
-		&mut self                                              ,
-		     // _sid    : &'static <MS as MultiService>::ServiceID ,
-		     sm     : BoxServiceMap<MS>                        ,
-		     handler: BoxRecipient<S>                    ,
+		&mut self                        ,
+		     sm     : BoxServiceMap<MS>  ,
+		     handler: BoxRecipient<S>    ,
 	)
 
 		where  S                    : Service<NS, UniqueID=<MS as MultiService>::ServiceID>,

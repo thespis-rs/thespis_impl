@@ -278,25 +278,16 @@ fn relay()
 			// Create mailbox for peer
 			//
 			let     mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
-			let mut peer_addr                = Addr ::new( mb_peer.sender() );
+			let peer_addr                    = Addr ::new( mb_peer.sender() );
 
 			// create peer with stream/sink + service map
 			//
-			let peer = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
+			let mut peer = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() ).expect( "spawn peer" );
 
+			let add  = <Add   as Service<remote::Services>>::sid();
+			let show = <Show  as Service<remote::Services>>::sid();
 
-			rt::spawn( async move
-			{
-				let add  = <Add   as Service<remote::Services>>::sid();
-				let show = <Show  as Service<remote::Services>>::sid();
-				let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera2 };
-
-				trace!( "sending register_relay" );
-
-				await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
-
-			}).expect( "spawn register relay" );
-
+			peer.register_relayed_services( vec![ add, show ], peera2, peera_evts ).expect( "register relayed" );
 
 			await!( mb_peer.start_fut( peer ) );
 		};
@@ -324,7 +315,7 @@ fn relay()
 			let resp = await!( show.call( Show ) ).expect( "Call failed" );
 			assert_eq!( 10, resp );
 
-			await!( peerb.send( CloseConnection{ remote: false } ) ).expect( "close connection to peera" );
+			await!( peerb.send( CloseConnection{ remote: false } ) ).expect( "close connection to nodeb" );
 		};
 
 		// we need to spawn this after peerb, otherwise peerb is not listening yet when we try to connect.
@@ -337,9 +328,6 @@ fn relay()
 		await!( relay_outcome );
 		await!( peera_addr.send( CloseConnection{ remote: false } ) ).expect( "close connection to nodea" );
 	};
-
-
-
 
 	rt::spawn( nodea  ).expect( "Spawn nodea"  );
 	rt::spawn( nodeb  ).expect( "Spawn nodeb"  );
