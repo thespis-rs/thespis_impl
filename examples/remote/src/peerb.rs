@@ -5,7 +5,7 @@ use common::*;
 
 fn main()
 {
-	flexi_logger::Logger::with_str( "peerb=trace, thespis_impl=trace, tokio=info" ).start().unwrap();
+	// flexi_logger::Logger::with_str( "peerb=trace, thespis_impl=trace, tokio=info" ).start().unwrap();
 
 	let program = async move
 	{
@@ -22,12 +22,12 @@ fn main()
 
 			// Create mailbox for peer
 			//
-			let     mb_peerc  : Inbox<MyPeer> = Inbox::new()                  ;
-			let mut peer_addr                 = Addr ::new( mb_peerc.sender() );
+			let mb_peerc  : Inbox<MyPeer> = Inbox::new()                  ;
+			let peer_addr                 = Addr ::new( mb_peerc.sender() );
 
 			// create peer with stream/sink
 			//
-			let mut peerc = Peer::new( peer_addr.clone(), srv_stream.compat(), srv_sink.sink_compat() )
+			let mut peerc = Peer::new( peer_addr, srv_stream.compat(), srv_sink.sink_compat() )
 
 				.expect( "spawn peerc" )
 			;
@@ -36,17 +36,18 @@ fn main()
 			//
 			let peerc_evts = peerc.observe( 10 );
 
-			// Start the mailbox for peerc
-			//
-			mb_peerc.start( peerc ).expect( "spawn peerc mb" );
 
 			// Register the services to be relayed
 			//
 			let add  = <ServiceA as Service<peer_a::Services>>::sid();
 			let show = <ServiceB as Service<peer_a::Services>>::sid();
-			let regi = RegisterRelay{ services: vec![ add, show ], peer_events: peera_evts, peer: peera_addr2 };
 
-			await!( peer_addr.call( regi ) ).expect( "Send register_relay" ).expect( "register relayed services" );
+			peerc.register_relayed_services( vec![ add, show ], peera_addr2, peera_evts ).expect( "register relayed" );
+
+
+			// Start the mailbox for peerc
+			//
+			mb_peerc.start( peerc ).expect( "spawn peerc mb" );
 
 			// Wait until the connection closes. If you need more fine grained info from the peer,
 			// you can inspect the elements of this stream, but this is an easy trick to just detect

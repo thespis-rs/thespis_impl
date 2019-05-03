@@ -7,25 +7,19 @@ use common::*;
 
 fn main()
 {
-	flexi_logger::Logger::with_str( "peera=trace, thespis_impl=trace, tokio=warn" ).start().unwrap();
+	// flexi_logger::Logger::with_str( "peera=trace, thespis_impl=trace, tokio=warn" ).start().unwrap();
 
 	let program = async move
 	{
 		trace!( "Starting peerA" );
 
-		// frame it with multiservice codec
-		//
-		let (sink_a, stream_a) = await!( listen_tcp( "127.0.0.1:8998" ) );
-
-
-
 		// register HandleA with peer as handler for ServiceA
 		//
-		let mb_handler  : Inbox<HandleA> = Inbox::new()                     ;
-		let addr_handler                 = Addr ::new( mb_handler.sender() );
+		let addr_handler = Addr::try_from( HandleA ).expect( "spawn mb HandleA" );
 
-		// Create mailbox for peer
+		// Create peera network connection actor
 		//
+		let (sink_a, stream_a)       = await!( listen_tcp( "127.0.0.1:8998" ) );
 		let mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
 		let peer_addr                = Addr ::new( mb_peer.sender() );
 
@@ -33,14 +27,12 @@ fn main()
 		//
 		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() ).expect( "create peer" );
 
+		// Register our services
+		//
 		peer.register_service::<ServiceA, peer_a::Services>( addr_handler.recipient() );
 		peer.register_service::<ServiceB, peer_a::Services>( addr_handler.recipient() );
 
-
-		let handler = HandleA {};
-
-		mb_peer   .start( peer    ).expect( "Failed to start mailbox of Peer"     );
-		mb_handler.start( handler ).expect( "Failed to start mailbox for HandleA" );
+		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
 
 
@@ -60,7 +52,6 @@ impl Actor for HandleA
 		Box::pin( async move
 		{
 			trace!( "Started HandleA actor" );
-
 		})
 	}
 
@@ -70,10 +61,10 @@ impl Actor for HandleA
 		Box::pin( async move
 		{
 			trace!( "Stopped HandleA actor" );
-
 		})
 	}
 }
+
 
 impl Handler<ServiceA> for HandleA
 {
@@ -85,6 +76,7 @@ impl Handler<ServiceA> for HandleA
 
 	})}
 }
+
 
 impl Handler<ServiceB> for HandleA
 {
