@@ -80,7 +80,7 @@ impl fmt::Display for ConnID
 {
 	fn fmt( &self, f: &mut fmt::Formatter ) -> fmt::Result
 	{
-		write!( f, "{:x?}", self )
+		write!( f, "{:?}", self )
 	}
 }
 
@@ -92,7 +92,7 @@ impl fmt::Debug for ConnID
 	{
 		for byte in &self.bytes
 		{
-			write!( f, "{:x}", byte )?
+			write!( f, "{:02x}", byte )?
 		}
 
 		Ok(())

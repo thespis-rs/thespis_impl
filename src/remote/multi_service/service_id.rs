@@ -45,7 +45,7 @@ impl fmt::Display for ServiceID
 {
 	fn fmt( &self, f: &mut fmt::Formatter ) -> fmt::Result
 	{
-		write!( f, "{:x?}", self )
+		write!( f, "{:?}", self )
 	}
 }
 
@@ -57,7 +57,7 @@ impl fmt::Debug for ServiceID
 	{
 		for byte in &self.bytes
 		{
-			write!( f, "{:x}", byte )?
+			write!( f, "{:02x}", byte )?
 		}
 
 		Ok(())
@@ -128,6 +128,17 @@ mod tests
 		let sid2 = ServiceID::from_seed( b"hi from seed" );
 
 		assert_eq!( sid, sid2 );
+	}
+
+
+	#[test]
+	//
+	fn debug()
+	{
+		let bytes: Bytes = vec![ 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, ].into();
+		let sid = ServiceID::try_from( bytes ).unwrap();
+
+		assert_eq!( "000102030405060708090a0b0c0d0e0f", &format!( "{:?}", sid ) );
 	}
 }
 
