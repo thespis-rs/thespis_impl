@@ -31,10 +31,10 @@ fn main()
 
 		// create peer with stream/sink + service map
 		//
-		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() ).expect( "spawn peer" );
+		let mut peer = Peer::new( peer_addr, stream_a.compat(), sink_a.sink_compat() ).expect( "create peer" );
 
-		peer.register_service::<ServiceA>( <ServiceA as Service<peer_a::Services>>::sid(), box peer_a::Services, addr_handler.recipient() );
-		peer.register_service::<ServiceB>( <ServiceB as Service<peer_a::Services>>::sid(), box peer_a::Services, addr_handler.recipient() );
+		peer.register_service::<ServiceA, peer_a::Services>( box peer_a::Services, addr_handler.recipient() );
+		peer.register_service::<ServiceB, peer_a::Services>( box peer_a::Services, addr_handler.recipient() );
 
 
 		let handler = HandleA {};

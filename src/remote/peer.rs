@@ -194,28 +194,34 @@ impl<Out, MS> Peer<Out, MS>
 
 	/// Register a handler for a service that you want to expose over this connection.
 	///
+	/// We need to take both Service type parameter and sid, because the sid will be constructed
+	/// also with the Namespace which we don't have here.
+	///
 	/// TODO: define what has to happen when called several times on the same service
 	///       options: 1. error
 	///                2. replace prior entry
 	///                3. allow several handlers for the same service (not very likely)
 	///
-	/// TODO: review api design. We take the service as a type parameter yet still require the user to pass in
-	///       sid? Should we not require a trait bound on Service rather than on Message? Is that possible
+	/// TODO: review api design. Should we not require a trait bound on Service rather than on Message? Is that possible
 	///       since we need a Recipient to it? We would need service map type if we were to call sid() on the
 	///       Service, but maybe we could take an explicit type for the service map?
 	///       Currently this requires the user to instantiate a new service map per service. Do we want this?
 	///       I think current impl is a zero sized type, so that's probably not problem.
 	///       Same questions for relayed services
 	//
-	pub fn register_service<Service: Message>
+	pub fn register_service<S, NS>
 	(
 		&mut self                                              ,
-		     sid    : &'static <MS as MultiService>::ServiceID ,
+		     // _sid    : &'static <MS as MultiService>::ServiceID ,
 		     sm     : BoxServiceMap<MS>                        ,
-		     handler: BoxRecipient<Service>                    ,
+		     handler: BoxRecipient<S>                    ,
 	)
+
+		where  S                    : Service<NS, UniqueID=<MS as MultiService>::ServiceID>,
+		      <S as Message>::Return: Serialize + DeserializeOwned                         ,
+
 	{
-		self.services.insert( sid, (box Receiver::new( handler ), sm) );
+		self.services.insert( <S as Service<NS>>::sid(), (box Receiver::new( handler ), sm) );
 	}
 
 

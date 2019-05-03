@@ -15,6 +15,7 @@
 // - verify all events on the events stream are outputted correctly
 // - stop relaying if a relay goes down, afterwards bring it back up and relay again?
 // - return errors to remote.
+// - verify eventstream end as detection of connection close
 
 
 
@@ -162,8 +163,8 @@ fn remote()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Add >( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
-		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Add , remote::Services>( box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
@@ -230,8 +231,9 @@ fn relay()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Add >( <Add  as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
-		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Add , remote::Services>( box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
+
 
 		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
 
@@ -409,9 +411,9 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service( <Show as Service<parallel::Services>>::sid(), box parallel::Services, addr_handler.recipient() );
+		peer.register_service::<Show, parallel::Services>( box parallel::Services, addr_handler.recipient() );
 
-		mb_peer   .start( peer ).expect( "Failed to start mailbox of Peer" );
+		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 	};
 
 
@@ -421,7 +423,7 @@ fn parallel()
 
 		// Create mailbox for peer
 		//
-		let mb_peer      : Inbox<MyPeer> = Inbox::new()                  ;
+		let     mb_peer  : Inbox<MyPeer> = Inbox::new()                  ;
 		let mut peer_addr                = Addr ::new( mb_peer.sender() );
 
 		// create peer with stream/sink
@@ -435,7 +437,7 @@ fn parallel()
 
 		// register Sum with peer as handler for Add and Show
 		//
-		peer.register_service::<Show>( <Show as Service<remote::Services>>::sid(), box remote::Services, addr_handler.recipient() );
+		peer.register_service::<Show, remote::Services>( box remote::Services, addr_handler.recipient() );
 
 		mb_peer.start( peer ).expect( "Failed to start mailbox of Peer" );
 

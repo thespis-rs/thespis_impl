@@ -128,7 +128,7 @@ mod import
 		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
 		futures     :: { future::RemoteHandle                                } ,
 		pharos      :: { Pharos, Observable                                  } ,
-		serde       :: { Serialize, Deserialize                              } ,
+		serde       :: { Serialize, Deserialize, de::DeserializeOwned        } ,
 
 	};
 
