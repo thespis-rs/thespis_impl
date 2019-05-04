@@ -17,6 +17,7 @@
 // - return errors to remote.(still need to implement receiving end for error)
 // - verify eventstream end as detection of connection close
 // - call remote service after connection closed. Verify error returned
+// - test service map: 2 different namespaces should give different sid, ...
 
 
 

@@ -1,6 +1,6 @@
 /// This is a beefy macro which is your main interface to using the remote actors. It's unavoidable to
 /// require code in the client application because thespis does not know the types of messages you will
-/// create, yet we aim at making the difference between local and remote actors seamless for using code.
+/// create, yet we aim at making the difference between local and remote actors seamless for user code.
 ///
 /// This macro will allow deserializing messages to the correct types, as well as creating recipients for
 /// remote actors.
@@ -9,11 +9,64 @@
 /// order needs to be exact.
 ///
 /// Please open declaration section to see the parameter documentation. The module [remote] has more
-/// documentation on using remote actors, and there is a remote example and unit tests in the repository
-/// which you can look at for a more fully fledged example.
+/// documentation on using remote actors and there are examples in the `examples/remote` folder to see
+/// it all in action. There are many integration tests as well testing each feature of the remote actors
+/// in the `tests/remote` folder..
 ///
-/// TODO: - document the types made available to the user by this macro.
-///       - this is not generic at all, cbor is hardcoded, <<$ms_type> as MultiService>::ServiceID as well...
+/// Types created by this macro, for the following invocation:
+///
+/// ```ignore
+/// type MySink = SplitSink<...>;
+/// type MyPeer = Peer<MultiServiceImpl, MySink>;
+/// service_map!
+/// (
+///    namespace: myns                 ;
+///    peer_type: MyPeer               ;
+///    multi_service: MultiServiceImpl ;
+///
+///    services:
+///
+///    	ServiceA,
+///    	ServiceB,
+/// );
+///
+/// mod myns
+/// {
+///    pub trait MarkServices {}; // trait bound for all services in this service_map
+///
+///    impl MarkServices for ServiceA {}
+///    impl MarkServices for ServiceB {}
+///
+///    // sid will be different for ServiceA in another service map with another namespace than myns
+///    //
+///    impl Service<self::Services> for ServiceA {...} // self being myns
+///    impl Service<self::Services> for ServiceB {...}
+///
+///    pub struct Services {}
+///
+///    impl Namespace for Services { const NAMESPACE: &'static str = "myns"; }
+///
+///    impl Services
+///    {
+///       /// Creates a recipient to a Service type for a remote actor, which can be used in exactly the
+///       /// same way as if the actor was local. This is for the process that wants to use the services
+///       /// not the one that provides them. For it to work, they must use the same namespace.
+///       //
+///       pub fn recipient<S>( peer: Addr<MyPeer> ) -> impl Recipient<S> {...}
+///
+///       ...
+///     }
+///
+///     // Service map is defined in the thespis crate. This is for the network peer, normally you don't
+///     // need to use this directly as a user.
+///     //
+///     impl ServiceMap<MultiServiceImpl> for Services {...}
+///
+///     // Some types to make the impl Recipient<S> in Services::recipient above.
+/// }
+/// ```
+///
+/// TODO: - this is not generic right now, cbor is hardcoded
 //
 #[ macro_export ]
 //
@@ -77,8 +130,8 @@ use
 //
 pub trait MarkServices {}
 
-$
-(
+$(
+
 	impl MarkServices for $services {}
 
 	impl Service<self::Services> for $services
