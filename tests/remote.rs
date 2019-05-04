@@ -14,8 +14,9 @@
 // - decide on relaying in runtime, without having the relayed types at compilation
 // - verify all events on the events stream are outputted correctly
 // - stop relaying if a relay goes down, afterwards bring it back up and relay again?
-// - return errors to remote.
+// - return errors to remote.(still need to implement receiving end for error)
 // - verify eventstream end as detection of connection close
+// - call remote service after connection closed. Verify error returned
 
 
 

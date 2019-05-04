@@ -75,7 +75,6 @@ impl<Out, MS> Handler<CloseConnection> for Peer<Out, MS>
 			self.services .clear();
 			self.relays   .clear();
 			self.responses.clear();
-
 		})
 	}
 }

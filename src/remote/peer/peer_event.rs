@@ -1,5 +1,12 @@
 use crate::{ import::*, remote::* };
 
+
+/// Events that can happen during the lifecycle of the peer. Use the [`observe`] method to subscribe to events.
+///
+/// When you see either `Closed` or `ClosedByRemote`, the connection is lost and you should drop all
+/// addresses/recipients you hold for this peer, so it can be dropped. You can no longer send messages
+/// over this peer after these events.
+//
 #[ derive( Debug, Clone, PartialEq ) ]
 //
 pub enum PeerEvent
@@ -27,7 +34,8 @@ impl Message for RelayEvent
 
 
 
-/// Handler for peer events from other peers, mainly for peers that we have to relay over.
+/// Handler for events from relays.
+/// If we notice Closed or ClosedByRemote on relays, we will stop relaying their services.
 //
 impl<Out, MS> Handler<RelayEvent> for Peer<Out, MS>
 

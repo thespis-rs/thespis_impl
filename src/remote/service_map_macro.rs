@@ -115,8 +115,10 @@ impl Services
 	//
 	pub fn recipient<S>( peer: Addr<$peer_type> ) -> impl Recipient<S>
 
-	where  S: MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Serialize + DeserializeOwned + Send,
-	      <S as Message>::Return: Serialize + DeserializeOwned + Send                                         ,
+	where  S:   MarkServices + Serialize + DeserializeOwned + Send
+	          + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID>,
+
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 	{
 		ServicesRecipient::new( peer )
 	}
@@ -127,8 +129,10 @@ impl Services
 	//
 	fn send_service_gen<S>( msg: $ms_type, receiver: &BoxAny )
 
-		where  S: MarkServices + Service<self::Services> + Message + Send,
-		      <S as Message>::Return: Serialize + DeserializeOwned + Send,
+		where  S:   MarkServices + Serialize + DeserializeOwned + Send
+		          + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID>,
+
+			      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 
 	{
 		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
@@ -155,8 +159,10 @@ impl Services
 
 	)
 
-	where  S                    : MarkServices + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID> + Send,
-	      <S as Message>::Return: Serialize + DeserializeOwned + Send                              ,
+	where S:   MarkServices + Serialize + DeserializeOwned + Send
+	         + Service<self::Services, UniqueID=<$ms_type as MultiService>::ServiceID>,
+
+	      <S as Message>::Return: Serialize + DeserializeOwned + Send,
 	{
 		let     backup: &Receiver<S> = receiver.downcast_ref().expect( "downcast_ref failed" );
 		let mut rec                  = backup.clone_box();

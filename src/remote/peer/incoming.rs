@@ -22,28 +22,23 @@ impl<Out, MS> Handler<Incoming<MS>> for Peer<Out, MS>
 {
 fn handle( &mut self, incoming: Incoming<MS> ) -> ReturnNoSend<()>
 {
-trace!( "got incoming event on stream" );
 
 Box::pin( async move
 {
+	let cid_null = <MS as MultiService>::ConnID::null();
+
 	let frame = match incoming.msg
 	{
 		Ok ( mesg  ) => mesg,
-
 		Err( error ) =>
 		{
 			error!( "Error extracting MultiService from stream: {:#?}", error );
 
 			await!( self.pharos.notify( &PeerEvent::Error( ConnectionError::DeserializationFailure ) ) );
 
-			// TODO: we should send an error to the remote before closing the connection.
+			// Send an error back to the remote peer and close the connection
 			//
-			if let Some( addr ) = &mut self.addr
-			{
-				// until we have bounded channels, this should never fail, so I'm leaving the expect.
-				//
-				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "Send Drop to self in Peer" );
-			}
+			await!( self.send_err( cid_null, &ConnectionError::DeserializationFailure, true ) );
 
 			return
 		}
@@ -102,24 +97,13 @@ Box::pin( async move
 		Ok ( sid ) => sid,
 		Err( err ) =>
 		{
-
 			error!( "Fail to get service_id from incoming frame: {}", err );
 
 			await!( self.pharos.notify( &PeerEvent::Error( ConnectionError::DeserializationFailure ) ) );
 
-
 			// Send an error back to the remote peer and close the connection
 			//
-			if let Some( ref mut addr ) = self.addr
-			{
-				let cid = <MS as MultiService>::ConnID::null();
-				let err = Self::prep_error( cid, ConnectionError::DeserializationFailure );
-
-				// until we have bounded channels, this should never fail, so I'm leaving the expect.
-				//
-				await!( addr.send( err                              ) ).expect( "send ms to self"       );
-				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection" );
-			}
+			await!( self.send_err( cid_null, &ConnectionError::DeserializationFailure, true ) );
 
 			return
 		}
@@ -135,18 +119,9 @@ Box::pin( async move
 
 			await!( self.pharos.notify( &PeerEvent::Error( ConnectionError::DeserializationFailure ) ) );
 
-			// Send an error back to the remote peer and to the observers
+			// Send an error back to the remote peer and close the connection
 			//
-			if let Some( ref mut addr ) = self.addr
-			{
-				let cid = <MS as MultiService>::ConnID::null();
-				let err = Self::prep_error( cid, ConnectionError::DeserializationFailure );
-
-				// until we have bounded channels, this should never fail, so I'm leaving the expect.
-				//
-				await!( addr.send( err                              ) ).expect( "send ms to self"       );
-				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection" );
-			}
+			await!( self.send_err( cid_null, &ConnectionError::DeserializationFailure, true ) );
 
 			return
 		}
@@ -160,7 +135,7 @@ Box::pin( async move
 	//
 	if sid.is_null()
 	{
-
+		todo!()
 	}
 
 
@@ -179,18 +154,34 @@ Box::pin( async move
 		}
 
 
-		// service_id in self.relay => Create Call and send to recipient found in self.relay.
+		// service_id in self.relay => Send to recipient found in self.relay.
 		//
-		else if let Some( relay ) = self.relayed.get( &sid )
+		else if let Some( relay_id ) = self.relayed.get( &sid )
 		{
 			trace!( "Incoming Send for relayed Actor" );
 
-			// until we have bounded channels, this should never fail, so I'm leaving the expect.
 			// We are keeping our internal state consistent, so the unwrap is fine. if it's in
 			// self.relayed, it's in self.relays.
 			//
-			await!( self.relays.get_mut( &relay ).unwrap().0.send( frame ) ).expect( "relaying send to other peer" );
+			let relay = &mut self.relays.get_mut( &relay_id ).unwrap().0;
+
+			// if this fails, well, the peer is no longer there. Warn remote and observers.
+			// We let remote know we are no longer relaying to this service.
+			// TODO: should we remove it from self.relayed? Normally there is detection mechanisms
+			//       already that should take care of this, but then if they work, we shouldn't be here...
+			//       also, if we no longer use unbounded channels, this might fail because the
+			//       channel is full.
+			//
+			if await!( relay.send( frame ) ).is_err()
+			{
+				let err = ConnectionError::LostRelayBeforeSend( sid.into().to_vec() );
+				await!( self.send_err( cid_null, &err, false ) );
+
+				let err = PeerEvent::Error( err );
+				await!( self.pharos.notify( &err ) );
+			};
 		}
+
 
 		// service_id unknown => send back and log error
 		//
@@ -200,14 +191,11 @@ Box::pin( async move
 
 			// Send an error back to the remote peer and to the observers
 			//
-			if let Some( ref mut addr ) = self.addr
-			{
-				let err = Self::prep_error( cid, ConnectionError::UnkownService(sid.into().to_vec()) );
+			let err = ConnectionError::UnkownService( sid.into().to_vec() );
+			await!( self.send_err( cid_null, &err, false ) );
 
-				// until we have bounded channels, this should never fail, so I'm leaving the expect.
-				//
-				await!( addr.send( err ) ).expect( "send ms to self" );
-			}
+			let err = PeerEvent::Error( err );
+			await!( self.pharos.notify( &err ) );
 		}
 	}
 
@@ -255,8 +243,6 @@ Box::pin( async move
 			//
 			// What could possibly go wrong???
 			// - relay peer has been shut down (eg. remote closed connection)
-			//   TODO: We should observe remotes to know when that happens, so we can drop their address
-			//         and report to our remotes that we are no longer relaying for those services.
 			// - we manage to call, but then when we await the response, the relay goes down, so the
 			//   sender of the channel for the response will come back as a disconnected error.
 			//
@@ -283,7 +269,7 @@ Box::pin( async move
 					//
 					match channel
 					{
-						Ok( receiver ) =>	{	match await!( receiver )
+						Ok( receiver ) =>	{match await!( receiver )
 						{
 
 							Ok( resp ) =>
@@ -304,25 +290,23 @@ Box::pin( async move
 							{
 								// Send an error back to the remote peer
 								//
-								let err = Self::prep_error( cid, ConnectionError::LostRelayBeforeResponse );
+								let err = Self::prep_error( cid, &ConnectionError::LostRelayBeforeResponse );
 
-								await!( self_addr.send( err ) ).expect( "send ms to self" );;
+								await!( self_addr.send( err ) ).expect( "send msg to self" );
 							}
 						}},
 
 						// Sending out call by relay failed
-						// TODO: inform remote
 						//
 						Err( _err ) =>
 						{
 							// Send an error back to the remote peer
 							//
-							let err = Self::prep_error( cid, ConnectionError::LostRelayBeforeCall );
+							let err = Self::prep_error( cid, &ConnectionError::LostRelayBeforeCall );
 
-							await!( self_addr.send( err ) ).expect( "send ms to self" );;
+							await!( self_addr.send( err ) ).expect( "send msg to self" );
 						}
 					}
-
 
 				}).expect( "failed to spawn" );
 
@@ -336,14 +320,11 @@ Box::pin( async move
 
 				// Send an error back to the remote peer and to the observers
 				//
-				if let Some( ref mut addr ) = self.addr
-				{
-					let err = Self::prep_error( cid, ConnectionError::UnkownService(sid.into().to_vec()) );
+				let err = ConnectionError::UnkownService( sid.into().to_vec() );
+				await!( self.send_err( cid_null, &err, false ) );
 
-					// until we have bounded channels, this should never fail, so I'm leaving the expect.
-					//
-					await!( addr.send( err ) ).expect( "send close connection" );
-				}
+				let err = PeerEvent::Error( err );
+				await!( self.pharos.notify( &err ) );
 			}
 		}
 

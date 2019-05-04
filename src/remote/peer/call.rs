@@ -41,12 +41,16 @@ impl<Out, MS> Handler<Call<MS>> for Peer<Out, MS>
 
 		Box::pin( async move
 		{
+			// Fallible operations first
+			//
+			let conn_id = call.mesg.conn_id()?;
+			await!( self.send_msg( call.mesg ) )?;
+
+			// If the above succeeded, store the other end of the channel
+			//
 			let (sender, receiver) = oneshot::channel::< MS >() ;
-			let conn_id            = call.mesg.conn_id()?               ;
 
 			self.responses.insert( conn_id, sender );
-
-			await!( self.send_msg( call.mesg ) )?;
 
 			Ok( receiver )
 

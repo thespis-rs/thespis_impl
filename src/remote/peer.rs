@@ -34,10 +34,6 @@ where T: 'static + Message<Return=()> + MultiService {}
 
 /// Represents a connection to another process over which you can send actor messages.
 ///
-/// TODO: - let the user subscribe to connection close event.
-///       - if you still have a recipient, so an address to this peer, but the remote end closes,
-///         what happens when you send on the recipient (error handling in other words)
-///
 /// ### Closing the connection
 ///
 /// The reasoning behind a peer is that it is tied to a stream/sink, often a framed connection.
@@ -49,13 +45,15 @@ where T: 'static + Message<Return=()> + MultiService {}
 ///
 /// If you do hold recipients and try to send on them, 2 things can happen. Since Send is like
 /// throwing a message in a bottle, without feedback, it's infallible, so your message will
-/// just get dropped silently. If you use call, which returns a result, you will get an error.
+/// just get dropped silently. If you use call, which returns a result, you will get an error
+/// (ThesError::PeerSendAfterCloseConnection).
 ///
-/// It's not yet implemented, but there will be an event that you will be able to subscribe to
-/// to detect closed connections, so you can drop your recipients, try to reconnect, etc...
+/// Peer uses the pharos crate to be observable over [`PeerEvent`]. This allows you to detect
+/// when errors happen and to react accordingly. If the connection gets closed, you can make
+/// reconnect and make a new peer.
 ///
-/// ### Actor shutdown
-///
+//
+#[ derive( Actor ) ]
 //
 pub struct Peer<Out, MS>
 
@@ -104,33 +102,6 @@ pub struct Peer<Out, MS>
 	/// The pharos allows us to have observers.
 	//
 	pharos        : Pharos<PeerEvent>,
-}
-
-
-
-impl<Out, MS> Actor for Peer<Out, MS>
-
-	where Out        : BoundsOut<MS> ,
-	      MS : BoundsMS      ,
-{
-	// fn started ( &mut self ) -> Return<()>
-	// {
-	// 	async move
-	// 	{
-	// 		trace!( "Started Peer actor" );
-
-	// 	}.boxed()
-	// }
-
-
-	// fn stopped ( &mut self ) -> Return<()>
-	// {
-	// 	async move
-	// 	{
-	// 		trace!( "Stopped Peer actor" );
-
-	// 	}.boxed()
-	// }
 }
 
 
@@ -194,26 +165,29 @@ impl<Out, MS> Peer<Out, MS>
 
 	/// Register a handler for a service that you want to expose over this connection.
 	///
-	/// We need to take both Service type parameter and sid, because the sid will be constructed
-	/// also with the Namespace which we don't have here.
-	///
 	/// TODO: define what has to happen when called several times on the same service
 	///       options: 1. error
 	///                2. replace prior entry
 	///                3. allow several handlers for the same service (not very likely)
 	///
-	/// TODO: review api design. Should we not require a trait bound on Service rather than on Message? Is that possible
-	///       since we need a Recipient to it? We would need service map type if we were to call sid() on the
-	///       Service, but maybe we could take an explicit type for the service map?
-	///       Currently this requires the user to instantiate a new service map per service. Do we want this?
-	///       I think current impl is a zero sized type, so that's probably not problem.
-	///       Same questions for relayed services
+	/// ----- Currently the existing entry is replaced with the new one. For the moment
+	///       the method is infallible which could no longer be the same if we change this.
+	///
+	/// TODO: review api design. Currently this needs to be called on a peer, which needs
+	///       it's own address, so there is no way to sugar this up. Users will need to
+	///       make and address and manual mailbox, then feed the address to peer, then
+	///       register services. So it's not really possible to make a reusable method
+	///       which takes a socket address, connects and returns an address to a peer, because
+	///       you will need to start the mailbox after registering here. Since this method
+	///       is...
+	///
+	/// ----- Actually, if the servicemap could take a peer and register all it's services
+	///       that would be awesome. Or a peer could take a servicemap and register all services...
+	///       Actuall, that won't be so easy. The user decides which actor handles which
+	///       service... We would have to take a vector of (sid, Box<Any>)... not very
+	///       clean.
 	//
-	pub fn register_service<S, NS>
-	(
-		&mut self                    ,
-		     handler: BoxRecipient<S>,
-	)
+	pub fn register_service<S, NS>( &mut self, handler: BoxRecipient<S> )
 
 		where  S                    : Service<NS, UniqueID=<MS as MultiService>::ServiceID>,
 		      <S as Message>::Return: Serialize + DeserializeOwned                         ,
@@ -225,21 +199,8 @@ impl<Out, MS> Peer<Out, MS>
 
 
 
-
-
-	/// Handler for RegisterRelay
-	///
 	/// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
 	/// For relaying services from other processes.
-	///
-	/// TODO: - verify we can relay services unknown at compile time. Eg. could a remote process ask in runtime
-	///       could you please relay for me. We just removed a type parameter here, which should help, but we
-	///       need to test it to make sure it works.
-	///
-	// Design:
-	// - take a peer with a vec of services to relay over that peer.
-	// - store in a hashmap, but put the peer address in an Rc? + a unique id (addr doesn't have Eq)
-	//
 	//
 	pub fn register_relayed_services
 	(
@@ -295,9 +256,6 @@ impl<Out, MS> Peer<Out, MS>
 		let (remote, handle) = listen.remote_handle();
 		rt::spawn( remote )?;
 
-		// self.relayed       : HashMap< &'static <MS as MultiService>::ServiceID, usize >,
-		// self.relays        : HashMap< usize, (Addr<Self>, RemoteHandle<()>)           >,
-
 		self.relays .insert( peer_id, (peer, handle) );
 
 		for sid in services
@@ -311,9 +269,7 @@ impl<Out, MS> Peer<Out, MS>
 
 
 
-
-
-// actually send the message accross the wire
+	// actually send the message accross the wire
 	//
 	async fn send_msg( &mut self, msg: MS ) -> ThesRes<()>
 	{
@@ -326,14 +282,43 @@ impl<Out, MS> Peer<Out, MS>
 
 
 
-	// actually send the message accross the wire
+	// actually send the error accross the wire. This is for when errors happen on receiving
+	// messages (eg. Deserialization errors).
 	//
-	fn prep_error( cid: <MS as MultiService>::ConnID, err: ConnectionError ) -> MS
+	async fn send_err<'a>
+	(
+		&'a mut self                                ,
+		     cid  : <MS as MultiService>::ConnID ,
+		     err  : &'a ConnectionError             ,
+
+		     // whether the connection should be closed (eg stream corrupted)
+		     //
+		     close: bool                         ,
+	)
 	{
-		// it's important that the sid is null here, because a response with both cid and sid
-		// not null is interpreted as an error.
-		//
-		let serialized   = serde_cbor::to_vec( &err ).expect( "serialize response" );
+		if let Some( ref mut out ) = self.outgoing
+		{
+			let msg = Self::prep_error( cid, err );
+
+			let _ = await!( out.send( msg ) );
+
+			if close {
+			if let Some( ref mut addr ) = self.addr
+			{
+				// until we have bounded channels, this should never fail, so I'm leaving the expect.
+				//
+				await!( addr.send( CloseConnection{ remote: false } ) ).expect( "send close connection" );
+			}}
+		}
+	}
+
+
+
+	// serialize a ConnectionError to be sent across the wire.
+	//
+	fn prep_error( cid: <MS as MultiService>::ConnID, err: &ConnectionError ) -> MS
+	{
+		let serialized   = serde_cbor::to_vec( err ).expect( "serialize response" );
 		let codec: Bytes = Codecs::CBOR.into();
 
 		let codec2 = match <MS as MultiService>::CodecAlg::try_from( codec )
@@ -342,21 +327,22 @@ impl<Out, MS> Peer<Out, MS>
 			Err( _ ) => panic!( "Failed to create codec from bytes" ),
 		};
 
+		// sid null is the marker that this is an error message.
+		//
 		MS::create
 		(
-			<MS as MultiService>::ServiceID::null(),
-			cid,
-			codec2,
-			serialized.into()
+			<MS as MultiService>::ServiceID::null() ,
+			cid                                     ,
+			codec2                                  ,
+			serialized.into()                       ,
 		)
 	}
 }
 
 
 
-// On an outgoing call, we need to store the conn_id and the peer to whome to return the response
-//
-// On outgoing call made by a local actor, store in the oneshot sender in self.responses
+// Put an outgoing multiservice message on the wire.
+// TODO: why do we not return the error?
 //
 impl<Out, MS> Handler<MS> for Peer<Out, MS>
 
@@ -377,6 +363,9 @@ impl<Out, MS> Handler<MS> for Peer<Out, MS>
 }
 
 
+
+// Pharos, shine!
+//
 impl<Out, MS> Observable<PeerEvent> for Peer<Out, MS>
 
 	where Out: BoundsOut<MS> ,

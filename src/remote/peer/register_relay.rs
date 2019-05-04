@@ -31,7 +31,11 @@ impl<MS, Out> Message for RegisterRelay<Out, MS>
 /// Handler for RegisterRelay
 ///
 /// Tell this peer to make a given service avaible to a remote, by forwarding incoming requests to the given peer.
-/// For relaying services from other processes.
+/// For relaying services from other processes. You should normally use the method [`register_relayed_services`]
+/// rather than sending this message, so that your peer is completely set up before starting it's mailbox. However
+/// it can happen that the connection to the relay is lost, but you want to reconnect at runtime and resume relaying,
+/// so this is provided for that scenario, since you won't be able to call [`register_relayed_services`] once your
+/// peer has been started.
 ///
 /// TODO: - verify we can relay services unknown at compile time. Eg. could a remote process ask in runtime
 ///       could you please relay for me. We just removed a type parameter here, which should help, but we
