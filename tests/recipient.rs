@@ -84,7 +84,7 @@ fn store_recipients()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let mut recs: Vec<Box< Recipient<Count> >> = vec![ box addr, box addro ];
+		let mut recs: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr, box addro ];
 
 		await!( recs[ 0 ].send( Count ) ).expect( "Send failed" );
 		await!( recs[ 1 ].send( Count ) ).expect( "Send failed" );
@@ -182,8 +182,8 @@ fn multi_thread()
 		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
-		let mut reca: Vec<Box< Recipient<Count> >> = vec![ box addr.clone(), box addro.clone() ];
-		let mut recb: Vec<Box< Recipient<Count> >> = vec![ box addr        , box addro         ];
+		let mut reca: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr.clone(), box addro.clone() ];
+		let mut recb: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr        , box addro         ];
 
 		let (tx, rx) = oneshot::channel::<()>();
 

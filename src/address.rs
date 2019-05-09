@@ -55,8 +55,7 @@ fn clean_name( name: &str ) -> String
 	use regex::Regex;
 
 	let re = Regex::new( r"\w+::" ).unwrap();
-
-	let s = re.replace_all( name, "" );
+	let s  = re.replace_all( name, "" );
 
 	// this is just a specific one when using the Peer from remote
 	//
@@ -93,8 +92,8 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn try_from( actor: A ) -> ThesRes<Self>
 	{
-		let inbox: Inbox<A> = Inbox::new();
-		let addr = Self::new( inbox.sender() );
+		let inbox: Inbox<A> = Inbox::new()                ;
+		let addr            = Self ::new( inbox.sender() );
 
 		inbox.start( actor )?;
 		Ok( addr )
@@ -137,30 +136,26 @@ impl<A, M> Recipient<M> for Addr<A>
 	       M: Message            ,
 
 {
-	type Error = ThesErr;
-
 	fn call( &mut self, msg: M ) -> Return<ThesRes< <M as Message>::Return >>
 	{
 		Box::pin( async move
 		{
-			let (ret_tx, ret_rx) = oneshot::channel::<M::Return>();
-
-			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) );
-
-			let result = await!( self.mb.send( envl ) );
+			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
+			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
+			let result               = await!( self.mb.send( envl ) )               ;
 
 			result.map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )?;
 
 
 			await!( ret_rx )
 
-				.map_err( |e| ThesErrKind::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
+				.map_err( |_| ThesErrKind::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
 		})
 	}
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M, Self::Error>
+	fn clone_box( &self ) -> BoxRecipient<M, <Self as Sink<M>>::SinkError>
 	{
 		box self.clone()
 	}
@@ -176,8 +171,8 @@ impl<A, M> Recipient<M> for Addr<A>
 
 impl<A, M> Sink<M> for Addr<A>
 
-	where A                     : Actor + Handler<M> ,
-	      M                     : Message            ,
+	where A: Actor + Handler<M> ,
+	      M: Message            ,
 
 {
 	type SinkError = ThesErr;
@@ -237,11 +232,11 @@ impl<A, M> Sink<M> for Addr<A>
 
 impl<A, M> Address<A, M> for Addr<A>
 
-	where  A                     : Actor + Handler<M>,
-	       M                     : Message           ,
+	where  A: Actor + Handler<M>,
+	       M: Message           ,
 
 {
-	fn recipient( &self ) -> BoxRecipient<M, <Self as Recipient<M>>::Error>
+	fn recipient( &self ) -> BoxRecipient<M, <Self as Sink<M>>::SinkError>
 	{
 		box self.clone()
 	}

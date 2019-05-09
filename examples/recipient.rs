@@ -51,7 +51,7 @@ fn main()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let recs: Vec<Box< Recipient<Ping> >> = vec![ box addr, box addro ];
+		let recs: Vec<Box< Recipient<Ping, SinkError=ThesErr> >> = vec![ box addr, box addro ];
 
 		// or like this, but it clones internally. Note that the compiler is capable here of detecting
 		// that we want a Recipient to the message type Ping.

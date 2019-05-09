@@ -89,9 +89,9 @@ impl ThesErr
 {
 	/// Allows matching on the error kind
 	//
-	pub fn kind( &self ) -> ThesErrKind
+	pub fn kind( &self ) -> &ThesErrKind
 	{
-		*self.inner.get_context()
+		self.inner.get_context()
 	}
 }
 

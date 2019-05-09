@@ -7,7 +7,7 @@ use crate :: { import::*, * };
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxRecipient< M, <Self as Recipient<M>>::Error >>
+	rec: Pin<BoxRecipient< M, <Self as Sink<M>>::SinkError >>
 }
 
 impl<M: Message> Receiver<M>
@@ -47,9 +47,7 @@ impl<M: Message> Eq for Receiver<M>{}
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	type Error = ThesErr;
-
-	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, Self::Error >>
+	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, <Self as Sink<M>>::SinkError >>
 	{
 		Box::pin( async move
 		{
@@ -60,7 +58,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient< M, <Self as Recipient<M>>::Error >
+	fn clone_box( &self ) -> BoxRecipient< M, <Self as Sink<M>>::SinkError >
 	{
 		self.rec.clone_box()
 	}
