@@ -15,48 +15,14 @@ log = "^0.4"
 once_cell = "^0.1"
 simple_logger = "^1"
 
-[dependencies.byteorder]
-optional = true
-version = "^1.3"
-
-[dependencies.bytes]
-optional = true
-version = "^0.4"
-
 [dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
 version = "^0.3.0-alpha.15"
 
-[dependencies.num-derive]
-optional = true
-version = "^0.2"
-
-[dependencies.num-traits]
-optional = true
-version = "^0.2"
-
-[dependencies.pharos]
-version = "^0.1"
-
-[dependencies.rand]
-default-features = false
-optional = true
-version = "^0.6"
-
 [dependencies.regex]
 features = ["pattern"]
 version = "^1"
-
-[dependencies.serde]
-default-features = false
-features = ["derive"]
-optional = true
-version = "^1"
-
-[dependencies.serde_cbor]
-optional = true
-version = "^0.9"
 
 [dependencies.thespis]
 path = "../thespis_iface"
@@ -67,15 +33,10 @@ features = ["async-await-preview", "rt-full", "codec"]
 optional = true
 version = "^0.1"
 
-[dependencies.twox-hash]
-optional = true
-version = "^1.1"
-
 [dev-dependencies]
 actix = "^0.7.9"
 flexi_logger = "^0.11"
 pretty_assertions = "^0.6"
-serde_cbor = "^0.9"
 
 [dev-dependencies.criterion]
 features = ["real_blackbox"]
@@ -92,10 +53,7 @@ features = ["async-await-preview", "rt-full", "tcp", "codec"]
 version = "^0.1"
 
 [features]
-default = ["tokio", "remote"]
-remote = ["serde", "serde_cbor", "thespis/remote", "bytes", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
-tcp = ["remote"]
-ws = ["remote"]
+default = ["tokio"]
 
 [lib]
 bench = false

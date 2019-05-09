@@ -34,7 +34,6 @@
     mod receiver ;
 
 pub mod runtime  ;
-pub mod remote   ;
 
 
 pub use
@@ -45,17 +44,7 @@ pub use
 	receiver :: * ,
 };
 
-// needed for macro
-//
-pub mod external_deps
-{
-	pub use once_cell  ;
-	pub use futures    ;
-	pub use thespis    ;
-	pub use serde_cbor ;
-	pub use serde      ;
-	pub use failure    ;
-}
+
 
 
 pub type ThesRes<T> = Result< T, ThesErr >;
@@ -104,24 +93,6 @@ mod import
 				ThreadPool   as ThreadPool03   ,
 			},
 		},
-	};
-
-
-	#[ cfg( feature = "remote" ) ]
-	//
-	pub use
-	{
-		byteorder   :: { LittleEndian, ReadBytesExt, WriteBytesExt           } ,
-		bytes       :: { Bytes, BytesMut, Buf, BufMut, IntoBuf               } ,
-		num_traits  :: { FromPrimitive, ToPrimitive                          } ,
-		num_derive  :: { FromPrimitive, ToPrimitive                          } ,
-		rand        :: { Rng                                                 } ,
-		std         :: { hash::{ BuildHasher, Hasher }, io::Cursor, any::Any } ,
-		twox_hash   :: { RandomXxHashBuilder, XxHash                         } ,
-		futures     :: { future::RemoteHandle                                } ,
-		pharos      :: { Pharos, Observable                                  } ,
-		serde       :: { Serialize, Deserialize, de::DeserializeOwned        } ,
-
 	};
 
 
