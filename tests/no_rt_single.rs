@@ -76,7 +76,7 @@ fn test_basic_send()
 
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		let result = await!( sum_send( &mut exec ) );
 
@@ -98,7 +98,7 @@ fn test_basic_call()
 
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		let result = await!( sum_call( &mut exec ) );
 

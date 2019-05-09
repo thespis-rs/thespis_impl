@@ -7,14 +7,14 @@ use crate :: { import::*, * };
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxRecipient<M>>
+	rec: Pin<BoxRecipient< M, <Self as Recipient<M>>::Error >>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxRecipient<M> ) -> Self
+	pub fn new( rec: BoxRecipient<M, ThesErr> ) -> Self
 	{
 		Self { rec: Pin::from( rec ) }
 	}
@@ -47,7 +47,9 @@ impl<M: Message> Eq for Receiver<M>{}
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
+	type Error = ThesErr;
+
+	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, Self::Error >>
 	{
 		Box::pin( async move
 		{
@@ -58,7 +60,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M>
+	fn clone_box( &self ) -> BoxRecipient< M, <Self as Recipient<M>>::Error >
 	{
 		self.rec.clone_box()
 	}
@@ -75,9 +77,9 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 impl<M: Message> Sink<M> for Receiver<M>
 {
-	type SinkError = Error;
+	type SinkError = ThesErr;
 
-	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		self.rec.as_mut().poll_ready( cx )
 	}
@@ -89,7 +91,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 	}
 
 
-	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		self.rec.as_mut().poll_flush( cx )
 	}
@@ -97,7 +99,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 
 	/// Will only close when dropped, this method can never return ready
 	//
-	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		self.rec.as_mut().poll_close( cx )
 	}

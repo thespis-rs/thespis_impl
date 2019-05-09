@@ -67,10 +67,6 @@ features = ["async-await-preview", "rt-full", "codec"]
 optional = true
 version = "^0.1"
 
-[dependencies.tokio-tungstenite]
-optional = true
-version = "^0.6"
-
 [dependencies.twox-hash]
 optional = true
 version = "^1.1"
@@ -96,10 +92,10 @@ features = ["async-await-preview", "rt-full", "tcp", "codec"]
 version = "^0.1"
 
 [features]
-default = ["tokio", "remote", "ws"]
+default = ["tokio", "remote"]
 remote = ["serde", "serde_cbor", "thespis/remote", "bytes", "num-derive", "num-traits", "twox-hash", "byteorder", "rand"]
-tcp = ["remote", "tokio/tcp"]
-ws = ["remote", "tokio-tungstenite"]
+tcp = ["remote"]
+ws = ["remote"]
 
 [lib]
 bench = false

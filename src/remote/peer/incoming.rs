@@ -1,10 +1,10 @@
-use crate::{ import::*, ThesError, runtime::rt, remote::*, Addr, Receiver };
+use crate::{ import::*, runtime::rt, remote::*, Addr, Receiver };
 
 /// Type representing Messages coming in over the wire, for internal use only.
 //
 pub(super) struct Incoming<MS>
 {
-	pub msg: ThesRes<MS>
+	pub msg: Result<MS, ThesRemoteErr>
 }
 
 impl<MS: 'static + MultiService + Send> Message for Incoming<MS>

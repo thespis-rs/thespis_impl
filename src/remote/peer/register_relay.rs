@@ -1,4 +1,4 @@
-use crate :: { import::*, ThesError, runtime::rt, remote::{ *, peer::peer_event::RelayEvent }, Addr };
+use crate :: { import::*, runtime::rt, remote::{ *, peer::peer_event::RelayEvent }, Addr };
 
 
 /// Type representing the outgoing call. Used by a recipient to a remote service to communicate
@@ -23,7 +23,7 @@ impl<MS, Out> Message for RegisterRelay<Out, MS>
 	      MS : BoundsMS     ,
 
 {
-	type Return = ThesRes<()>;
+	type Return = Result<(), ThesRemoteErr>;
 }
 
 

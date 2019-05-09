@@ -1,4 +1,4 @@
-use crate::{ import::* };
+use crate::{ import::*, remote::error::* };
 
 
 /// A connection identifier. This allows to match incoming packets to requests sent earlier.
@@ -66,9 +66,9 @@ impl Into< Bytes > for ConnID
 
 impl TryFrom< Bytes > for ConnID
 {
-	type Error = Error;
+	type Error = ThesRemoteErr;
 
-	fn try_from( bytes: Bytes ) -> Result< Self, Error >
+	fn try_from( bytes: Bytes ) -> Result<Self, Self::Error>
 	{
 		Ok( Self { bytes } )
 	}

@@ -1,4 +1,4 @@
-use crate :: { import::*, runtime::rt };
+use crate :: { import::*, error::*, runtime::rt };
 
 
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
@@ -39,6 +39,26 @@ impl<A> Inbox<A> where A: Actor
 	{
 		(self.id, self.handle.clone())
 	}
+
+
+	pub fn mb_error( e: mpsc::SendError, context: String ) -> ThesErr
+	{
+		// Can only happen if using bounded channels
+		//
+		if e.is_full()
+		{
+			ThesErrKind::MailboxFull{ actor: context }.into()
+		}
+
+		// is disconnected
+		// Can only happen if the thread in which the mailbox lives panics. Otherwise
+		// this addr will keep the mailbox alive.
+		//
+		else
+		{
+			ThesErrKind::MailboxClosed{ actor: context }.into()
+		}
+	}
 }
 
 
@@ -46,9 +66,13 @@ impl<A> Inbox<A> where A: Actor
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor
 {
-	fn start( self, actor: A ) -> ThesRes<()>
+	type Error = ThesErr;
+
+	fn start( self, actor: A ) -> Result<(), Self::Error >
 	{
-		rt::spawn_pinned( self.start_fut( actor ) )
+		Ok( rt::spawn_pinned( self.start_fut( actor ) )
+
+			.context( ThesErrKind::Spawn{ context: "Inbox".into() })? )
 	}
 
 

@@ -33,6 +33,8 @@ impl Default for TokioRT
 
 impl Executor for TokioRT
 {
+	type Error = ThesErr;
+
 	/// Run all spawned futures to completion.
 	//
 	fn run( &self )
@@ -60,7 +62,7 @@ impl Executor for TokioRT
 
 	/// Spawn a future to be run on the LocalPool (current thread)
 	//
-	fn spawn( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
+	fn spawn( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> Result<(), Self::Error>
 	{
 		if *self.running.borrow()
 		{
@@ -79,7 +81,7 @@ impl Executor for TokioRT
 	/// Spawn a future to be run on a threadpool.
 	/// Not implemented!
 	//
-	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
+	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> Result<(), Self::Error>
 	{
 		todo!()
 	}

@@ -1,4 +1,4 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::*, Addr, Receiver } };
+use { crate :: { import::*, runtime::rt, remote::{ *, error::* }, Addr, Receiver } };
 
 
 /// Type representing the outgoing call. Used by a recipient to a remote service to communicate
@@ -13,7 +13,7 @@ pub struct Call<MS: MultiService>
 
 impl<MS: 'static +  MultiService + Send> Message for Call<MS>
 {
-	type Return = ThesRes< oneshot::Receiver<MS> >;
+	type Return = Result< oneshot::Receiver<MS>, ThesRemoteErr >;
 }
 
 impl<MS: MultiService> Call<MS>

@@ -4,17 +4,6 @@
 //!
 //! - tokio: makes the tokio executor available. enabled by default.
 //!
-//!
-//! ## Actual Features:
-//!
-//! - Single threaded impl that allows messages that aren't `Send`, and that doesn't pay thread sync overhead
-//! - Multi threaded impl for sending messages to actors in different threads
-//! - Runtime for convenience (don't have to pass executor around, use static methods `spawn` and `run`)
-//! - 2 Executor impls: futures 0.3 executor and tokio executor (TODO: threadpools, currently spawn everything on current thread)
-//!
-//!
-//!
-//!
 #![ allow( unused_imports, dead_code ) ]
 
 #![ feature
@@ -68,6 +57,9 @@ pub mod external_deps
 	pub use failure    ;
 }
 
+
+pub type ThesRes<T> = Result< T, ThesErr >;
+
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
 // the crate. The must all be unique.
 // Separate use imports per enabled features.
@@ -76,7 +68,7 @@ mod import
 {
 	pub use
 	{
-		failure   :: { Error, Fail, bail, err_msg, AsFail          } ,
+		failure   :: { Fail, bail, err_msg, AsFail, Context as FailContext, Backtrace, ResultExt } ,
 		thespis   :: { *                                           } ,
 		log       :: { *                                           } ,
 		once_cell :: { unsync::OnceCell, unsync::Lazy, unsync_lazy } ,
@@ -100,10 +92,10 @@ mod import
 
 		futures ::
 		{
-			prelude :: { Stream, StreamExt, Sink, SinkExt           } ,
-			channel :: { oneshot, mpsc                              } ,
-			future  :: { FutureExt, TryFutureExt                    } ,
-			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, Context, Poll } ,
+			prelude :: { Stream, StreamExt, Sink, SinkExt                                         } ,
+			channel :: { oneshot, mpsc                                                            } ,
+			future  :: { FutureExt, TryFutureExt                                                  } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, Context as TaskContext, Poll } ,
 
 			executor::
 			{

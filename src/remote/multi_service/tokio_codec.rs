@@ -1,17 +1,25 @@
-use crate::{ import::*, ThesError };
+use crate::{ import::*, remote::error::* };
+
+
+impl From<tokio::io::Error> for ThesRemoteErr
+{
+	fn from( e: tokio::io::Error ) -> Self
+	{
+		ThesRemoteErrKind::TokioIoError.into()
+	}
+}
 
 
 
 // TODO: - max_length!
-//       - make generic over MultiService
 //
-pub struct MulServTokioCodec<Format> where Format: MultiService
+pub struct MulServTokioCodec<MS> where MS: MultiService
 {
-	pub _p: PhantomData<Format>,
+	pub _p: PhantomData<MS>,
 }
 
 
-impl<Format> MulServTokioCodec<Format> where Format: MultiService
+impl<MS> MulServTokioCodec<MS> where MS: MultiService
 {
 	pub fn new() -> Self
 	{
@@ -20,22 +28,31 @@ impl<Format> MulServTokioCodec<Format> where Format: MultiService
 }
 
 
-impl<Format> Decoder for MulServTokioCodec<Format>
+impl<MS> Decoder for MulServTokioCodec<MS>
 
-	where Format: MultiService,
+	where MS: MultiService,
 {
-	type Item  = Format;
-	type Error = Error ;
+	type Item  = MS            ;
+	type Error = ThesRemoteErr ;
 
-	fn decode( &mut self, buf: &mut BytesMut ) -> ThesRes< Option<Self::Item> >
+	fn decode( &mut self, buf: &mut BytesMut ) -> Result< Option<Self::Item>, Self::Error >
 	{
 		// Minimum length of an empty message is the u64 indicating the length
 		//
 		if buf.len() < 8  { return Ok( None ) }
 
+
 		// parse the first 8 bytes to find out the total length of the message
 		//
-		let mut len = buf[..8].as_ref().read_u64::<LittleEndian>()? as usize;
+		let mut len = buf[..8]
+
+			.as_ref()
+			.read_u64::<LittleEndian>()
+			.context( ThesRemoteErrKind::Deserialize{ what: "Tokio codec: Length".to_string() } )?
+
+			as usize
+		;
+
 
 		if buf.len() < len { return Ok( None ) }
 
@@ -51,7 +68,7 @@ impl<Format> Decoder for MulServTokioCodec<Format>
 
 		// Convert
 		//
-		Ok( Some( Format::from( Bytes::from( buf ) ) ) )
+		Ok( Some( MS::from( Bytes::from( buf ) ) ) )
 	}
 }
 
@@ -60,14 +77,14 @@ impl<Format> Decoder for MulServTokioCodec<Format>
 // In principle we would like to not have to serialize the inner message
 // before having access to this buffer.
 //
-impl<Format> Encoder for MulServTokioCodec<Format>
+impl<MS> Encoder for MulServTokioCodec<MS>
 
-	where Format: MultiService
+	where MS: MultiService
 {
-	type Item  = Format;
-	type Error = Error ;
+	type Item  = MS            ;
+	type Error = ThesRemoteErr ;
 
-	fn encode( &mut self, item: Self::Item, buf: &mut BytesMut ) -> Result<(), Error>
+	fn encode( &mut self, item: Self::Item, buf: &mut BytesMut ) -> Result<(), Self::Error>
 	{
 		let len = item.len() + 8;
 		buf.reserve( len );
@@ -117,7 +134,9 @@ mod tests
 		let mut buf = BytesMut::with_capacity( 1 );
 		buf.put( 0u8 );
 
-		MultiServiceImpl::create( ServiceID::from_seed( b"Empty Message" ), ConnID::default(), Codecs::CBOR, buf.into() )
+		let m = MultiServiceImpl::create( ServiceID::from_seed( b"Empty Message" ), ConnID::default(), Codecs::CBOR, buf.into() );
+
+		m
 	}
 
 	fn full_data() -> MulServ

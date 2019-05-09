@@ -1,4 +1,4 @@
-use { crate :: { import::*, ThesError, runtime::rt, remote::{ ServiceID, ConnID, Codecs }, Addr, Receiver } };
+use crate :: { import::*, ThesErr, runtime::rt, remote::{ self, error::*, ServiceID, ConnID, Codecs }, Addr, Receiver };
 
 
 mod close_connection  ;
@@ -18,18 +18,24 @@ pub use register_relay    :: RegisterRelay    ;
 
 // Reduce trait bound boilerplate, since we have to repeat them all over
 //
-pub trait BoundsIn <MS>: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
-pub trait BoundsOut<MS>: 'static + Sink<MS, SinkError=Error> + Unpin + Send {}
-pub trait BoundsMS     : 'static + Message<Return=()> + MultiService + Send {}
+pub trait BoundsIn <MS: BoundsMS>: 'static + Stream< Item = Result<MS, <MS as MultiService>::Error> > + Unpin {}
+pub trait BoundsOut<MS: BoundsMS>: 'static + Sink<MS, SinkError=ThesRemoteErr > + Unpin + Send {}
+pub trait BoundsMS               : 'static + Message<Return=()> + MultiService< Error=ThesRemoteErr > + Send + fmt::Debug {}
 
 impl<T, MS> BoundsIn<MS> for T
-where T: 'static + Stream< Item = Result<MS, Error> > + Unpin {}
+
+	where T : 'static + Stream< Item = Result<MS, <MS as MultiService>::Error> > + Unpin,
+   	   MS: BoundsMS
+{}
 
 impl<T, MS> BoundsOut<MS> for T
-where T: 'static + Sink<MS, SinkError=Error> + Unpin + Send {}
+
+	where T : 'static + Sink<MS, SinkError=ThesRemoteErr > + Unpin + Send,
+	      MS: BoundsMS
+{}
 
 impl<T> BoundsMS for T
-where T: 'static + Message<Return=()> + MultiService {}
+where T: 'static + Message<Return=()> + MultiService< Error=ThesRemoteErr > + Send + fmt::Debug {}
 
 
 /// Represents a connection to another process over which you can send actor messages.
@@ -81,7 +87,11 @@ pub struct Peer<Out, MS>
 	/// Information required to process incoming messages. The first element is a boxed Receiver, and the second is
 	/// the service map that takes care of this service type.
 	//
-	services      : HashMap<&'static <MS as MultiService>::ServiceID ,(BoxAny, BoxServiceMap<MS>)>,
+	// The error type here needs to correspond to the error type of the recipient we are going to pass
+	// to `Servicemap::call_service`. TODO: In principle we should be generic over recipient type, but for now
+	// I have put ThesErr, because it's getting to complex.
+	//
+	services      : HashMap<&'static <MS as MultiService>::ServiceID ,(BoxAny, BoxServiceMap<MS, ThesErr>)>,
 
 	/// All services that we relay to another peer. It has to be of the same type for now since there is
 	/// no trait for peers.
@@ -114,7 +124,7 @@ impl<Out, MS> Peer<Out, MS>
 {
 	/// Create a new peer to represent a connection to some remote.
 	//
-	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> ThesRes< Self >
+	pub fn new( addr: Addr<Self>, incoming: impl BoundsIn<MS>, outgoing: Out ) -> Result< Self, ThesRemoteErr >
 	{
 		trace!( "create peer" );
 
@@ -126,7 +136,10 @@ impl<Out, MS> Peer<Out, MS>
 		{
 			// We need to map this to a custom type, since we had to impl Message for it.
 			//
-			let stream  = &mut incoming.map( |msg| Incoming{ msg } );
+			let stream  = &mut incoming.map( |msg|
+			{
+				Incoming{ msg }
+			});
 
 			// This can fail if:
 			// - channel is full (TODO: currently we use unbounded, so that won't happen, but it might
@@ -147,7 +160,7 @@ impl<Out, MS> Peer<Out, MS>
 		// our address, and we won't be dropped as long as there are adresses around.
 		//
 		let (remote, handle) = listen.remote_handle();
-		rt::spawn( remote )?;
+		rt::spawn( remote ).context( ThesRemoteErrKind::Spawn{ context: "Incoming stream for peer".into() } )?;
 
 		Ok( Self
 		{
@@ -186,15 +199,18 @@ impl<Out, MS> Peer<Out, MS>
 	///       Actuall, that won't be so easy. The user decides which actor handles which
 	///       service... We would have to take a vector of (sid, Box<Any>)... not very
 	///       clean.
+	///
+	/// TODO: For now we have put the error type to ThesErr fixed. For usability, we probably
+	///       should be generic over that error type.
 	//
-	pub fn register_service<S, NS>( &mut self, handler: BoxRecipient<S> )
+	pub fn register_service<S, NS>( &mut self, handler: Receiver<S> )
 
 		where  S                    : Service<NS, UniqueID=<MS as MultiService>::ServiceID>,
 		      <S as Message>::Return: Serialize + DeserializeOwned                         ,
-		       NS                   : ServiceMap<MS> + Send + Sync + 'static               ,
+		       NS                   : ServiceMap<MS, ThesErr> + Send + Sync + 'static    ,
 
 	{
-		self.services.insert( <S as Service<NS>>::sid(), (box Receiver::new( handler ), NS::boxed()) );
+		self.services.insert( <S as Service<NS>>::sid(), (box handler, NS::boxed()) );
 	}
 
 
@@ -209,15 +225,20 @@ impl<Out, MS> Peer<Out, MS>
 		     peer        : Addr<Self>                                    ,
 		     peer_events : mpsc::Receiver<PeerEvent>                     ,
 
-	) -> ThesRes<()>
+	) -> Result<(), ThesRemoteErr>
 
 	{
 		trace!( "peer: starting Handler<RegisterRelay<Out, MS>>" );
 
+		// When called from a RegisterRelay message, it's possible that in the mean time
+		// the connection closed. We should immediately return a ConnectionClosed error.
+		//
 		let mut self_addr = match &self.addr
 		{
 			Some( self_addr ) => self_addr.clone() ,
-			None              => return Ok(())     ,
+			None              =>
+
+				Err( ThesRemoteErrKind::ConnectionClosed{ operation: "register_relayed_services".to_string() } )?,
 		};
 
 		let peer_id = < Addr<Self> as Recipient<RelayEvent> >::actor_id( &peer );
@@ -254,7 +275,10 @@ impl<Out, MS> Peer<Out, MS>
 		// our address, and we won't be dropped as long as there are adresses around.
 		//
 		let (remote, handle) = listen.remote_handle();
-		rt::spawn( remote )?;
+		rt::spawn( remote ).map_err( |_|
+		{
+			ThesRemoteErrKind::Spawn { context: "Stream of events from relay peer".to_string() }
+		})?;
 
 		self.relays .insert( peer_id, (peer, handle) );
 
@@ -271,12 +295,16 @@ impl<Out, MS> Peer<Out, MS>
 
 	// actually send the message accross the wire
 	//
-	async fn send_msg( &mut self, msg: MS ) -> ThesRes<()>
+	async fn send_msg( &mut self, msg: MS ) -> Result<(), ThesRemoteErr>
 	{
 		match &mut self.outgoing
 		{
-			Some( out ) => await!( out.send( msg ) )                             ,
-			None        => Err( ThesError::PeerSendAfterCloseConnection.into() ) ,
+			Some( out ) => await!( out.send( msg ) ),
+
+			None =>
+			{
+				Err( ThesRemoteErrKind::ConnectionClosed{ operation: "send MS".to_string() } )?
+			}
 		}
 	}
 

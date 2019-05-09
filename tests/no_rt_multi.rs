@@ -112,7 +112,7 @@ fn test_basic_send()
 
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		trace!( "start program" );
 
@@ -139,7 +139,7 @@ fn test_basic_call()
 
 	let program = async move
 	{
-		let _ = simple_logger::init();
+		// let _ = simple_logger::init();
 
 		trace!( "start program" );
 

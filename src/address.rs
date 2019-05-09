@@ -133,11 +133,13 @@ impl<A: Actor> Drop for Addr<A>
 
 impl<A, M> Recipient<M> for Addr<A>
 
-	where  A                     : Actor + Handler<M> ,
-	       M                     : Message            ,
+	where  A: Actor + Handler<M> ,
+	       M: Message            ,
 
 {
-	fn call( &mut self, msg: M ) -> Return< ThesRes<<M as Message>::Return> >
+	type Error = ThesErr;
+
+	fn call( &mut self, msg: M ) -> Return<ThesRes< <M as Message>::Return >>
 	{
 		Box::pin( async move
 		{
@@ -145,18 +147,20 @@ impl<A, M> Recipient<M> for Addr<A>
 
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) );
 
-			// trace!( "Sending envl to Mailbox in call" );
+			let result = await!( self.mb.send( envl ) );
 
-			await!( self.mb.send( envl ) )?;
+			result.map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )?;
 
-			Ok( await!( ret_rx )? )
 
+			await!( ret_rx )
+
+				.map_err( |e| ThesErrKind::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
 		})
 	}
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M>
+	fn clone_box( &self ) -> BoxRecipient<M, Self::Error>
 	{
 		box self.clone()
 	}
@@ -176,16 +180,19 @@ impl<A, M> Sink<M> for Addr<A>
 	      M                     : Message            ,
 
 {
-	type SinkError = Error;
+	type SinkError = ThesErr;
 
-	fn poll_ready( self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_ready( self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		match self.mb.poll_ready( cx )
 		{
 			Poll::Ready( p ) => match p
 			{
-				Ok (_) => Poll::Ready( Ok(())          ),
-				Err(e) => Poll::Ready( Err( e.into() ) ),
+				Ok (_) => Poll::Ready( Ok(()) ),
+				Err(e) =>
+				{
+					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) ) ) )
+				}
 			}
 
 			Poll::Pending => Poll::Pending
@@ -197,18 +204,21 @@ impl<A, M> Sink<M> for Addr<A>
 	{
 		let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
-		self.mb.start_send( envl ).map_err( |e| e.into() )
+		self.mb.start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )
 	}
 
 
-	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		match Pin::new( &mut self.mb ).poll_flush( cx )
 		{
 			Poll::Ready( p ) => match p
 			{
 				Ok (_) => Poll::Ready( Ok ( ()       ) ),
-				Err(e) => Poll::Ready( Err( e.into() ) ),
+				Err(e) =>
+				{
+					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) ) ) )
+				}
 			}
 
 			Poll::Pending => Poll::Pending
@@ -218,7 +228,7 @@ impl<A, M> Sink<M> for Addr<A>
 
 	/// Will only close when dropped, this method can never return ready
 	//
-	fn poll_close( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
 	{
 		Poll::Pending
 	}
@@ -231,7 +241,7 @@ impl<A, M> Address<A, M> for Addr<A>
 	       M                     : Message           ,
 
 {
-	fn recipient( &self ) -> BoxRecipient<M>
+	fn recipient( &self ) -> BoxRecipient<M, <Self as Recipient<M>>::Error>
 	{
 		box self.clone()
 	}

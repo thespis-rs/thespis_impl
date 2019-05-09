@@ -14,7 +14,7 @@ pub use
 #[ cfg( feature = "tokio" ) ] pub mod tokio_codec   ;
 #[ cfg( feature = "tokio" ) ] pub use tokio_codec::*;
 
-use { crate :: { import::*, ThesError } };
+use { crate :: { import::*, remote::error::* } };
 
 const HEADER_LEN: usize = 36;
 
@@ -83,9 +83,10 @@ const HEADER_LEN: usize = 36;
 //
 pub struct MultiServiceImpl<SID, CID, Codec>
 
-	where SID  : 'static + Send + Sync,
-	      CID  : 'static + Send + Sync,
-	      Codec: 'static + Send + Sync,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 {
 	bytes: Bytes,
 
@@ -95,11 +96,12 @@ pub struct MultiServiceImpl<SID, CID, Codec>
 }
 
 
-impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
+impl<SID: 'static, CID: 'static, Codec: 'static> Message for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: Send + Sync,
-	      CID  : Send + Sync,
-	      SID  : Send + Sync,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 
 {
 	type Return = ();
@@ -109,9 +111,10 @@ impl<SID, CID, Codec> Message for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + Into< Bytes > + Send + Sync,
-	      CID  : UniqueID + Into< Bytes > + Send + Sync,
-	      SID  : UniqueID + Into< Bytes > + Send + Sync,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 
 {
 
@@ -120,14 +123,15 @@ impl<SID, CID, Codec> MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send + Sync,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
-         Self : From< Bytes >                           ,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 {
-	type ServiceID = SID   ;
-	type ConnID    = CID   ;
-	type CodecAlg  = Codec ;
+	type ServiceID = SID           ;
+	type ConnID    = CID           ;
+	type CodecAlg  = Codec         ;
+	type Error     = ThesRemoteErr ;
 
 
 	/// Beware: This can panic because of Buf.put
@@ -145,19 +149,19 @@ impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 	}
 
 
-	fn service ( &self ) -> Result< Self::ServiceID, Error >
+	fn service ( &self ) -> Result< Self::ServiceID, ThesRemoteErr >
 	{
 		SID::try_from( self.bytes.slice(0 , 16) )
 	}
 
 
-	fn encoding( &self ) -> Result< Self::CodecAlg, Error >
+	fn encoding( &self ) -> Result< Self::CodecAlg, ThesRemoteErr >
 	{
 		Codec::try_from( self.bytes.slice(32, HEADER_LEN) )
 	}
 
 
-	fn conn_id( &self ) -> Result< Self::ConnID, Error >
+	fn conn_id( &self ) -> Result< Self::ConnID, ThesRemoteErr >
 	{
 		CID::try_from( self.bytes.slice(16, 32) )
 	}
@@ -178,9 +182,10 @@ impl<SID, CID, Codec> MultiService for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: Send + Sync,
-	      CID  : Send + Sync,
-	      SID  : Send + Sync,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 
 {
 	fn into( self ) -> Bytes
@@ -193,9 +198,10 @@ impl<SID, CID, Codec> Into< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
 impl<SID, CID, Codec> From< Bytes > for MultiServiceImpl<SID, CID, Codec>
 
-	where Codec: CodecAlg + TryFrom< Bytes, Error=Error > + Send + Sync,
-	      CID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
-	      SID  : UniqueID + TryFrom< Bytes, Error=Error > + Send + Sync,
+	where Codec: CodecAlg + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      CID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+	      SID  : UniqueID + TryFrom< Bytes, Error=ThesRemoteErr > + Send + Sync,
+         Self : From< Bytes >                                                 ,
 
 {
 	fn from( bytes: Bytes ) -> Self

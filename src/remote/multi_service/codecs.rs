@@ -1,4 +1,4 @@
-use crate::{ import::* };
+use crate::{ import::*, remote::error::* };
 
 
 /// The supported encodings for this implementation. Values come from the
@@ -13,7 +13,7 @@ pub enum Codecs
 	UTF8 = 0x4000, // not in multicodecs for now
 }
 
-impl CodecAlg for Codecs {}
+impl CodecAlg for Codecs { type Error = ThesRemoteErr; }
 
 
 impl fmt::Display for Codecs
@@ -55,15 +55,15 @@ impl Into< Bytes > for Codecs
 
 impl TryFrom< Bytes > for Codecs
 {
-	type Error = Error;
+	type Error = ThesRemoteErr;
 
-	fn try_from( bytes: Bytes ) -> Result< Self, Error >
+	fn try_from( bytes: Bytes ) -> Result<Self, Self::Error>
 	{
 		let mut rdr = Cursor::new( bytes.as_ref() );
 
 		let num = rdr.read_u32::<LittleEndian>().expect( "Read Codec from Bytes" );
 
-		Codecs::from_u32( num ).ok_or( err_msg( "Failed to convert u32 to Codecs" ) )
+		Codecs::from_u32( num ).ok_or( ThesRemoteErrKind::Deserialization{ what: "Codec".to_string() }.into() )
 	}
 }
 

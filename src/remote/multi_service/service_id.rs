@@ -1,4 +1,4 @@
-use crate::{ import::* };
+use crate::{ import::*, remote::error::* };
 
 
 /// A unique identifier for a service that is exposed to other processes. This will allow
@@ -32,9 +32,9 @@ impl Into< Bytes > for ServiceID
 //
 impl TryFrom< Bytes > for ServiceID
 {
-	type Error = Error;
+	type Error = ThesRemoteErr;
 
-	fn try_from( bytes: Bytes ) -> Result< Self, Error >
+	fn try_from( bytes: Bytes ) -> Result<Self, ThesRemoteErr>
 	{
 		Ok( Self { bytes } )
 	}

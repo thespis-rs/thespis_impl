@@ -62,12 +62,12 @@
 //! }
 //! ```
 //!
-use crate :: { import::*, * };
+use crate :: { import::*, ThesRes, error::* };
 
 
 thread_local!
 (
-	static EXEC: OnceCell<Box< dyn Executor >> = OnceCell::INIT;
+	static EXEC: OnceCell<Box< dyn Executor<Error=ThesErr> >> = OnceCell::INIT;
 );
 
 
@@ -83,14 +83,14 @@ thread_local!
 /// ```
 ///
 //
-pub fn init( new_exec: Box< dyn Executor > ) -> ThesRes<()>
+pub fn init( new_exec: Box< dyn Executor<Error=ThesErr> > ) -> ThesRes<()>
 {
 	EXEC.with( move |exec| -> ThesRes<()>
 	{
 		exec
 
 			.set( new_exec )
-			.map_err( |_| ThesError::DoubleExecutorInit.into() )
+			.map_err( |_| ThesErrKind::DoubleExecutorInit.into() )
 	})
 }
 
