@@ -30,7 +30,6 @@
     mod address  ;
     mod envelope ;
     mod mailbox  ;
-    mod error    ;
     mod receiver ;
 
 pub mod runtime  ;
@@ -38,7 +37,6 @@ pub mod runtime  ;
 
 pub use
 {
-	error    :: * ,
 	address  :: * ,
 	mailbox  :: * ,
 	receiver :: * ,
@@ -47,7 +45,6 @@ pub use
 
 
 
-pub type ThesRes<T> = Result< T, ThesErr >;
 
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
 // the crate. The must all be unique.

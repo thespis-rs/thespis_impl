@@ -62,7 +62,7 @@
 //! }
 //! ```
 //!
-use crate :: { import::*, ThesRes, error::* };
+use crate :: { import::* };
 
 
 thread_local!
