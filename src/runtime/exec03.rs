@@ -34,8 +34,6 @@ impl Default for Exec03
 
 impl Executor for Exec03
 {
-	type Error = ThesErr;
-
 	/// Run all spawned futures to completion.
 	//
 	fn run( &self )
@@ -46,7 +44,7 @@ impl Executor for Exec03
 
 	/// Spawn a future to be run on the LocalPool (current thread)
 	//
-	fn spawn( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> Result<(), Self::Error>
+	fn spawn( &self, fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
 	{
 		self.spawner.borrow_mut().spawn_local( fut )
 
@@ -57,7 +55,7 @@ impl Executor for Exec03
 	/// Spawn a future to be run on a threadpool.
 	/// Not implemented!
 	//
-	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> Result<(), Self::Error>
+	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
 	{
 		todo!()
 	}

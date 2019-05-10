@@ -66,9 +66,7 @@ impl<A> Inbox<A> where A: Actor
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor
 {
-	type Error = ThesErr;
-
-	fn start( self, actor: A ) -> Result<(), Self::Error >
+	fn start( self, actor: A ) -> ThesRes<()>
 	{
 		Ok( rt::spawn_pinned( self.start_fut( actor ) )
 

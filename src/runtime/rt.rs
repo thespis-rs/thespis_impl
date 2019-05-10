@@ -67,7 +67,7 @@ use crate :: { import::* };
 
 thread_local!
 (
-	static EXEC: OnceCell<Box< dyn Executor<Error=ThesErr> >> = OnceCell::INIT;
+	static EXEC: OnceCell<Box< dyn Executor >> = OnceCell::INIT;
 );
 
 
@@ -83,7 +83,7 @@ thread_local!
 /// ```
 ///
 //
-pub fn init( new_exec: Box< dyn Executor<Error=ThesErr> > ) -> ThesRes<()>
+pub fn init( new_exec: Box< dyn Executor > ) -> ThesRes<()>
 {
 	EXEC.with( move |exec| -> ThesRes<()>
 	{

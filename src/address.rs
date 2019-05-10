@@ -155,7 +155,7 @@ impl<A, M> Recipient<M> for Addr<A>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M, <Self as Sink<M>>::SinkError>
+	fn clone_box( &self ) -> BoxRecipient<M>
 	{
 		box self.clone()
 	}
@@ -236,7 +236,7 @@ impl<A, M> Address<A, M> for Addr<A>
 	       M: Message           ,
 
 {
-	fn recipient( &self ) -> BoxRecipient<M, <Self as Sink<M>>::SinkError>
+	fn recipient( &self ) -> BoxRecipient<M>
 	{
 		box self.clone()
 	}

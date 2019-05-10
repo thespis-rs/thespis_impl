@@ -7,14 +7,14 @@ use crate :: { import::*, * };
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxRecipient< M, <Self as Sink<M>>::SinkError >>
+	rec: Pin<BoxRecipient<M>>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxRecipient<M, ThesErr> ) -> Self
+	pub fn new( rec: BoxRecipient<M> ) -> Self
 	{
 		Self { rec: Pin::from( rec ) }
 	}
@@ -58,7 +58,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient< M, <Self as Sink<M>>::SinkError >
+	fn clone_box( &self ) -> BoxRecipient<M>
 	{
 		self.rec.clone_box()
 	}
