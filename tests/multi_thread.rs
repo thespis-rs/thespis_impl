@@ -1,6 +1,10 @@
 #![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
-// TODO: cleanup and test sending the future from call to another thread rather than just the address.
+// Tested:
+//
+// - Send message to another thread
+// - Call actor in another thread
+// - Move the future from call to another thread and await it there
 
 mod common;
 
@@ -13,6 +17,7 @@ use
 	std           :: { thread                     } ,
 	common        :: { actors::{ Sum, Add, Show } } ,
 };
+
 
 
 async fn sum_send() -> u64
@@ -64,7 +69,7 @@ async fn sum_call() -> u64
 	{
 		let thread_program = async move
 		{
-			await!( addr2.call( Add( 10 ) ) ).expect( "Send failed" );
+			await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" );
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -83,6 +88,46 @@ async fn sum_call() -> u64
 
 
 
+async fn move_call() -> u64
+{
+	let sum = Sum(5);
+
+	// Create mailbox
+	//
+	let     mb  : Inbox<Sum> = Inbox::new(             );
+	let mut addr             = Addr ::new( mb.sender() );
+	let mut addr2            = addr.clone();
+
+	mb.start( sum ).expect( "Failed to start mailbox" );
+
+
+	let (tx, rx) = oneshot::channel::<()>();
+	let call_fut = async move { await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" ) };
+
+	thread::spawn( move ||
+	{
+		let thread_program = async move
+		{
+			await!( call_fut );
+		};
+
+		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
+		rt::run();
+
+		tx.send(()).expect( "Signal end of thread" );
+
+	});
+
+	// TODO: create a way to join threads asynchronously...
+	//
+	await!( rx ).expect( "receive Signal end of thread" );
+
+	await!( addr.call( Show{} ) ).expect( "Call failed" )
+}
+
+
+// Send message to another thread
+//
 #[test]
 //
 fn test_basic_send()
@@ -104,7 +149,8 @@ fn test_basic_send()
 }
 
 
-
+// Call actor in another thread
+//
 #[test]
 //
 fn test_basic_call()
@@ -116,6 +162,30 @@ fn test_basic_call()
 		trace!( "start program" );
 
 		let result = await!( sum_call() );
+
+		trace!( "result is: {}", result );
+		assert_eq!( 15, result );
+	};
+
+	rt::spawn( program ).expect( "Spawn program" );
+	rt::run();
+}
+
+
+
+// Move the future from call to another thread and await it there
+//
+#[test]
+//
+fn test_move_call()
+{
+	let program = async move
+	{
+		// let _ = simple_logger::init();
+
+		trace!( "start program" );
+
+		let result = await!( move_call() );
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );

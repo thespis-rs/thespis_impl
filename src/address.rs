@@ -18,7 +18,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE address for: {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ) );
+		trace!( "CREATE address for: {} ~ {}", clean_name( unsafe{ std::intrinsics::type_name::<A>() } ), self.id );
 
 		Self { mb: self.mb.clone(), id: self.id }
 	}
@@ -45,11 +45,13 @@ impl<A: Actor> fmt::Debug for Addr<A>
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
-		unsafe{ write!( f, "Addr<{:?}>", clean_name( std::intrinsics::type_name::<A>() ) ) }
+		unsafe{ write!( f, "Addr<{}> ~ {}", clean_name( std::intrinsics::type_name::<A>() ), &self.id ) }
 	}
 }
 
 
+/// Remove all paths from names
+//
 fn clean_name( name: &str ) -> String
 {
 	use regex::Regex;
@@ -59,7 +61,11 @@ fn clean_name( name: &str ) -> String
 
 	// this is just a specific one when using the Peer from remote
 	//
-	s.replace( "Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>", "Peer" )
+	s.replace
+	(
+		"Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>",
+		"Peer"
+	)
 }
 
 
@@ -199,7 +205,7 @@ impl<A, M> Sink<M> for Addr<A>
 	{
 		let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
-		self.mb.start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )
+		self.mb.start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ))
 	}
 
 
@@ -209,10 +215,10 @@ impl<A, M> Sink<M> for Addr<A>
 		{
 			Poll::Ready( p ) => match p
 			{
-				Ok (_) => Poll::Ready( Ok ( ()       ) ),
+				Ok (_) => Poll::Ready( Ok(()) ),
 				Err(e) =>
 				{
-					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) ) ) )
+					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) )))
 				}
 			}
 

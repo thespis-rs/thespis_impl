@@ -28,9 +28,10 @@ impl<A> Inbox<A> where A: Actor
 
 		let (handle, msgs) = mpsc::unbounded();
 
-		// TODO: do we need SeqCst or is AcqRel enough?
+		// As far as I can tell from https://doc.rust-lang.org/nomicon/atomics.html
+		// this is a simple increment to a counter, so Relaxed should be enough here.
 		//
-		let id = MB_COUNTER.fetch_add( 1, Ordering::SeqCst );
+		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
 		Self { handle, msgs, id }
 	}

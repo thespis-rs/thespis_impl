@@ -18,8 +18,6 @@
 //   - ✔ remove sendr method from recipient?
 //   - ✔ clean up all the sync, unpin, 'static we added to make this compile
 //   - ✔ some examples with sink?
-//   - error handling on peer with the new send interface
-//     - unit test peer error handling
 //
 
 #![ feature( await_macro, async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
