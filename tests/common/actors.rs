@@ -10,8 +10,8 @@ use
 
 #[ derive( Actor ) ] pub struct Sum( pub u64 );
 
-#[cfg_attr(feature = "remote", derive(Serialize, Deserialize))] #[ derive( Debug ) ] pub struct Add( pub u64 );
-#[cfg_attr(feature = "remote", derive(Serialize, Deserialize))] #[ derive( Debug ) ] pub struct Show;
+#[ derive( Debug ) ] pub struct Add( pub u64 );
+#[ derive( Debug ) ] pub struct Show;
 
 impl Message for Add  { type Return = ();  }
 impl Message for Show { type Return = u64; }

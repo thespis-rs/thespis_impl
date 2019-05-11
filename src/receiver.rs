@@ -31,6 +31,16 @@ impl<M: Message> Clone for Receiver<M>
 }
 
 
+
+impl<M: Message> fmt::Debug for Receiver<M>
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		write!( f, "Receiver: {:?}", &self.rec )
+	}
+}
+
+
 /// Verify whether 2 Receivers will deliver to the same actor
 //
 impl<M: Message> PartialEq for Receiver<M>
