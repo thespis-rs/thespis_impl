@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -54,10 +54,10 @@ fn main()
 
 		// TODO: This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start_fut( a ) ); };
+		let move_mb = async move { mb.start_fut( a ).await; };
 		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
-		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
+		let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
 
 		assert_eq!( "pong".to_string(), result );
 		dbg!( result );

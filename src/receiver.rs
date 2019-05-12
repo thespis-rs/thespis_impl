@@ -61,7 +61,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 	{
 		Box::pin( async move
 		{
-			await!( self.rec.call( msg ) )
+			self.rec.call( msg ).await
 
 		})
 	}

@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -44,7 +44,7 @@ fn main()
 		let     a    = MyActor                                                 ;
 		let mut addr = Addr::try_from( a ).expect( "Failed to create address" );
 
-		let result = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
+		let result = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
 
 		assert_eq!( "pong".to_string(), result );
 		dbg!( result );

@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 use
 {
@@ -82,15 +82,15 @@ fn send()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start_fut( sum ) ); };
+		let move_mb = async move { mb.start_fut( sum ).await; };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
-			await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+			addr.send( Add( 10 ) ).await.expect( "Send failed" );
 		}
 
-		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
 		assert_eq!( 1005, res );
 	};
 
@@ -114,15 +114,15 @@ fn call()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { await!( mb.start_fut( sum ) ); };
+		let move_mb = async move { mb.start_fut( sum ).await; };
 		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
-			await!( addr.call( Add( 10 ) ) ).expect( "Call failed" );
+			addr.call( Add( 10 ) ).await.expect( "Call failed" );
 		}
 
-		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
 		assert_eq!( 1005, res );
 	};
 
@@ -142,10 +142,10 @@ fn send_rt()
 
 		for _i in 0..100usize
 		{
-			await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+			addr.send( Add( 10 ) ).await.expect( "Send failed" );
 		}
 
-		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
 		assert_eq!( 1005, res );
 	};
 
@@ -164,10 +164,10 @@ fn call_rt()
 
 		for _i in 0..100usize
 		{
-			await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+			addr.call( Add( 10 ) ).await.expect( "Send failed" );
 		}
 
-		let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
 		assert_eq!( 1005, res );
 	};
 
@@ -190,7 +190,7 @@ fn actix_dosend()
 				addr.do_send( AxAdd( 10 ) );
 			}
 
-			let res = await!( addr.send( AxShow{} ).compat() ).unwrap();
+			let res = addr.send( AxShow{} ).compat().await.unwrap();
 
 			assert_eq!( 1005, res );
 
@@ -215,10 +215,10 @@ fn actix_send()
 
 			for _i in 0..100usize
 			{
-				await!( addr.send( AxAdd( 10 ) ).compat() ).unwrap();
+				addr.send( AxAdd( 10 ) ).compat().await.unwrap();
 			}
 
-			let res = await!( addr.send( AxShow{} ).compat() ).unwrap();
+			let res = addr.send( AxShow{} ).compat().await.unwrap();
 
 			assert_eq!( 1005, res );
 
@@ -240,10 +240,10 @@ fn method()
 
 		for _i in 0..100usize
 		{
-			await!( sum.add( Add( 10 ) ) );
+			sum.add( Add( 10 ) ).await;
 		}
 
-		let res = await!( sum.show() );
+		let res = sum.show().await;
 		assert_eq!( 1005, res );
 	})
 }
@@ -257,10 +257,10 @@ fn inline_method()
 
 		for _i in 0..100usize
 		{
-			await!( sum.add_inline( Add( 10 ) ) );
+			sum.add_inline( Add( 10 ) ).await;
 		}
 
-		let res = await!( sum.show() );
+		let res = sum.show().await;
 		assert_eq!( 1005, res );
 	})
 }

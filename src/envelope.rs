@@ -28,7 +28,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 		Box::pin( async move
 		{
 
-			let _ = await!( < A as Handler<M> >::handle( actor, self.msg ) );
+			let _ = < A as Handler<M> >::handle( actor, self.msg ).await;
 
 		})
 	}
@@ -60,7 +60,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	{
 		Box::pin( async move
 		{
-			let result = await!( < A as Handler<M> >::handle( actor, self.msg ) );
+			let result = < A as Handler<M> >::handle( actor, self.msg ).await;
 
 			// trace!( "Send from envelope" );
 

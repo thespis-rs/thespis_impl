@@ -11,7 +11,6 @@
 (
 	arbitrary_self_types   ,
 	async_await            ,
-	await_macro            ,
 	box_into_pin           ,
 	box_patterns           ,
 	box_syntax             ,
@@ -98,8 +97,8 @@ mod import
 	//
 	pub use
 	{
-		tokio :: { await as await01, prelude::{ AsyncRead as TokioAsyncR, AsyncWrite as TokioAsyncW } } ,
-		tokio :: { codec::{ Decoder, Encoder, Framed, FramedParts, FramedRead, FramedWrite } },
+		tokio :: { prelude::{ AsyncRead as TokioAsyncR, AsyncWrite as TokioAsyncW }          } ,
+		tokio :: { codec::{ Decoder, Encoder, Framed, FramedParts, FramedRead, FramedWrite } } ,
 	};
 
 

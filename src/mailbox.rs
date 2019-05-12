@@ -86,19 +86,19 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			let Inbox{ mut msgs, handle, .. } = self;
 			drop( handle );
 
-			await!( actor.started() );
+			actor.started().await;
 			trace!( "mailbox: started" );
 
 			loop
 			{
-				match await!( msgs.next() )
+				match  msgs.next().await
 				{
-					Some( envl ) => { await!( envl.handle( &mut actor ) ); }
+					Some( envl ) => { envl.handle( &mut actor ).await; }
 					None         => { break;                               }
 				}
 			}
 
-			await!( actor.stopped() );
+			actor.stopped().await;
 			trace!( "Mailbox stopped actor" );
 
 		})

@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -50,13 +50,13 @@ fn main()
 		//
 		// let call_fut = addr.call( Ping( "ping".into() ) );
 		//
-		let call_fut = async move { await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" ) };
+		let call_fut = async move { addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" ) };
 
 		thread::spawn( move ||
 		{
 			let thread_program = async move
 			{
-				let result = await!( call_fut );
+				let result = call_fut.await;
 
 				assert_eq!( "pong".to_string(), result );
 				dbg!( result );

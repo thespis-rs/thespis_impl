@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 // Tested:
 //
@@ -36,7 +36,7 @@ async fn sum_send() -> u64
 	{
 		let thread_program = async move
 		{
-			await!( addr2.send( Add( 10 ) ) ).expect( "Send failed" );
+			addr2.send( Add( 10 ) ).await.expect( "Send failed" );
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -44,7 +44,7 @@ async fn sum_send() -> u64
 
 	}).join().expect( "join thread" );
 
-	await!( addr.call( Show{} ) ).expect( "Call failed" )
+	addr.call( Show{} ).await.expect( "Call failed" )
 }
 
 
@@ -69,7 +69,7 @@ async fn sum_call() -> u64
 	{
 		let thread_program = async move
 		{
-			await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" );
+			addr2.call( Add( 10 ) ).await.expect( "Call failed" );
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -81,9 +81,9 @@ async fn sum_call() -> u64
 
 	// TODO: create a way to join threads asynchronously...
 	//
-	await!( rx ).expect( "receive Signal end of thread" );
+	rx.await.expect( "receive Signal end of thread" );
 
-	await!( addr.call( Show{} ) ).expect( "Call failed" )
+	addr.call( Show{} ).await.expect( "Call failed" )
 }
 
 
@@ -102,13 +102,13 @@ async fn move_call() -> u64
 
 
 	let (tx, rx) = oneshot::channel::<()>();
-	let call_fut = async move { await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" ) };
+	let call_fut = async move { addr2.call( Add( 10 ) ).await.expect( "Call failed" ) };
 
 	thread::spawn( move ||
 	{
 		let thread_program = async move
 		{
-			await!( call_fut );
+			call_fut.await;
 		};
 
 		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
@@ -120,9 +120,9 @@ async fn move_call() -> u64
 
 	// TODO: create a way to join threads asynchronously...
 	//
-	await!( rx ).expect( "receive Signal end of thread" );
+	rx.await.expect( "receive Signal end of thread" );
 
-	await!( addr.call( Show{} ) ).expect( "Call failed" )
+	addr.call( Show{} ).await.expect( "Call failed" )
 }
 
 
@@ -138,7 +138,7 @@ fn test_basic_send()
 
 		trace!( "start program" );
 
-		let result = await!( sum_send() );
+		let result = sum_send().await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );
@@ -161,7 +161,7 @@ fn test_basic_call()
 
 		trace!( "start program" );
 
-		let result = await!( sum_call() );
+		let result = sum_call().await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );
@@ -185,7 +185,7 @@ fn test_move_call()
 
 		trace!( "start program" );
 
-		let result = await!( move_call() );
+		let result = move_call().await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );

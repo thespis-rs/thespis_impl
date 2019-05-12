@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 use
 {
@@ -62,7 +62,7 @@ fn main()
 
 		for mut actor in recs
 		{
-			println!( "Pinged: {}", await!( actor.call( Ping( "ping".into() ) ) ).expect( "Call failed" ) );
+			println!( "Pinged: {}", actor.call( Ping( "ping".into() ) ).await.expect( "Call failed" ) );
 		}
 	};
 

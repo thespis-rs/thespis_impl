@@ -1,5 +1,5 @@
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 mod common;
 
@@ -26,13 +26,13 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 
 	// This is ugly right now. It will be more ergonomic in the future.
 	//
-	let move_mb = async move { await!( mb.start_fut( sum ) ); };
+	let move_mb = async move { mb.start_fut( sum ).await; };
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 
-	await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+	addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
-	let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+	let res = addr.call( Show{} ).await.expect( "Call failed" );
 
 	trace!( "res is: {}", res );
 
@@ -52,13 +52,13 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 
 	// This is ugly right now. It will be more ergonomic in the future.
 	//
-	let move_mb = async move { await!( mb.start_fut( sum ) ); };
+	let move_mb = async move { mb.start_fut( sum ).await; };
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 
-	await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+	addr.call( Add( 10 ) ).await.expect( "Send failed" );
 
-	let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+	let res = addr.call( Show{} ).await.expect( "Call failed" );
 
 	trace!( "res is: {}", res );
 
@@ -78,7 +78,7 @@ fn test_basic_send()
 	{
 		// let _ = simple_logger::init();
 
-		let result = await!( sum_send( &mut exec ) );
+		let result = sum_send( &mut exec ).await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );
@@ -100,7 +100,7 @@ fn test_basic_call()
 	{
 		// let _ = simple_logger::init();
 
-		let result = await!( sum_call( &mut exec ) );
+		let result = sum_call( &mut exec ).await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );

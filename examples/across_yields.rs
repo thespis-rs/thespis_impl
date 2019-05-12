@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 #![ allow( dead_code, unused_imports )]
 
@@ -46,7 +46,7 @@ impl Handler< Ping > for MyActor
 
 		self.seed.extend( msg.0.chars() );
 
-		self.seed = await!( Self::bla( &mut self.seed ) );
+		self.seed = Self::bla( &mut self.seed ).await;
 
 		self.seed += " - after yield";
 
@@ -69,10 +69,10 @@ fn main()
 		let mut addr2 = addr.clone();
 
 		trace!( "calling addr.call( Ping( 'ping' ) )" );
-		let result  = await!( addr.call( Ping( "ping".into() ) ) ).expect( "Call failed" );
+		let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
 
 		trace!( "calling addr.call( Ping( 'pang' ) )" );
-		let result2 = await!( addr2.call( Ping( "pang".into() ) ) ).expect( "Call failed" );
+		let result2 = addr2.call( Ping( "pang".into() ) ).await.expect( "Call failed" );
 
 		info!( "We got a result: {}", result );
 		assert_eq!( "seedpingbla - after yield".to_string(), result );

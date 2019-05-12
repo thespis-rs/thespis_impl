@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 use
 {
@@ -35,7 +35,7 @@ fn main()
 		let mut addr    = Addr::try_from( a ).expect( "Failed to create address" );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
-		await!( addr.send_all( &mut stream ) ).expect( "drain stream" );
+		addr.send_all( &mut stream ).await.expect( "drain stream" );
 
 		// This doesn't really work, we don't support it because:
 		//
@@ -43,9 +43,9 @@ fn main()
 		// - the future will only complete when the sink is closed, but our addresses can only
 		//   close when they are dropped.
 		//
-		// await!( stream.forward( &mut addr ) ).expect( "forward to sink" );
+		// stream.forward( &mut addr ).await.expect( "forward to sink" );
 
-		let total = await!( addr.call( Count ) ).expect( "Call failed" );
+		let total = addr.call( Count ).await.expect( "Call failed" );
 
 		assert_eq!( 4, total );
 		dbg!( total );

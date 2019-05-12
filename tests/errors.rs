@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 // TODO:
 //
@@ -39,7 +39,7 @@ async fn mb_closed()
 	}).join();
 
 
-	match await!( addr.send( Add(10) ) )
+	match addr.send( Add(10) ).await
 	{
 		Ok (_) => assert!( false, "Addr::send should fail" ),
 
@@ -76,7 +76,7 @@ async fn mb_closed_before_response()
 	});
 
 
-	match await!( addr.call( Add(10) ) )
+	match  addr.call( Add(10) ).await
 	{
 		Ok (_) => assert!( false, "Call should fail" ),
 
@@ -104,7 +104,7 @@ fn test_mb_closed()
 
 		trace!( "start program" );
 
-		await!( mb_closed() );
+		mb_closed().await;
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -123,7 +123,7 @@ fn test_mb_closed_before_response()
 
 		trace!( "start program" );
 
-		await!( mb_closed_before_response() );
+		mb_closed_before_response().await;
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

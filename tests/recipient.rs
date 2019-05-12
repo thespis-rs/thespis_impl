@@ -20,7 +20,7 @@
 //   - ✔ some examples with sink?
 //
 
-#![ feature( await_macro, async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 use
 {
@@ -84,12 +84,12 @@ fn store_recipients()
 
 		let mut recs: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr, box addro ];
 
-		await!( recs[ 0 ].send( Count ) ).expect( "Send failed" );
-		await!( recs[ 1 ].send( Count ) ).expect( "Send failed" );
-		await!( recs[ 0 ].send( Count ) ).expect( "Send failed" );
+		recs[ 0 ].send( Count ).await.expect( "Send failed" );
+		recs[ 1 ].send( Count ).await.expect( "Send failed" );
+		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 
-		assert_eq!( 3, await!( recs[ 0 ].call( Count ) ).expect( "Call failed" ) );
-		assert_eq!( 2, await!( recs[ 1 ].call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 3,  recs[ 0 ].call( Count ).await.expect( "Call failed" ) );
+		assert_eq!( 2,  recs[ 1 ].call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -115,12 +115,12 @@ fn receiver_basic_use()
 
 		let mut recs: Vec< Receiver<Count> > = vec![ Receiver::new( box addr ), Receiver::new( box addro ) ];
 
-		await!( recs[ 0 ].send( Count ) ).expect( "Send failed" );
-		await!( recs[ 1 ].send( Count ) ).expect( "Send failed" );
-		await!( recs[ 0 ].send( Count ) ).expect( "Send failed" );
+		recs[ 0 ].send( Count ).await.expect( "Send failed" );
+		recs[ 1 ].send( Count ).await.expect( "Send failed" );
+		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 
-		assert_eq!( 3, await!( recs[ 0 ].call( Count ) ).expect( "Call failed" ) );
-		assert_eq!( 2, await!( recs[ 1 ].call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 3,  recs[ 0 ].call( Count ).await.expect( "Call failed" ) );
+		assert_eq!( 2,  recs[ 1 ].call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -150,12 +150,12 @@ fn receiver_box_any()
 		let mut reca = recs[ 0 ].downcast_ref::<Receiver<Count>>().expect( "downcast" ).clone();
 		let mut recb = recs[ 1 ].downcast_ref::<Receiver<Count>>().expect( "downcast" ).clone();
 
-		await!( reca.send( Count ) ).expect( "Send failed" );
-		await!( recb.send( Count ) ).expect( "Send failed" );
-		await!( reca.send( Count ) ).expect( "Send failed" );
+		reca.send( Count ).await.expect( "Send failed" );
+		recb.send( Count ).await.expect( "Send failed" );
+		reca.send( Count ).await.expect( "Send failed" );
 
-		assert_eq!( 3, await!( reca.call( Count ) ).expect( "Call failed" ) );
-		assert_eq!( 2, await!( recb.call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 3,  reca.call( Count ).await.expect( "Call failed" ) );
+		assert_eq!( 2,  recb.call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -190,9 +190,9 @@ fn multi_thread()
 		{
 			let thread_program = async move
 			{
-				await!( reca[ 0 ].send( Count ) ).expect( "Send failed" );
-				await!( reca[ 1 ].send( Count ) ).expect( "Send failed" );
-				await!( reca[ 0 ].send( Count ) ).expect( "Send failed" );
+				reca[ 0 ].send( Count ).await.expect( "Send failed" );
+				reca[ 1 ].send( Count ).await.expect( "Send failed" );
+				reca[ 0 ].send( Count ).await.expect( "Send failed" );
 			};
 
 			rt::spawn( thread_program ).expect( "Spawn thread program" );
@@ -204,11 +204,11 @@ fn multi_thread()
 
 		// TODO: create a way to join threads asynchronously...
 		//
-		await!( rx ).expect( "receive Signal end of thread" );
+		rx.await.expect( "receive Signal end of thread" );
 
 
-		assert_eq!( 3, await!( recb[0].call( Count ) ).expect( "Call failed" ) );
-		assert_eq!( 2, await!( recb[1].call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 3,  recb[0].call( Count ).await.expect( "Call failed" ) );
+		assert_eq!( 2,  recb[1].call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -231,7 +231,7 @@ fn stream_to_sink_addr()
 		let mut addr    = Addr::try_from( a ).expect( "Failed to create address" );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
-		await!( addr.send_all( &mut stream ) ).expect( "drain stream" );
+		addr.send_all( &mut stream ).await.expect( "drain stream" );
 
 		// This doesn't really work:
 		// - stream needs to be a TryStream
@@ -239,9 +239,9 @@ fn stream_to_sink_addr()
 		//   close when they are dropped.
 		//
 		// let mut stream2 = stream::iter( vec![ Count, Count, Count ].into_iter() );
-		// await!( stream.forward( &mut addr ) ).expect( "forward to sink" );
+		//  stream.forward( &mut addr ).await.expect( "forward to sink" );
 
-		assert_eq!( 4, await!( addr.call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 4,  addr.call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );
@@ -264,7 +264,7 @@ fn stream_to_sink_receiver()
 		let mut rec     = Receiver::new( addr.recipient() );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
-		await!( rec.send_all( &mut stream ) ).expect( "drain stream" );
+		rec.send_all( &mut stream ).await.expect( "drain stream" );
 
 		// This doesn't really work:
 		// - stream needs to be a TryStream
@@ -272,9 +272,9 @@ fn stream_to_sink_receiver()
 		//   close when they are dropped.
 		//
 		// let mut stream2 = stream::iter( vec![ Count, Count, Count ].into_iter() );
-		// await!( stream.forward( &mut addr ) ).expect( "forward to sink" );
+		//  stream.forward( &mut addr ).await.expect( "forward to sink" );
 
-		assert_eq!( 4, await!( rec.call( Count ) ).expect( "Call failed" ) );
+		assert_eq!( 4,  rec.call( Count ).await.expect( "Call failed" ) );
 	};
 
 	rt::spawn( program ).expect( "Spawn program" );

@@ -1,5 +1,5 @@
 #![ allow( unused_imports, dead_code ) ]
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 mod common;
 
@@ -27,7 +27,7 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 
 	// This is ugly right now. It will be more ergonomic in the future.
 	//
-	let move_mb = async move { await!( mb.start_fut( sum ) ); };
+	let move_mb = async move { mb.start_fut( sum ).await; };
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 	thread::spawn( move ||
@@ -40,7 +40,7 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 		{
 			// This is ugly right now. It will be more ergonomic in the future.
 			//
-			let move_addr = async move { await!( addr2.send( Add( 10 ) ) ).expect( "Call failed" ); };
+			let move_addr = async move { addr2.send( Add( 10 ) ).await.expect( "Call failed" ); };
 			thread_exec2.spawn_local( move_addr ).expect( "Spawning mailbox failed" );
 		};
 
@@ -50,7 +50,7 @@ async fn sum_send( exec: &mut impl LocalSpawn ) -> u64
 
 	}).join().expect( "join thread" );
 
-	await!( addr.call( Show{} ) ).expect( "Call failed" )
+	addr.call( Show{} ).await.expect( "Call failed" )
 }
 
 
@@ -67,7 +67,7 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 
 	// This is ugly right now. It will be more ergonomic in the future.
 	//
-	let move_mb = async move { await!( mb.start_fut( sum ) ); };
+	let move_mb = async move { mb.start_fut( sum ).await; };
 	exec.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 
 	let (tx, rx) = oneshot::channel::<()>();
@@ -83,7 +83,7 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 		{
 			// This is ugly right now. It will be more ergonomic in the future.
 			//
-			let move_addr = async move { await!( addr2.call( Add( 10 ) ) ).expect( "Call failed" ); };
+			let move_addr = async move { addr2.call( Add( 10 ) ).await.expect( "Call failed" ); };
 			thread_exec2.spawn_local( move_addr ).expect( "Spawning mailbox failed" );
 		};
 
@@ -95,9 +95,9 @@ async fn sum_call( exec: &mut impl LocalSpawn ) -> u64
 
 	});
 
-	await!( rx ).expect( "receive Signal end of thread" );
+	rx.await.expect( "receive Signal end of thread" );
 
-	await!( addr.call( Show{} ) ).expect( "Call failed" )
+	addr.call( Show{} ).await.expect( "Call failed" )
 }
 
 
@@ -116,7 +116,7 @@ fn test_basic_send()
 
 		trace!( "start program" );
 
-		let result = await!( sum_send( &mut exec2 ) );
+		let result = sum_send( &mut exec2 ).await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );
@@ -143,7 +143,7 @@ fn test_basic_call()
 
 		trace!( "start program" );
 
-		let result = await!( sum_call( &mut exec2 ) );
+		let result = sum_call( &mut exec2 ).await;
 
 		trace!( "result is: {}", result );
 		assert_eq!( 15, result );

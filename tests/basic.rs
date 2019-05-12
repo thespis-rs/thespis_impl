@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
 
 mod common;
 
@@ -20,9 +20,9 @@ fn test_basic_send()
 	{
 		let mut addr = Addr::try_from( Sum(5) ).expect( "spawn actor mailbox" );
 
-		await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
-		let result = await!( addr.call( Show{}    ) ).expect( "Call failed" );
+		let result = addr.call( Show{} ).await.expect( "Call failed" );
 
 		assert_eq!( 15, result );
 	};
@@ -41,9 +41,9 @@ fn test_basic_call()
 	{
 		let mut addr = Addr::try_from( Sum(5) ).expect( "spawn actor mailbox" );
 
-		await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+		addr.call( Add(10) ).await.expect( "Send failed" );
 
-		let result = await!( addr.call( Show{}    ) ).expect( "Call failed" );
+		let result = addr.call( Show{} ).await.expect( "Call failed" );
 
 		assert_eq!( 15, result );
 	};
@@ -63,10 +63,10 @@ fn send_from_multiple_addrs()
 		let mut addr  = Addr::try_from( Sum(5) ).expect( "spawn actor mailbox" );
 		let mut addr2 = addr.clone();
 
-		await!( addr .send( Add( 10 ) ) ).expect( "Send failed" );
-		await!( addr2.send( Add( 10 ) ) ).expect( "Send failed" );
+		addr .send( Add( 10 ) ).await.expect( "Send failed" );
+		addr2.send( Add( 10 ) ).await.expect( "Send failed" );
 
-		let resp = await!( addr.call ( Show{} ) ).expect( "Call failed" );
+		let resp = addr.call( Show{} ).await.expect( "Call failed" );
 
 		assert_eq!( 25, resp );
 	};
@@ -93,10 +93,10 @@ fn call_from_multiple_addrs()
 
 		mb.start( sum ).expect( "Failed to start mailbox" );
 
-		await!( addr .call( Add( 10 ) ) ).expect( "Send failed" );
-		await!( addr2.call( Add( 10 ) ) ).expect( "Send failed" );
+		addr .call( Add( 10 ) ).await.expect( "Send failed" );
+		addr2.call( Add( 10 ) ).await.expect( "Send failed" );
 
-		let resp = await!( addr.call ( Show{} ) ).expect( "Call failed" );
+		let resp = addr.call ( Show{} ).await.expect( "Call failed" );
 
 		assert_eq!( 25, resp );
 	};

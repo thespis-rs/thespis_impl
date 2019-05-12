@@ -1,4 +1,4 @@
-#![ feature( await_macro, async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
+#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
 
 
 use
@@ -58,10 +58,10 @@ fn send()
 			{
 				for _i in 0..100usize
 				{
-					await!( addr.send( Add( 10 ) ) ).expect( "Send failed" );
+					addr.send( Add( 10 ) ).await.expect( "Send failed" );
 				}
 
-				let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
 				assert_eq!( 1005, res );
 			};
 
@@ -90,10 +90,10 @@ fn call()
 			{
 				for _i in 0..100usize
 				{
-					await!( addr.call( Add( 10 ) ) ).expect( "Send failed" );
+					addr.call( Add( 10 ) ).await.expect( "Send failed" );
 				}
 
-				let res = await!( addr.call( Show{} ) ).expect( "Call failed" );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
 				assert_eq!( 1005, res );
 			};
 
@@ -143,10 +143,10 @@ fn method()
 			{
 				for _i in 0..100usize
 				{
-					await!( sum2.add( Add( 10 ) ) );
+					sum2.add( Add( 10 ) ).await;
 				}
 
-				let res = await!( sum2.show() );
+				let res = sum2.show().await;
 				assert_eq!( 1005, res );
 			};
 
@@ -175,7 +175,7 @@ fn method()
 // 						addr.do_send( AxAdd( 10 ) );
 // 					}
 
-// 					let res = await!( addr.send( AxShow{} ) ).unwrap();
+// 					let res = addr.send( AxShow{} ).await.unwrap();
 
 // 					assert_eq!( 1005, res );
 
@@ -212,10 +212,10 @@ fn method()
 // 				{
 // 					for _i in 0..100usize
 // 					{
-// 						await!( addr.send( AxAdd( 10 ) ) ).expect( "failed sending actix message" );
+// 						addr.send( AxAdd( 10 ) ).await.expect( "failed sending actix message" );
 // 					}
 
-// 					let res = await!( addr.send( AxShow{} ) ).unwrap();
+// 					let res = addr.send( AxShow{} ).await.unwrap();
 
 // 					assert_eq!( 1006, res );
 
@@ -258,7 +258,7 @@ fn method()
 
 // impl AxHandler< AxShow > for AxSum
 // {
-// 	type Result  = u64
+// 	type Result = u64
 // ;
 // 	fn handle( &mut self, _msg: AxShow, _ctx: &mut AxContext<Self> ) -> Self::Result
 // 	{

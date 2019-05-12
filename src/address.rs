@@ -93,7 +93,7 @@ impl<A> Addr<A> where A: Actor
 	///
 	/// ```ignore
 	/// let addr = Addr::try_from( MyActor{} )?;
-	/// await!( addr.call( MyMessage{} ) )?;
+	/// addr.call( MyMessage{} ).await?;
 	/// ```
 	//
 	pub fn try_from( actor: A ) -> ThesRes<Self>
@@ -148,12 +148,12 @@ impl<A, M> Recipient<M> for Addr<A>
 		{
 			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
-			let result               = await!( self.mb.send( envl ) )               ;
+			let result               = self.mb.send( envl ).await               ;
 
 			result.map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )?;
 
 
-			await!( ret_rx )
+			ret_rx.await
 
 				.map_err( |_| ThesErrKind::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
 		})

@@ -20,10 +20,10 @@
 //!
 //!       // Manually spawn the future.
 //!       //
-//!       let move_mb = async move { await!( mb.start_fut( a ) ); };
+//!       let move_mb = async move { mb.start_fut( a ).await; };
 //!       exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
 //!
-//!       let result  = await!( addr.call( Ping( "ping".into() ) ) );
+//!       let result  = addr.call( Ping( "ping".into() ) ).await;
 //!
 //!       assert_eq!( "pong".to_string(), result );
 //!       dbg!( result );
@@ -50,7 +50,7 @@
 //!
 //!       mb.start( a ).expect( "Failed to start mailbox" );
 //!
-//!       let result  = await!( addr.call( Ping( "ping".into() ) ) );
+//!       let result  = addr.call( Ping( "ping".into() ) ).await;
 //!
 //!       assert_eq!( "pong".to_string(), result );
 //!       dbg!( result );
