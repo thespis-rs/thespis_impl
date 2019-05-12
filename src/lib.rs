@@ -4,7 +4,8 @@
 //!
 //! - tokio: makes the tokio executor available. enabled by default.
 //!
-#![ allow( unused_imports, dead_code ) ]
+#![deny(bare_trait_objects)]
+
 
 #![ feature
 (

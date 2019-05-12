@@ -1,4 +1,4 @@
-use crate :: { import::*, *, mailbox::*, envelope::* };
+use crate::{ import::*, mailbox::*, envelope::* };
 
 
 
@@ -43,7 +43,7 @@ impl< A: Actor > Eq for Addr<A>{}
 //
 impl<A: Actor> fmt::Debug for Addr<A>
 {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	fn fmt( &self, f: &mut fmt::Formatter ) -> fmt::Result
 	{
 		unsafe{ write!( f, "Addr<{}> ~ {}", clean_name( std::intrinsics::type_name::<A>() ), &self.id ) }
 	}

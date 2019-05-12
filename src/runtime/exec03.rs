@@ -1,4 +1,4 @@
-use crate :: { import::*, * };
+use crate :: { import::* };
 
 
 /// An executor that uses futures 0.3 executor under the hood.
@@ -9,7 +9,7 @@ pub struct Exec03
 {
 	local  : RefCell<LocalPool03>    ,
 	spawner: RefCell<LocalSpawner03> ,
-	pool   : ThreadPool03            ,
+	_pool   : ThreadPool03            ,
 }
 
 
@@ -24,7 +24,7 @@ impl Default for Exec03
 		Exec03
 		{
 			local  : RefCell::new( local ),
-			pool   : ThreadPool03::new().expect( "Create futures::ThreadPool with default configurtion" ),
+			_pool   : ThreadPool03::new().expect( "Create futures::ThreadPool with default configurtion" ),
 			spawner: RefCell::new( spawner ),
 		}
 	}
