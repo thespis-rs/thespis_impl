@@ -42,6 +42,9 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
+	/// Translate a futures SendError to a ThesErr.
+	/// Returns MailboxFull or MailboxClosed.
+	//
 	pub fn mb_error( e: mpsc::SendError, context: String ) -> ThesErr
 	{
 		// Can only happen if using bounded channels

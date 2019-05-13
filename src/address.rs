@@ -150,6 +150,8 @@ impl<A, M> Recipient<M> for Addr<A>
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
 			let result               = self.mb.send( envl ).await               ;
 
+			// MailboxClosed or MailboxFull
+			//
 			result.map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )?;
 
 
