@@ -1,4 +1,4 @@
-use crate::{ import::*, mailbox::*, envelope::* };
+use crate::{ import::*, Inbox, envelope::* };
 
 
 

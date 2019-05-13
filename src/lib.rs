@@ -29,7 +29,7 @@
 
     mod address  ;
     mod envelope ;
-    mod mailbox  ;
+    mod inbox    ;
     mod receiver ;
 
 pub mod runtime  ;
@@ -38,7 +38,7 @@ pub mod runtime  ;
 pub use
 {
 	address  :: * ,
-	mailbox  :: * ,
+	inbox    :: * ,
 	receiver :: * ,
 };
 
