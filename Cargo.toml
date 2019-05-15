@@ -18,7 +18,7 @@ simple_logger = "^1"
 [dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
-version = "^0.3.0-alpha.15"
+version = "^0.3.0-alpha.16"
 
 [dependencies.regex]
 features = ["pattern"]
@@ -29,12 +29,12 @@ path = "../thespis_iface"
 
 [dependencies.tokio]
 default-features = false
-features = ["rt-full", "codec"]
+features = ["rt-full"]
 optional = true
 version = "^0.1"
 
 [dev-dependencies]
-actix = "^0.7.9"
+actix = "^0.8"
 flexi_logger = "^0.11"
 pretty_assertions = "^0.6"
 
@@ -45,7 +45,7 @@ version = "^0.2"
 [dev-dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
-version = "^0.3.0-alpha.15"
+version = "^0.3.0-alpha.16"
 
 [dev-dependencies.tokio]
 default-features = false

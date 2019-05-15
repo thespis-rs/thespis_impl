@@ -200,7 +200,7 @@ fn actix_dosend()
 
 		}).compat());
 
-	});
+	}).unwrap();
 }
 
 
@@ -228,7 +228,7 @@ fn actix_send()
 
 		}).compat());
 
-	});
+	}).unwrap();
 }
 
 
