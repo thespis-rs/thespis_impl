@@ -103,7 +103,13 @@ fn default_init()
 	{
 		if exec.get().is_none()
 		{
-			init( box super::exec03::Exec03::default() ).unwrap()
+			#[ cfg(not( target_arch = "wasm32" )) ]
+			//
+			init( box super::exec03::Exec03::default() ).unwrap();
+
+			#[ cfg( target_arch = "wasm32" ) ]
+			//
+			init( box super::wasm::WasmRT::default() ).unwrap();
 		}
 	});
 }

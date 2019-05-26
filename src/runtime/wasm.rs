@@ -1,15 +1,13 @@
 use
 {
-	crate :: { import::*                       } ,
-	tokio :: { runtime::current_thread as trt  } ,
+	crate                :: { import::*                } ,
+	wasm_bindgen_futures :: { futures_0_3::spawn_local } ,
 };
 
 
-/// An executor that uses tokio executor under the hood.
-///
-/// TODO: threadpool impl. Currently puts everything on tokio_current_thread.
+/// An executor that works on WASM.
 //
-pub struct TokioRT
+pub struct WasmRT
 {
 	spawned: Rc<RefCell<Vec< Pin<Box< dyn Future< Output = () > + 'static >>>>> ,
 	running: RefCell<bool>                                                      ,
@@ -17,11 +15,11 @@ pub struct TokioRT
 
 
 
-impl Default for TokioRT
+impl Default for WasmRT
 {
 	fn default() -> Self
 	{
-		TokioRT
+		WasmRT
 		{
 			spawned: Rc::new( RefCell::new( vec![] ) ),
 			running: RefCell::new( false )            ,
@@ -31,7 +29,7 @@ impl Default for TokioRT
 
 
 
-impl Executor for TokioRT
+impl Executor for WasmRT
 {
 	/// Run all spawned futures to completion.
 	//
@@ -45,16 +43,13 @@ impl Executor for TokioRT
 
 			for fut in v.drain(..)
 			{
-				trt::spawn( Box::pin( async { fut.await; Ok(()) } ).compat() );
+				spawn_local( fut );
 			}
-
-			Ok(())
-
 		};
 
 		{ *self.running.borrow_mut() = true; }
 
-		trt::run( Box::pin( task ).compat() );
+		spawn_local( task );
 	}
 
 
@@ -64,7 +59,7 @@ impl Executor for TokioRT
 	{
 		if *self.running.borrow()
 		{
-			trt::spawn( Box::pin( async { fut.await; Ok(()) } ).compat() );
+			spawn_local( fut );
 		}
 
 		else
@@ -76,11 +71,10 @@ impl Executor for TokioRT
 	}
 
 
-	/// Spawn a future to be run on a threadpool.
-	/// Not implemented!
+	/// The Executor trait requires this for now, but wasm doesn't have threads yet!
 	//
 	fn spawn_pool( &self, _fut: Pin<Box< dyn Future< Output = () > + 'static >> ) -> ThesRes<()>
 	{
-		todo!()
+		unreachable!()
 	}
 }

@@ -37,9 +37,10 @@ pub mod runtime  ;
 
 pub use
 {
-	address  :: * ,
-	inbox    :: * ,
-	receiver :: * ,
+	address  :: *  ,
+	inbox    :: *  ,
+	receiver :: *  ,
+	runtime  :: rt ,
 };
 
 
@@ -92,14 +93,6 @@ mod import
 		},
 	};
 
-
-	#[ cfg( feature = "tokio" ) ]
-	//
-	pub use
-	{
-		tokio :: { prelude::{ AsyncRead as TokioAsyncR, AsyncWrite as TokioAsyncW }          } ,
-		tokio :: { codec::{ Decoder, Encoder, Framed, FramedParts, FramedRead, FramedWrite } } ,
-	};
 
 
 	#[ cfg(test) ]

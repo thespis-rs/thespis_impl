@@ -27,12 +27,6 @@ version = "^1"
 [dependencies.thespis]
 path = "../thespis_iface"
 
-[dependencies.tokio]
-default-features = false
-features = ["rt-full"]
-optional = true
-version = "^0.1"
-
 [dev-dependencies]
 actix = "^0.8"
 flexi_logger = "^0.11"
@@ -42,18 +36,10 @@ pretty_assertions = "^0.6"
 features = ["real_blackbox"]
 version = "^0.2"
 
-[dev-dependencies.futures-preview]
-default-features = false
-features = ["std", "compat", "nightly"]
-version = "^0.3.0-alpha.16"
-
 [dev-dependencies.tokio]
 default-features = false
-features = ["rt-full", "tcp", "codec"]
+features = ["rt-full"]
 version = "^0.1"
-
-[features]
-default = ["tokio"]
 
 [lib]
 bench = false
@@ -74,3 +60,10 @@ codegen-units = 1
 debug = true
 lto = false
 opt-level = 3
+
+[target]
+[target."cfg(target_arch = \"wasm32\")"]
+[target."cfg(target_arch = \"wasm32\")".dependencies]
+[target."cfg(target_arch = \"wasm32\")".dependencies.wasm-bindgen-futures]
+features = ["futures_0_3"]
+version = "0.3.22"

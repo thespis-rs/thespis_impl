@@ -14,10 +14,6 @@ lib:
   bench: false
 
 
-features:
-
-  default: [ tokio ]
-
 
 dependencies:
 
@@ -29,23 +25,21 @@ dependencies:
   regex               : { version: ^1, features: [ pattern ] }
   once_cell           : ^0.1
 
-  # tokio stuff
-  #
 
-  tokio:
+target:
 
-    version          : ^0.1
-    features         : [rt-full]
-    default-features : false
-    optional         : true
+  'cfg(target_arch = "wasm32")':
+
+    dependencies:
+
+      wasm-bindgen-futures: { version: 0.3.22, features: [ futures_0_3 ] }
 
 
 dev-dependencies:
 
   actix             : ^0.8
   criterion         : { version: ^0.2           , features: [ real_blackbox ]                                 }
-  futures-preview   : { version: ^0.3.0-alpha.16, default-features: false, features: [ std, compat, nightly ] }
-  tokio             : { version: ^0.1 , default-features: false, features: [ rt-full, tcp, codec ] }
+  tokio             : { version: ^0.1 , default-features: false, features: [ rt-full ] }
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.11
