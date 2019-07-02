@@ -4,7 +4,8 @@ use
 {
 	futures       :: { stream, sink::SinkExt } ,
 	thespis       :: { *                     } ,
-	thespis_impl  :: { *, runtime::rt        } ,
+	thespis_impl  :: { *                     } ,
+	async_runtime :: { rt                    } ,
 };
 
 
@@ -17,7 +18,7 @@ impl Message for Count { type Return = u8; }
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> ReturnNoSend<u8> { Box::pin( async move
+	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count

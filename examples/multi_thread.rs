@@ -9,7 +9,8 @@ use
 	std           :: { pin::Pin, thread } ,
 	log           :: { *                } ,
 	thespis       :: { *                } ,
-	thespis_impl  :: { *, runtime::rt   } ,
+	thespis_impl  :: { *                } ,
+	async_runtime :: { rt               } ,
 };
 
 
@@ -29,7 +30,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> ReturnNoSend<String> { Box::pin( async move
+	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
 	{
 		"pong".into()
 

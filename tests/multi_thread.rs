@@ -2,9 +2,9 @@
 
 // Tested:
 //
-// - Send message to another thread
-// - Call actor in another thread
-// - Move the future from call to another thread and await it there
+// - ✔ Send message to another thread
+// - ✔ Call actor in another thread
+// - ✔ Move the future from call to another thread and await it there
 
 mod common;
 
@@ -13,7 +13,8 @@ use
 	futures       :: { channel::oneshot           } ,
 	thespis       :: { *                          } ,
 	log           :: { *                          } ,
-	thespis_impl  :: { *, runtime::rt             } ,
+	thespis_impl  :: { *                          } ,
+	async_runtime :: { rt                         } ,
 	std           :: { thread                     } ,
 	common        :: { actors::{ Sum, Add, Show } } ,
 };

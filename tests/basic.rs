@@ -5,7 +5,8 @@ mod common;
 use
 {
 	thespis       :: { *                          } ,
-	thespis_impl  :: { *, runtime::rt             } ,
+	thespis_impl  :: { *,                         } ,
+	async_runtime :: { rt                         } ,
 	common        :: { actors::{ Sum, Add, Show } } ,
 };
 

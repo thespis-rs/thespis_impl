@@ -23,7 +23,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 	where  A                     : Actor + Handler<M>,
 	       M                     : Message           ,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
 		Box::pin( async move
 		{
@@ -56,7 +56,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	      M: Message,
 	      A: Handler<M>,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
 		Box::pin( async move
 		{

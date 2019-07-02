@@ -4,8 +4,10 @@ Just showing that thespis works in WASM. This is without remote functionality. T
 
 ## Dependencies
 
-- install wasm32-unkown-unknown target with rustup
-- install wasm-pack
+```shell
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+```
 
 ## Usage
 

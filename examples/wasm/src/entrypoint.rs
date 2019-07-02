@@ -5,8 +5,9 @@ use wasm_bindgen::prelude::*;
 
 use
 {
-	thespis      :: { * },
-	thespis_impl :: { * },
+	async_runtime:: { rt },
+	thespis      :: { *  },
+	thespis_impl :: { *  },
 };
 
 
@@ -26,7 +27,7 @@ struct MyActor { count: usize }
 //
 impl Handler<Ping> for MyActor
 {
-	fn handle( &mut self, msg: Ping ) -> ReturnNoSend<<Ping as Message>::Return>
+	fn handle( &mut self, msg: Ping ) -> Return<<Ping as Message>::Return>
 	{
 		Box::pin( async move
 		{
@@ -71,7 +72,6 @@ pub fn main() -> Result<(), JsValue>
 
 
 	rt::spawn( program ).expect( "spawn program" );
-	rt::run();
 
 	Ok(())
 }

@@ -1,4 +1,4 @@
-use crate :: { import::*, runtime::rt };
+use crate :: { import::* };
 
 
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
@@ -68,19 +68,20 @@ impl<A> Inbox<A> where A: Actor
 
 
 
-impl<A> Mailbox<A> for Inbox<A> where A: Actor
+impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 {
 	fn start( self, actor: A ) -> ThesRes<()>
 	{
-		Ok( rt::spawn_pinned( self.start_fut( actor ) )
+		Ok( rt::spawn( self.start_fut( actor ) )
 
 			.context( ThesErrKind::Spawn{ context: "Inbox".into() })? )
 	}
 
 
-	fn start_fut( self, mut actor: A ) -> ReturnNoSend<'static, ()>
+
+	fn start_fut( self, mut actor: A ) -> Return<'static, ()>
 	{
-		Box::pin( async move
+		async move
 		{
 			// TODO: Clean this up...
 			// We need to drop the handle, otherwise the channel will never close and the program will not
@@ -104,7 +105,7 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor
 			actor.stopped().await;
 			trace!( "Mailbox stopped actor" );
 
-		})
+		}.boxed()
 	}
 }
 

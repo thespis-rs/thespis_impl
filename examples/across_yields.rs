@@ -9,7 +9,9 @@ use
 	std           :: { pin::Pin        } ,
 	log           :: { *               } ,
 	thespis       :: { *               } ,
-	thespis_impl  :: { *, runtime::rt  } ,
+	thespis_impl  :: { *               } ,
+	async_runtime :: { rt              } ,
+
 };
 
 
@@ -40,7 +42,7 @@ impl Handler< Ping > for MyActor
 {
 	// If you forget the move on the end, it won't compile and error messages will be shit!!!
 	//
-	fn handle( &mut self, msg: Ping ) -> ReturnNoSend<String> { Box::pin( async move
+	fn handle( &mut self, msg: Ping ) -> Return<String> { Box::pin( async move
 	{
 		trace!( "Ping handler called" );
 

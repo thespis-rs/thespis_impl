@@ -12,7 +12,8 @@ use
 {
 	thespis       :: { *                    } ,
 	log           :: { *                    } ,
-	thespis_impl  :: { *, runtime::rt       } ,
+	thespis_impl  :: { *                    } ,
+	async_runtime :: { rt                   } ,
 	std           :: { thread               } ,
 	common        :: { actors::{ Sum, Add } } ,
 };

@@ -27,7 +27,8 @@ use
 	std           :: { any::Any, thread                        } ,
 	futures       :: { channel::oneshot, stream, sink::SinkExt } ,
 	thespis       :: { *                                       } ,
-	thespis_impl  :: { *, runtime::rt                          } ,
+	thespis_impl  :: { *                                       } ,
+	async_runtime :: { rt, RtConfig                            } ,
 };
 
 
@@ -46,7 +47,7 @@ impl Message for Count
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> ReturnNoSend<u8> { Box::pin( async move
+	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count
@@ -57,7 +58,7 @@ impl Handler< Count > for MyActor
 
 impl Handler< Count > for Other
 {
-	fn handle( &mut self, _msg: Count ) -> ReturnNoSend<u8> { Box::pin( async move
+	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
 	{
 		self.count += 1;
 		self.count
@@ -82,7 +83,7 @@ fn store_recipients()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let mut recs: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr, box addro ];
+		let mut recs: Vec<Box< dyn Recipient<Count, SinkError=ThesErr> >> = vec![ box addr, box addro ];
 
 		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 		recs[ 1 ].send( Count ).await.expect( "Send failed" );
@@ -135,6 +136,8 @@ fn receiver_basic_use()
 //
 fn receiver_box_any()
 {
+	rt::init( RtConfig::Local ).expect( "set executor" );
+
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
@@ -144,7 +147,7 @@ fn receiver_box_any()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let recs: Vec< Box<Any> > = vec![ Box::new( Receiver::new( box addr ) ), Box::new( Receiver::new( box addro ) ) ];
+		let recs: Vec< Box<dyn Any> > = vec![ Box::new( Receiver::new( box addr ) ), Box::new( Receiver::new( box addro ) ) ];
 
 
 		let mut reca = recs[ 0 ].downcast_ref::<Receiver<Count>>().expect( "downcast" ).clone();
@@ -158,7 +161,7 @@ fn receiver_box_any()
 		assert_eq!( 2,  recb.call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
+	rt::spawn_local( program ).expect( "Spawn program" );
 	rt::run();
 }
 
@@ -180,8 +183,8 @@ fn multi_thread()
 		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
-		let mut reca: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr.clone(), box addro.clone() ];
-		let mut recb: Vec<Box< Recipient<Count, SinkError=ThesErr> >> = vec![ box addr        , box addro         ];
+		let mut reca: Vec<Box< dyn Recipient<Count, SinkError=ThesErr> >> = vec![ box addr.clone(), box addro.clone() ];
+		let mut recb: Vec<Box< dyn Recipient<Count, SinkError=ThesErr> >> = vec![ box addr        , box addro         ];
 
 		let (tx, rx) = oneshot::channel::<()>();
 

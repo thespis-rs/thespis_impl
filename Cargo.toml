@@ -15,6 +15,11 @@ log = "^0.4"
 once_cell = "^0.1"
 simple_logger = "^1"
 
+[dependencies.async_runtime]
+default-features = false
+package = "naja_async_runtime"
+version = "^0.1"
+
 [dependencies.futures-preview]
 default-features = false
 features = ["std", "compat", "nightly"]
@@ -31,6 +36,10 @@ path = "../thespis_iface"
 actix = "^0.8"
 flexi_logger = "^0.11"
 pretty_assertions = "^0.6"
+
+[dev-dependencies.async_runtime]
+package = "naja_async_runtime"
+version = "^0.1"
 
 [dev-dependencies.criterion]
 features = ["real_blackbox"]

@@ -32,15 +32,12 @@
     mod inbox    ;
     mod receiver ;
 
-pub mod runtime  ;
-
 
 pub use
 {
 	address  :: *  ,
 	inbox    :: *  ,
 	receiver :: *  ,
-	runtime  :: rt ,
 };
 
 
@@ -55,11 +52,11 @@ mod import
 {
 	pub use
 	{
-		failure   :: { Fail, bail, err_msg, AsFail, Context as FailContext, Backtrace, ResultExt } ,
-		thespis   :: { *                                           } ,
-		log       :: { *                                           } ,
-		once_cell :: { unsync::OnceCell, unsync::Lazy, unsync_lazy } ,
-
+		failure       :: { Fail, bail, err_msg, AsFail, Context as FailContext, Backtrace, ResultExt } ,
+		thespis       :: { *                                                                         } ,
+		log           :: { *                                                                         } ,
+		once_cell     :: { unsync::OnceCell, unsync::Lazy, unsync_lazy                               } ,
+		async_runtime :: { rt                                                                        } ,
 
 		std ::
 		{

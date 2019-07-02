@@ -16,14 +16,15 @@ dependencies:
 
   log             : ^0.4
   console_log     : ^0.1
-  thespis         : { path: ../../../thespis_iface }
-  thespis_impl    : { path: ../../../thespis_impl, default-features: false  }
+  async_runtime   : { version: ^0.1, package: naja_async_runtime, default-features: false }
+  thespis         : { path: ../../../thespis_iface                                        }
+  thespis_impl    : { path: ../../../thespis_impl, default-features: false                }
   futures-preview : 0.3.0-alpha.16
-  wasm-bindgen    : 0.2.45
+  wasm-bindgen    : ^0.2
 
   web-sys:
 
-    version  : 0.3.22
+    version  : ^0.3
 
     features :
     [

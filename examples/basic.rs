@@ -6,10 +6,13 @@
 use
 {
 	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
-	std           :: { pin::Pin                      } ,
-	log           :: { *                             } ,
-	thespis       :: { *                             } ,
-	thespis_impl  :: { *, runtime::rt } ,
+
+	std           :: { pin::Pin } ,
+	log           :: { *        } ,
+	thespis       :: { *        } ,
+	thespis_impl  :: { *        } ,
+	async_runtime :: { rt       } ,
+
 };
 
 
@@ -28,7 +31,7 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> ReturnNoSend<String> { Box::pin( async move
+	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
 	{
 		"pong".into()
 
