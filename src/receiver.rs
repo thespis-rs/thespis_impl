@@ -57,7 +57,7 @@ impl<M: Message> Eq for Receiver<M>{}
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, <Self as Sink<M>>::SinkError >>
+	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, <Self as Sink<M>>::Error >>
 	{
 		Box::pin( async move
 		{
@@ -85,21 +85,21 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 impl<M: Message> Sink<M> for Receiver<M>
 {
-	type SinkError = ThesErr;
+	type Error = ThesErr;
 
-	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_ready( cx )
 	}
 
 
-	fn start_send( mut self: Pin<&mut Self>, msg: M ) -> Result<(), Self::SinkError>
+	fn start_send( mut self: Pin<&mut Self>, msg: M ) -> Result<(), Self::Error>
 	{
 		self.rec.as_mut().start_send( msg )
 	}
 
 
-	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_flush( cx )
 	}
@@ -107,7 +107,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 
 	/// Will only close when dropped, this method can never return ready
 	//
-	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::SinkError>>
+	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_close( cx )
 	}

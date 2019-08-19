@@ -19,12 +19,12 @@ dependencies:
 
   thespis         : { path: ../thespis_iface }
   failure         : ^0.1
-  futures-preview : { version: ^0.3.0-alpha.16, features: [ std, compat, nightly ], default-features: false }
+  futures-preview : { version: ^0.3.0-alpha, features: [ std, compat, nightly ], default-features: false }
   log             : ^0.4
   simple_logger   : ^1
   regex           : { version: ^1, features: [ pattern ] }
   once_cell       : ^0.1
-  async_runtime   : { version: ^0.1, package: naja_async_runtime, default-features: false }
+  async_runtime   : { version: ^0.3, package: naja_async_runtime, default-features: false }
 
 
 target:
@@ -33,7 +33,7 @@ target:
 
     dependencies:
 
-      wasm-bindgen-futures: { version: 0.3.22, features: [ futures_0_3 ] }
+      wasm-bindgen-futures: { version: ^0.3, features: [ futures_0_3 ] }
 
 
 dev-dependencies:
@@ -44,7 +44,7 @@ dev-dependencies:
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.11
-  async_runtime     : { version: ^0.1, package: naja_async_runtime }
+  async_runtime     : { version: ^0.3, package: naja_async_runtime }
 
 
 bench:

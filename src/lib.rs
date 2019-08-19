@@ -76,7 +76,8 @@ mod import
 
 		futures ::
 		{
-			prelude :: { Stream, StreamExt, Sink, SinkExt                                         } ,
+			stream  :: { Stream, StreamExt                                                        } ,
+			sink    :: { Sink, SinkExt                                                            } ,
 			channel :: { oneshot, mpsc                                                            } ,
 			future  :: { FutureExt, TryFutureExt                                                  } ,
 			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, Context as TaskContext, Poll } ,
