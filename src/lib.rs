@@ -10,7 +10,6 @@
 #![ feature
 (
 	arbitrary_self_types   ,
-	async_await            ,
 	box_into_pin           ,
 	box_patterns           ,
 	box_syntax             ,
@@ -55,7 +54,7 @@ mod import
 		failure       :: { Fail, bail, err_msg, AsFail, Context as FailContext, Backtrace, ResultExt } ,
 		thespis       :: { *                                                                         } ,
 		log           :: { *                                                                         } ,
-		once_cell     :: { unsync::OnceCell, unsync::Lazy, unsync_lazy                               } ,
+		once_cell     :: { unsync::OnceCell, unsync::Lazy                                            } ,
 		async_runtime :: { rt                                                                        } ,
 
 		std ::

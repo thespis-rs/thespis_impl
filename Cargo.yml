@@ -23,7 +23,7 @@ dependencies:
   log             : ^0.4
   simple_logger   : ^1
   regex           : { version: ^1, features: [ pattern ] }
-  once_cell       : ^0.1
+  once_cell       : ^1.0.0-pre
   async_runtime   : { version: ^0.3, package: naja_async_runtime, default-features: false }
 
 
@@ -39,11 +39,11 @@ target:
 dev-dependencies:
 
   actix             : ^0.8
-  criterion         : { version: ^0.2           , features: [ real_blackbox ]          }
+  criterion         : { version: ^0.3           , features: [ real_blackbox ]          }
   tokio             : { version: ^0.1 , default-features: false, features: [ rt-full ] }
 
   pretty_assertions : ^0.6
-  flexi_logger      : ^0.11
+  flexi_logger      : ^0.14
   async_runtime     : { version: ^0.3, package: naja_async_runtime }
 
 
