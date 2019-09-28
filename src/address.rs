@@ -81,8 +81,10 @@ impl<A> Addr<A> where A: Actor
 		trace!( "CREATE address for: {}", clean_name( std::intrinsics::type_name::<A>() ) );
 		Self{ id: mb.0, mb: mb.1 }
 	}
+}
 
-
+impl<A> Addr<A> where A: Actor + Send
+{
 	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
 	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
 	/// Will consume your actor and return an address.

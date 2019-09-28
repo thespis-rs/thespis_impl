@@ -1,4 +1,4 @@
-use crate :: { import::* };
+use crate::{import::*};
 
 
 
@@ -25,12 +25,9 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
-		Box::pin( async move
-		{
-
-			let _ = < A as Handler<M> >::handle( actor, self.msg ).await;
-
-		})
+		< A as Handler<M>  >::handle( actor, self.msg )
+			.map(|_| ())
+			.boxed()
 	}
 }
 
@@ -58,19 +55,17 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
-		Box::pin( async move
-		{
-			let result = < A as Handler<M> >::handle( actor, self.msg ).await;
-
-			// trace!( "Send from envelope" );
-
-			match self.addr.send( result )
-			{
-				Ok (_) => {},
-				Err(_) => { error!( "failed to send from envelope, receiving end dropped" ) },
-			};
-
-		})
+        let CallEnvelope { msg, addr } = *self;
+        < A as Handler<M> >::handle( actor, msg )
+            .then(|result| {
+                match addr.send(result)
+                    {
+                        Ok(_) => {}
+                        Err(_) => { error!("failed to send from envelope, receiving end dropped") }
+                    };
+                async { () }
+            })
+            .boxed()
 	}
 }
 
