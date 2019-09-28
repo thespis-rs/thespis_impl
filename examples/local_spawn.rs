@@ -40,20 +40,38 @@ impl Handler<Ping> for MyActor
 
 fn main()
 {
-    let actor = MyActor;
-    let inbox = Inbox::new();
-    let mut addr = inbox.addr();
-    let future = inbox.start_fut_local(actor);
+    let mut local_pool = futures::executor::LocalPool::new();
+    let mut thread_pool = futures::executor::ThreadPool::new().unwrap();
 
-    let mut pool = futures::executor::LocalPool::new();
-    pool.spawner().spawn_local(future).unwrap();
+    let mut addr_local = {
+        let actor = MyActor;
+        let inbox = Inbox::new();
+        let addr = inbox.addr();
+        local_pool.spawner().spawn_local(
+            inbox.start_fut_local(actor)
+        ).unwrap();
+        addr
+    };
 
+    let mut addr_thread = {
+        let actor = MyActor;
+        let inbox = Inbox::new();
+        let addr = inbox.addr();
+        thread_pool.spawn(
+            inbox.start_fut(actor)
+        ).unwrap();
+        addr
+    };
 
-    pool.spawner().spawn_local(async move {
-        let result = addr.call(Ping("ping".into())).await.expect("Call failed");
-        assert_eq!("pong".to_string(), result);
-        dbg!(result);
+    local_pool.spawner().spawn_local(async move {
+        let result_local = addr_local.call(Ping("ping".into())).await.expect("Call failed");
+        assert_eq!("pong".to_string(), result_local);
+        dbg!(result_local);
+
+        let result_thread = addr_thread.call(Ping("ping".into())).await.expect("Call failed");
+        assert_eq!("pong".to_string(), result_thread);
+        dbg!(result_thread);
     }).unwrap();
 
-    pool.run();
+    local_pool.run();
 }
