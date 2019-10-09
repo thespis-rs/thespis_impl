@@ -1,4 +1,4 @@
-#![ feature( arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( optin_builtin_traits ) ]
 
 // Tested:
 //
