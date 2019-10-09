@@ -1,5 +1,5 @@
-#![ feature( async_await ) ]
-
+#![ feature( optin_builtin_traits ) ]
+//
 use wasm_bindgen::prelude::*;
 
 
@@ -21,19 +21,28 @@ impl Message for Ping { type Return = usize; }
 //
 struct MyActor { count: usize }
 
-
+// Just to demonstrate we can use !Send actors, since WASM is single threaded anyway.
+//
+impl !Send for MyActor {}
 
 /// Handler for `Ping` message
 //
 impl Handler<Ping> for MyActor
 {
-	fn handle( &mut self, msg: Ping ) -> Return<<Ping as Message>::Return>
+	fn handle_local( &mut self, msg: Ping ) -> ReturnNoSend<<Ping as Message>::Return>
 	{
 		Box::pin( async move
 		{
 			self.count += msg.0;
 			self.count
 		})
+	}
+
+	// This is necessary for !Send actors, as handle is a required method.
+	//
+	fn handle( &mut self, _: Ping ) -> Return<<Ping as Message>::Return>
+	{
+		unreachable!( "Cannot spawn !Send actor on a threadpool" );
 	}
 }
 
@@ -51,7 +60,7 @@ pub fn main() -> Result<(), JsValue>
 	{
 		// start new actor
 		//
-		let mut addr = Addr::try_from( MyActor { count: 10 } ).expect( "create addres for MyActor" );
+		let mut addr = Addr::try_from_local( MyActor { count: 10 } ).expect( "create addres for MyActor" );
 
 		// send message and get future for result
 		//
@@ -71,7 +80,7 @@ pub fn main() -> Result<(), JsValue>
 	};
 
 
-	rt::spawn( program ).expect( "spawn program" );
+	rt::spawn_local( program ).expect( "spawn program" );
 
 	Ok(())
 }
