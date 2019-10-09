@@ -25,7 +25,7 @@ impl< A: Actor > Clone for Addr<A>
 }
 
 
-/// Verify whether 2 Receivers will deliver to the same actor
+/// Verify whether 2 Receivers will deliver to the same actor.
 //
 impl< A: Actor > PartialEq for Addr<A>
 {
@@ -39,8 +39,6 @@ impl< A: Actor > Eq for Addr<A>{}
 
 
 
-// TODO: test this and do we really want to introduce unsafe just for a type name?
-//
 impl<A: Actor> fmt::Debug for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter ) -> fmt::Result

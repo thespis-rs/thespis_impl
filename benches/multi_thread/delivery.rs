@@ -1,6 +1,3 @@
-#![ feature( async_await, arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
-
 use
 {
 	async_runtime     :: { rt                                                     } ,
