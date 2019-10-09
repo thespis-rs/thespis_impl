@@ -102,6 +102,18 @@ impl<A> Addr<A> where A: Actor
 		inbox.start( actor )?;
 		Ok( addr )
 	}
+
+
+	/// Get the id of the mailbox this address sends to. There will be exactly one for each
+	/// actor, so you can use this for uniquely identifying your actors.
+	///
+	/// This is an atomic usize that is incremented for every new mailbox. There currently
+	/// is no overflow protection.
+	//
+	pub fn id( &self ) -> usize
+	{
+		self.id
+	}
 }
 
 
