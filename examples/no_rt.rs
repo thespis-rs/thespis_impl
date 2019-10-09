@@ -45,17 +45,17 @@ fn main()
 
 	let program = async move
 	{
-		let a = MyActor;
+		let actor = MyActor;
 
 		// Create mailbox
 		//
-		let mb  : Inbox<MyActor> = Inbox::new();
-		let mut addr  = Addr::new( mb.sender() );
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
 
-		// TODO: This is ugly right now. It will be more ergonomic in the future.
+		// Now we can start and stop our mailbox whenever we want, because we have a future,
+		// rather than thespis_impl spawning it for us.
 		//
-		let move_mb = async move { mb.start_fut( a ).await; };
-		exec2.spawn_local( move_mb ).expect( "Spawning mailbox failed" );
+		exec2.spawn_local( mb.start_fut( actor ) ).expect( "Spawning mailbox failed" );
 
 		let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
 
