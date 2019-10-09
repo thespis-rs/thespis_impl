@@ -6,30 +6,12 @@
 //!
 #![deny(bare_trait_objects)]
 
+#![ feature( core_intrinsics ) ]
 
-#![ feature
-(
-	arbitrary_self_types   ,
-	box_into_pin           ,
-	box_patterns           ,
-	box_syntax             ,
-	core_intrinsics        ,
-	decl_macro             ,
-	never_type             ,
-	nll                    ,
-	optin_builtin_traits   ,
-	re_rebalance_coherence ,
-	specialization         ,
-	todo_macro             ,
-	trait_alias            ,
-	try_trait              ,
-	unboxed_closures       ,
-)]
-
-    mod address  ;
-    mod envelope ;
-    mod inbox    ;
-    mod receiver ;
+mod address  ;
+mod envelope ;
+mod inbox    ;
+mod receiver ;
 
 
 pub use
@@ -49,44 +31,28 @@ pub use
 //
 mod import
 {
-	pub use
+	pub(crate) use
 	{
-		failure       :: { Fail, bail, err_msg, AsFail, Context as FailContext, Backtrace, ResultExt } ,
-		thespis       :: { *                                                                         } ,
-		log           :: { *                                                                         } ,
-		once_cell     :: { unsync::OnceCell, unsync::Lazy                                            } ,
-		async_runtime :: { rt                                                                        } ,
+		failure       :: { ResultExt } ,
+		thespis       :: { *         } ,
+		log           :: { *         } ,
+		async_runtime :: { rt        } ,
 
 		std ::
 		{
-			fmt                                                       ,
-			cell        :: { RefCell                                } ,
-			convert     :: { TryFrom, TryInto                       } ,
-			future      :: { Future                                 } ,
-			marker      :: { PhantomData                            } ,
-			ops         :: { Try, DerefMut                          } ,
-			pin         :: { Pin                                    } ,
-			rc          :: { Rc                                     } ,
-			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
-			collections :: { HashMap                                } ,
-
+			fmt ,
+			pin         :: { Pin                               } ,
+			sync        :: { atomic::{ AtomicUsize, Ordering } } ,
 		},
 
 
 		futures ::
 		{
-			stream  :: { Stream, StreamExt                                                        } ,
-			sink    :: { Sink, SinkExt                                                            } ,
-			channel :: { oneshot, mpsc                                                            } ,
-			future  :: { FutureExt, TryFutureExt                                                  } ,
-			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, Context as TaskContext, Poll } ,
-
-			executor::
-			{
-				LocalPool    as LocalPool03    ,
-				LocalSpawner as LocalSpawner03 ,
-				ThreadPool   as ThreadPool03   ,
-			},
+			stream  :: { StreamExt                    } ,
+			sink    :: { Sink, SinkExt                } ,
+			channel :: { oneshot, mpsc                } ,
+			future  :: { FutureExt                    } ,
+			task    :: { Context as TaskContext, Poll } ,
 		},
 	};
 

@@ -175,7 +175,7 @@ impl<A, M> Recipient<M> for Addr<A>
 
 	fn clone_box( &self ) -> BoxRecipient<M>
 	{
-		box self.clone()
+		Box::new( self.clone() )
 	}
 
 
@@ -256,6 +256,6 @@ impl<A, M> Address<A, M> for Addr<A>
 {
 	fn recipient( &self ) -> BoxRecipient<M>
 	{
-		box self.clone()
+		Box::new( self.clone() )
 	}
 }
