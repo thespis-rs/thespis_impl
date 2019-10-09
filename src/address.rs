@@ -83,7 +83,8 @@ impl<A> Addr<A> where A: Actor
 	}
 }
 
-impl<A> Addr<A> where A: Actor + Send
+
+impl<A> Addr<A> where A: Actor
 {
 	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
 	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
@@ -96,12 +97,35 @@ impl<A> Addr<A> where A: Actor + Send
 	/// addr.call( MyMessage{} ).await?;
 	/// ```
 	//
-	pub fn try_from( actor: A ) -> ThesRes<Self>
+	pub fn try_from( actor: A ) -> ThesRes<Self> where A: Send
 	{
 		let inbox: Inbox<A> = Inbox::new()                ;
 		let addr            = Self ::new( inbox.sender() );
 
 		inbox.start( actor )?;
+		Ok( addr )
+	}
+
+	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
+	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
+	/// Will consume your actor and return an address.
+	///
+	/// This will spawn the mailbox on the current thread. You need to set up async_runtime to enable
+	/// spawn_local.
+	///
+	/// TODO: have doc examples tested by rustdoc
+	///
+	/// ```ignore
+	/// let addr = Addr::try_from( MyActor{} )?;
+	/// addr.call( MyMessage{} ).await?;
+	/// ```
+	//
+	pub fn try_from_local( actor: A ) -> ThesRes<Self>
+	{
+		let inbox: Inbox<A> = Inbox::new()                ;
+		let addr            = Self ::new( inbox.sender() );
+
+		inbox.start_local( actor )?;
 		Ok( addr )
 	}
 

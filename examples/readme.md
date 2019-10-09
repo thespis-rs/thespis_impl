@@ -10,5 +10,6 @@ These examples demonstrate how to use thespis with the reference implementation 
 6. *recipient_is_sink*: Shows how to you can use sink combinators on recipient
 7. *multi_thread*: Use addresses to send across threads
 8. *move_fut*: Use address on the same thread, but move the future from call to a different thread before polling it.
+9. *local_spawn*: Use an Actor which is `!Send` and spawn it on a thread local executor.
 
 TODO: Receiver as Box<Any>
