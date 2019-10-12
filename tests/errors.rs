@@ -1,4 +1,4 @@
-#![ feature( arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( optin_builtin_traits ) ]
 
 // TODO:
 //
@@ -13,7 +13,7 @@ use
 	thespis       :: { *                    } ,
 	log           :: { *                    } ,
 	thespis_impl  :: { *                    } ,
-	async_runtime :: { rt                   } ,
+	async_runtime :: { rt, RtConfig         } ,
 	std           :: { thread               } ,
 	common        :: { actors::{ Sum, Add } } ,
 };
@@ -70,26 +70,31 @@ async fn mb_closed_before_response()
 	let     mb  : Inbox<Sum> = Inbox::new(             );
 	let mut addr             = Addr ::new( mb.sender() );
 
-	thread::spawn( move ||
+	let mb_thread = thread::Builder::new().name( "mb_closed_before_response".into() );
+
+	mb_thread.spawn( move ||
 	{
-		mb.start( sum ).expect( "Failed to start mailbox" );
+		mb.start_local( sum ).expect( "Failed to start mailbox" );
 		panic!( "terminate thread" );
-	});
 
+	}).expect( "spawn mb_closed_before_response" );
 
-	match  addr.call( Add(10) ).await
+	match addr.call( Add(10) ).await
 	{
 		Ok (_) => assert!( false, "Call should fail" ),
 
-		Err(e) => if let ThesErrKind::MailboxClosedBeforeResponse{..} = e.kind()
+		Err(e) =>
 		{
-			assert!( true )
-		}
+			if let ThesErrKind::MailboxClosedBeforeResponse{..} = e.kind()
+			{
+				assert!( true )
+			}
 
-		else
-		{
-			assert!( false, "Wrong error returned: {:?}", e )
-		},
+			else
+			{
+				assert!( false, "Wrong error returned: {:?}", e )
+			}
+		}
 	}
 }
 
@@ -114,10 +119,16 @@ fn test_mb_closed()
 
 
 
+// TODO: double check. When spawning on a threadpool, panics in the worker threads from asserts
+// don't make the test fail!
+// This could be a problem for other tests as well.
+//
 #[test]
 //
 fn test_mb_closed_before_response()
 {
+	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+
 	let program = async move
 	{
 		// let _ = simple_logger::init();

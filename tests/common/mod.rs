@@ -5,7 +5,7 @@ pub mod import
 {
 	pub use
 	{
-		futures       :: { future::{ FutureExt } } ,
+		futures       :: { future::{ FutureExt }, SinkExt } ,
 		thespis       :: { * } ,
 		log           :: { * } ,
 	};

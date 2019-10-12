@@ -1,4 +1,4 @@
-use crate :: { import::* };
+use crate::import::*;
 
 
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
@@ -63,8 +63,61 @@ impl<A> Inbox<A> where A: Actor
 			ThesErrKind::MailboxClosed{ actor: context }.into()
 		}
 	}
-}
 
+
+
+	async fn start_fut_inner( self, mut actor: A ) where A: Send
+	{
+		// TODO: Clean this up...
+		// We need to drop the handle, otherwise the channel will never close and the program will not
+		// terminate. Like this when the user drops all their handles, this loop will automatically break.
+		//
+		let Inbox{ mut msgs, handle, .. } = self;
+		drop( handle );
+
+		actor.started().await;
+		trace!( "mailbox: started" );
+
+		loop
+		{
+			match  msgs.next().await
+			{
+				Some( envl ) => { envl.handle( &mut actor ).await; }
+				None         => { break;                           }
+			}
+		}
+
+		actor.stopped().await;
+		trace!( "Mailbox stopped actor" );
+	}
+
+
+
+	async fn start_fut_inner_local( self, mut actor: A )
+	{
+		// TODO: Clean this up...
+		// We need to drop the handle, otherwise the channel will never close and the program will not
+		// terminate. Like this when the user drops all their handles, this loop will automatically break.
+		//
+		let Inbox{ mut msgs, handle, .. } = self;
+		drop( handle );
+
+		actor.started().await;
+		trace!( "mailbox: started" );
+
+		loop
+		{
+			match  msgs.next().await
+			{
+				Some( envl ) => { envl.handle_local( &mut actor ).await; }
+				None         => { break;                           }
+			}
+		}
+
+		actor.stopped().await;
+		trace!( "Mailbox stopped actor" );
+	}
+}
 
 
 
@@ -74,38 +127,29 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 	{
 		Ok( rt::spawn( self.start_fut( actor ) )
 
-			.context( ThesErrKind::Spawn{ context: "Inbox".into() })? )
+			.context( ThesErrKind::Spawn{ context: "Inbox".into() } )? )
 	}
 
 
-
-	fn start_fut( self, mut actor: A ) -> Return<'static, ()>
+	fn start_fut( self, actor: A ) -> Return<'static, ()>
 	{
-		async move
-		{
-			// TODO: Clean this up...
-			// We need to drop the handle, otherwise the channel will never close and the program will not
-			// terminate. Like this when the user drops all their handles, this loop will automatically break.
-			//
-			let Inbox{ mut msgs, handle, .. } = self;
-			drop( handle );
+		self.start_fut_inner( actor ).boxed()
+	}
+}
 
-			actor.started().await;
-			trace!( "mailbox: started" );
+impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
+{
+	fn start_local( self, actor: A ) -> ThesRes<()>
+	{
+		Ok( rt::spawn_local( self.start_fut_inner_local( actor ) )
 
-			loop
-			{
-				match  msgs.next().await
-				{
-					Some( envl ) => { envl.handle( &mut actor ).await; }
-					None         => { break;                               }
-				}
-			}
+			.context( ThesErrKind::Spawn{ context: "Inbox".into() } )? )
+	}
 
-			actor.stopped().await;
-			trace!( "Mailbox stopped actor" );
 
-		}.boxed()
+	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, ()>
+	{
+		self.start_fut_inner_local( actor ).boxed_local()
 	}
 }
 

@@ -1,3 +1,5 @@
+#![ feature( optin_builtin_traits ) ]
+
 // TODO:
 // - ✔ basic usage (using addr directly uses recipient, so that's already tested)
 //     Let's test storing Box<Recipient<M>> to several actors and send/call on that
@@ -19,9 +21,6 @@
 //   - ✔ clean up all the sync, unpin, 'static we added to make this compile
 //   - ✔ some examples with sink?
 //
-
-#![ feature( arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
 use
 {
 	std           :: { any::Any, thread                        } ,
@@ -83,7 +82,7 @@ fn store_recipients()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let mut recs: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ box addr, box addro ];
+		let mut recs: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr ), Box::new( addro ) ];
 
 		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 		recs[ 1 ].send( Count ).await.expect( "Send failed" );
@@ -114,7 +113,7 @@ fn receiver_basic_use()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let mut recs: Vec< Receiver<Count> > = vec![ Receiver::new( box addr ), Receiver::new( box addro ) ];
+		let mut recs: Vec< Receiver<Count> > = vec![ Receiver::new( Box::new( addr ) ), Receiver::new( Box::new( addro ) ) ];
 
 		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 		recs[ 1 ].send( Count ).await.expect( "Send failed" );
@@ -147,7 +146,11 @@ fn receiver_box_any()
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
 
-		let recs: Vec< Box<dyn Any> > = vec![ Box::new( Receiver::new( box addr ) ), Box::new( Receiver::new( box addro ) ) ];
+		let recs: Vec< Box<dyn Any> > = vec!
+		[
+			Box::new( Receiver::new( Box::new( addr  ) ) ),
+			Box::new( Receiver::new( Box::new( addro ) ) ),
+		];
 
 
 		let mut reca = recs[ 0 ].downcast_ref::<Receiver<Count>>().expect( "downcast" ).clone();
@@ -183,8 +186,8 @@ fn multi_thread()
 		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
 		let addro = Addr::try_from( b ).expect( "Failed to create address" );
 
-		let mut reca: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ box addr.clone(), box addro.clone() ];
-		let mut recb: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ box addr        , box addro         ];
+		let mut reca: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr.clone() ), Box::new( addro.clone() ) ];
+		let mut recb: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr )        , Box::new( addro )         ];
 
 		let (tx, rx) = oneshot::channel::<()>();
 

@@ -1,17 +1,16 @@
-#![ allow( unused_imports, dead_code ) ]
-#![ feature( arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias, box_syntax, box_patterns, todo_macro, try_trait, optin_builtin_traits ) ]
+#![ feature( optin_builtin_traits ) ]
 
 mod common;
 
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, Spawn, SpawnExt, LocalSpawnExt } } ,
-	futures       :: { executor::LocalPool, channel::oneshot                                               } ,
-	thespis       :: { * } ,
-	log           :: { * } ,
-	thespis_impl  :: { *  } ,
-	std           :: { pin::Pin, thread } ,
-	common        :: actors::{ Sum, Add, Show   } ,
+	futures       :: { task::{ LocalSpawn, LocalSpawnExt }   } ,
+	futures       :: { executor::LocalPool, channel::oneshot } ,
+	thespis       :: { *                                     } ,
+	log           :: { *                                     } ,
+	thespis_impl  :: { *                                     } ,
+	std           :: { thread                                } ,
+	common        :: actors::{ Sum, Add, Show                } ,
 };
 
 
