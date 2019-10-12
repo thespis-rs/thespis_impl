@@ -69,8 +69,8 @@ impl<M> CallEnvelope<M> where M: Message
 impl<A, M> Envelope<A> for CallEnvelope<M>
 
 	where A: Actor      ,
-			M: Message    ,
-			A: Handler<M> ,
+	      M: Message    ,
+	      A: Handler<M> ,
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
 	{
