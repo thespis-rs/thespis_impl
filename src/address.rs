@@ -18,7 +18,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE address for: {} ~ {}", clean_name( std::intrinsics::type_name::<A>() ), self.id );
+		trace!( "CREATE address for: {} ~ {}", clean_name( std::any::type_name::<A>() ), self.id );
 
 		Self { mb: self.mb.clone(), id: self.id }
 	}
@@ -41,9 +41,9 @@ impl< A: Actor > Eq for Addr<A>{}
 
 impl<A: Actor> fmt::Debug for Addr<A>
 {
-	fn fmt( &self, f: &mut fmt::Formatter ) -> fmt::Result
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Addr<{}> ~ {}", clean_name( std::intrinsics::type_name::<A>() ), &self.id )
+		write!( f, "Addr<{}> ~ {}", clean_name( std::any::type_name::<A>() ), &self.id )
 	}
 }
 
@@ -78,7 +78,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn new( mb: (usize, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
 	{
-		trace!( "CREATE address for: {}", clean_name( std::intrinsics::type_name::<A>() ) );
+		trace!( "CREATE address for: {}", clean_name( std::any::type_name::<A>() ) );
 		Self{ id: mb.0, mb: mb.1 }
 	}
 
@@ -163,7 +163,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {}", clean_name( std::intrinsics::type_name::<A>() ) );
+		trace!( "DROP address for: {}", clean_name( std::any::type_name::<A>() ) );
 	}
 }
 
@@ -175,7 +175,7 @@ impl<A, M> Recipient<M> for Addr<A>
 	       M: Message            ,
 
 {
-	fn call( &mut self, msg: M ) -> Return<ThesRes< <M as Message>::Return >>
+	fn call( &mut self, msg: M ) -> Return<'_, ThesRes< <M as Message>::Return >>
 	{
 		Box::pin( async move
 		{
@@ -218,7 +218,7 @@ impl<A, M> Sink<M> for Addr<A>
 {
 	type Error = ThesErr;
 
-	fn poll_ready( self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_ready( self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		match self.mb.poll_ready( cx )
 		{
@@ -244,7 +244,7 @@ impl<A, M> Sink<M> for Addr<A>
 	}
 
 
-	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		match Pin::new( &mut self.mb ).poll_flush( cx )
 		{
@@ -264,7 +264,7 @@ impl<A, M> Sink<M> for Addr<A>
 
 	/// Will only close when dropped, this method can never return ready
 	//
-	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		Poll::Pending
 	}

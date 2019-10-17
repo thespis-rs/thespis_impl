@@ -1,6 +1,8 @@
 use crate::import::*;
 
 
+/// The mailbox implementation.
+//
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
 //       Do not hold anything in the mailbox struct. just PhantomData<A>.
 //       In method start, create the channel. give msgs to start_fut, and create rawaddress from handle.
@@ -20,8 +22,12 @@ pub struct Inbox<A> where A: Actor
 	id    : usize,
 }
 
+
+
 impl<A> Inbox<A> where A: Actor
 {
+	/// Create a new inbox.
+	//
 	pub fn new() -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 0 );
@@ -36,6 +42,8 @@ impl<A> Inbox<A> where A: Actor
 		Self { handle, msgs, id }
 	}
 
+	/// A handle to a channel sender that can be used for creating an address to this mailbox.
+	//
 	pub fn sender( &self ) -> (usize, mpsc::UnboundedSender<BoxEnvelope<A>>)
 	{
 		(self.id, self.handle.clone())
@@ -137,6 +145,8 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 	}
 }
 
+
+
 impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
 {
 	fn start_local( self, actor: A ) -> ThesRes<()>
@@ -158,4 +168,14 @@ impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
 impl<A> Default for Inbox<A> where A: Actor
 {
 	fn default() -> Self { Self::new() }
+}
+
+
+
+impl<A: Actor> fmt::Debug for Inbox<A>
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		write!( f, "Addr<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+	}
 }

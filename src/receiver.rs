@@ -34,7 +34,7 @@ impl<M: Message> Clone for Receiver<M>
 
 impl<M: Message> fmt::Debug for Receiver<M>
 {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 	{
 		write!( f, "Receiver: {:?}", &self.rec )
 	}
@@ -57,7 +57,7 @@ impl<M: Message> Eq for Receiver<M>{}
 
 impl<M: Message> Recipient<M> for Receiver<M>
 {
-	fn call( &mut self, msg: M ) -> Return<Result< <M as Message>::Return, <Self as Sink<M>>::Error >>
+	fn call( &mut self, msg: M ) -> Return<'_, Result< <M as Message>::Return, <Self as Sink<M>>::Error >>
 	{
 		Box::pin( async move
 		{
@@ -87,7 +87,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 {
 	type Error = ThesErr;
 
-	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_ready( cx )
 	}
@@ -99,7 +99,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 	}
 
 
-	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_flush( cx )
 	}
@@ -107,7 +107,7 @@ impl<M: Message> Sink<M> for Receiver<M>
 
 	/// Will only close when dropped, this method can never return ready
 	//
-	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext ) -> Poll<Result<(), Self::Error>>
+	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		self.rec.as_mut().poll_close( cx )
 	}

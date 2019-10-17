@@ -4,7 +4,7 @@ use crate::{import::*};
 
 /// An envelope for sending a message to an actor ignoring the return value.
 //
-pub struct SendEnvelope<M> where M: Message
+pub(crate) struct SendEnvelope<M> where M: Message
 {
 	msg: M,
 }
@@ -13,7 +13,7 @@ pub struct SendEnvelope<M> where M: Message
 
 impl<M> SendEnvelope<M> where M: Message
 {
-	pub fn new( msg: M ) -> Self
+	pub(crate) fn new( msg: M ) -> Self
 	{
 		Self { msg }
 	}
@@ -27,7 +27,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 			 M: Message           ,
 
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()> where <M as Message>::Return: Send,
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()> where <M as Message>::Return: Send,
 	{
 		< A as Handler<M> >::handle( actor, self.msg )
 
@@ -35,7 +35,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 			.boxed()
 	}
 
-	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
+	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<'_, ()>
 	{
 		< A as Handler<M> >::handle_local( actor, self.msg )
 
@@ -48,7 +48,7 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 
 /// An envelope that will take care of returning the result of the handle method.
 //
-pub struct CallEnvelope<M> where M: Message
+pub(crate) struct CallEnvelope<M> where M: Message
 {
 	msg : M,
 	addr: oneshot::Sender< M::Return >,
@@ -58,7 +58,7 @@ pub struct CallEnvelope<M> where M: Message
 
 impl<M> CallEnvelope<M> where M: Message
 {
-	pub fn new( msg: M, addr: oneshot::Sender< M::Return > ) -> Self
+	pub(crate) fn new( msg: M, addr: oneshot::Sender< M::Return > ) -> Self
 	{
 		Self { msg, addr }
 	}
@@ -72,7 +72,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	      M: Message    ,
 	      A: Handler<M> ,
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Return<()>
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()>
 	{
 		let CallEnvelope { msg, addr } = *self;
 
@@ -94,7 +94,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	}
 
 
-	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<()>
+	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<'_, ()>
 	{
 		let CallEnvelope { msg, addr } = *self;
 
