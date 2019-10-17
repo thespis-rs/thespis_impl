@@ -72,11 +72,11 @@ impl<A> Inbox<A> where A: Actor
 		// We need to drop the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, .. } = self;
+		let Inbox{ mut msgs, handle, id } = self;
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started" );
+		trace!( "mailbox: started for: {}", id );
 
 		loop
 		{
@@ -88,7 +88,7 @@ impl<A> Inbox<A> where A: Actor
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor" );
+		trace!( "Mailbox stopped actor for {}", id );
 	}
 
 
@@ -99,23 +99,23 @@ impl<A> Inbox<A> where A: Actor
 		// We need to drop the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, .. } = self;
+		let Inbox{ mut msgs, handle, id } = self;
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started" );
+		trace!( "mailbox: started for: {}", id );
 
 		loop
 		{
 			match  msgs.next().await
 			{
 				Some( envl ) => { envl.handle_local( &mut actor ).await; }
-				None         => { break;                           }
+				None         => { break;                                 }
 			}
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor" );
+		trace!( "Mailbox stopped actor for {}", id );
 	}
 }
 
