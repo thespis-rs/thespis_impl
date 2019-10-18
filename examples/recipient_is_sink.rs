@@ -1,5 +1,3 @@
-#![ feature( arbitrary_self_types, box_syntax, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
 use
 {
 	futures       :: { stream, sink::SinkExt } ,

@@ -1,11 +1,8 @@
-#![ feature( arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
-
 use
 {
-	thespis       :: { *               } ,
-	thespis_impl  :: { *               } ,
-	async_runtime :: { rt              } ,
+	thespis       :: { *  } ,
+	thespis_impl  :: { *  } ,
+	async_runtime :: { rt } ,
 };
 
 

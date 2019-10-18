@@ -1,0 +1,62 @@
+use crate::import::*;
+
+/// Result which has a ThesErr as error type.
+//
+pub type ThesRes<T> = Result<T, ThesErr>;
+
+/// Errors that can happen in thespis_impl.
+//
+#[ derive( Debug, Error ) ]
+//
+pub enum ThesErr
+{
+	/// You try to use a mailbox that is already closed.
+	//
+	#[ error( "You try to use a mailbox that is already closed. For actor: {actor}" ) ]
+	//
+	MailboxClosed
+	{
+		/// The actor concerned by the error.
+		//
+		actor: String
+	},
+
+
+	/// The mailbox cannot take more messages right now.
+	//
+	#[ error( "The mailbox cannot take more messages right now. For actor: {actor}" ) ]
+	//
+	MailboxFull
+	{
+		/// The actor concerned by the error.
+		//
+		actor: String
+	},
+
+
+	/// The mailbox was closed before the result of the computation got returned upon `call`.
+	//
+	#[ error( "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {actor}" ) ]
+	//
+	MailboxClosedBeforeResponse
+	{
+		/// The actor concerned by the error.
+		//
+		actor: String
+	},
+
+
+	/// Failed to spawn the mailbox.
+	//
+	#[ error( "Failed to spawn the mailbox for actor: {actor}" ) ]
+	//
+	Spawn
+	{
+		/// The actor concerned by the error.
+		//
+		actor: String
+
+		// /// The underlying error.
+		// source: anyhow::Error ,
+	}
+}

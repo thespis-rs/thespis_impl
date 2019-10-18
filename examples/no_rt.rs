@@ -1,15 +1,8 @@
-#![ feature( arbitrary_self_types, specialization, nll, never_type, unboxed_closures, trait_alias ) ]
-
-#![ allow( dead_code, unused_imports )]
-
-
 use
 {
-	futures       :: { future::{ Future, FutureExt }, task::{ LocalSpawn, SpawnExt, LocalSpawnExt }, executor::LocalPool  } ,
-	std           :: { pin::Pin } ,
-	log           :: { *        } ,
-	thespis       :: { *        } ,
-	thespis_impl  :: { *        } ,
+	futures       :: { task::{ LocalSpawnExt }, executor::LocalPool } ,
+	thespis       :: { *                                            } ,
+	thespis_impl  :: { *                                            } ,
 };
 
 

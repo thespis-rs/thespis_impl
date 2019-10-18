@@ -1,4 +1,4 @@
-use crate::{ import::* };
+use crate::{ import::*, error::* };
 
 
 
@@ -7,14 +7,14 @@ use crate::{ import::* };
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxRecipient<M>>
+	rec: Pin<BoxRecipient<M, ThesErr>>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxRecipient<M> ) -> Self
+	pub fn new( rec: BoxRecipient<M, ThesErr> ) -> Self
 	{
 		Self { rec: Pin::from( rec ) }
 	}
@@ -68,7 +68,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M>
+	fn clone_box( &self ) -> BoxRecipient<M, ThesErr>
 	{
 		self.rec.clone_box()
 	}

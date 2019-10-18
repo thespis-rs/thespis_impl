@@ -1,4 +1,4 @@
-use crate::import::*;
+use crate::{ import::*, error::* };
 
 
 /// The mailbox implementation.
@@ -59,7 +59,7 @@ impl<A> Inbox<A> where A: Actor
 		//
 		if e.is_full()
 		{
-			ThesErrKind::MailboxFull{ actor: context }.into()
+			ThesErr::MailboxFull{ actor: context }.into()
 		}
 
 		// is disconnected
@@ -68,7 +68,7 @@ impl<A> Inbox<A> where A: Actor
 		//
 		else
 		{
-			ThesErrKind::MailboxClosed{ actor: context }.into()
+			ThesErr::MailboxClosed{ actor: context }.into()
 		}
 	}
 
@@ -125,20 +125,36 @@ impl<A> Inbox<A> where A: Actor
 		actor.stopped().await;
 		trace!( "Mailbox stopped actor for {}", id );
 	}
+
+
+	/// Spawn the mailbox.
+	//
+	pub fn start( self, actor: A ) -> ThesRes<()> where A: Send
+	{
+		let id = self.id;
+
+		Ok( rt::spawn( self.start_fut( actor ) )
+
+			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+	}
+
+
+	/// Spawn the mailbox on the current thread.
+	//
+	pub fn start_local( self, actor: A ) -> ThesRes<()>
+	{
+		let id = self.id;
+
+		Ok( rt::spawn_local( self.start_fut_inner_local( actor ) )
+
+			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+	}
 }
 
 
 
 impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 {
-	fn start( self, actor: A ) -> ThesRes<()>
-	{
-		Ok( rt::spawn( self.start_fut( actor ) )
-
-			.context( ThesErrKind::Spawn{ context: "Inbox".into() } )? )
-	}
-
-
 	fn start_fut( self, actor: A ) -> Return<'static, ()>
 	{
 		self.start_fut_inner( actor ).boxed()
@@ -149,14 +165,6 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 
 impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
 {
-	fn start_local( self, actor: A ) -> ThesRes<()>
-	{
-		Ok( rt::spawn_local( self.start_fut_inner_local( actor ) )
-
-			.context( ThesErrKind::Spawn{ context: "Inbox".into() } )? )
-	}
-
-
 	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, ()>
 	{
 		self.start_fut_inner_local( actor ).boxed_local()

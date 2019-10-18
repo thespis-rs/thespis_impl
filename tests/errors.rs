@@ -44,7 +44,7 @@ async fn mb_closed()
 	{
 		Ok (_) => assert!( false, "Addr::send should fail" ),
 
-		Err(e) => if let ThesErrKind::MailboxClosed{..} = e.kind()
+		Err(e) => if let ThesErr::MailboxClosed{..} = e
 		{
 			assert!( true )
 		}
@@ -85,7 +85,7 @@ async fn mb_closed_before_response()
 
 		Err(e) =>
 		{
-			if let ThesErrKind::MailboxClosedBeforeResponse{..} = e.kind()
+			if let ThesErr::MailboxClosedBeforeResponse{..} = e
 			{
 				assert!( true )
 			}

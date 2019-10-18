@@ -1,4 +1,4 @@
-use crate::{ import::*, Inbox, envelope::* };
+use crate::{ import::*, Inbox, envelope::*, error::* };
 
 
 
@@ -181,7 +181,7 @@ impl<A, M> Recipient<M> for Addr<A>
 		{
 			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
-			let result               = self.mb.send( envl ).await               ;
+			let result               = self.mb.send( envl ).await                   ;
 
 			// MailboxClosed or MailboxFull
 			//
@@ -190,13 +190,13 @@ impl<A, M> Recipient<M> for Addr<A>
 
 			ret_rx.await
 
-				.map_err( |_| ThesErrKind::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
+				.map_err( |_| ThesErr::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
 		})
 	}
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M>
+	fn clone_box( &self ) -> BoxRecipient<M, ThesErr>
 	{
 		Box::new( self.clone() )
 	}
@@ -277,7 +277,7 @@ impl<A, M> Address<A, M> for Addr<A>
 	       M: Message           ,
 
 {
-	fn recipient( &self ) -> BoxRecipient<M>
+	fn recipient( &self ) -> BoxRecipient<M, ThesErr>
 	{
 		Box::new( self.clone() )
 	}

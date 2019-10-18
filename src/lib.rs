@@ -25,6 +25,7 @@
 
 mod address  ;
 mod envelope ;
+mod error    ;
 mod inbox    ;
 mod receiver ;
 
@@ -32,6 +33,7 @@ mod receiver ;
 pub use
 {
 	address  :: *  ,
+	error    :: *  ,
 	inbox    :: *  ,
 	receiver :: *  ,
 };
@@ -48,10 +50,10 @@ mod import
 {
 	pub(crate) use
 	{
-		failure       :: { ResultExt } ,
-		thespis       :: { *         } ,
-		log           :: { *         } ,
-		async_runtime :: { rt        } ,
+		thiserror     :: { Error } ,
+		thespis       :: { *     } ,
+		log           :: { *     } ,
+		async_runtime :: { rt    } ,
 
 		std ::
 		{
