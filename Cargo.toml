@@ -1,4 +1,11 @@
 # Auto-generated from "Cargo.yml"
+[badges]
+[badges.maintenance]
+status = "actively-developed"
+
+[badges.travis-ci]
+repository = "thespis-rs/thespis_impl"
+
 [[bench]]
 harness = false
 name = "single_thread_delivery"
@@ -30,7 +37,7 @@ features = ["pattern"]
 version = "^1"
 
 [dependencies.thespis]
-path = "../thespis_iface"
+path = "../thespis"
 
 [dev-dependencies]
 actix = "^0.8"
@@ -50,18 +57,31 @@ default-features = false
 features = ["rt-full"]
 version = "^0.1"
 
+[features]
+default = []
+external_doc = []
+
 [lib]
 bench = false
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]
+categories = ["Asynchronous", "Concurrency"]
+description = "Reference implementation for the thespis actor model"
+documentation = "https://docs.rs/thespis_impl"
 edition = "2018"
+homepage = "https://github.com/thespis-rs/thespis_impl"
+keywords = ["async", "futures", "actor", "thespis"]
+license = "Unlicense"
 name = "thespis_impl"
+readme = "README.md"
+repository = "https://github.com/thespis-rs/thespis_impl"
 version = "0.1.0"
 
 [package.metadata]
-[package.metadata."docs.rs"]
-all-features = true
+[package.metadata.docs]
+[package.metadata.docs.rs]
+features = ["external_doc"]
 
 [profile]
 [profile.release]

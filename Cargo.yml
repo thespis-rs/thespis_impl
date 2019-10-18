@@ -1,23 +1,57 @@
 package:
 
-  name   : thespis_impl
-  version: 0.1.0
-  authors: [ Naja Melan <najamelan@autistici.org> ]
-  edition: '2018'
+  # When releasing to crates.io:
+  #
+  # - Update CHANGELOG.md.
+  # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
+  # - verify CI result
+  # - test dependent crates
+  # - cargo publish
+  # - merge dev branch into master
+  # - create git tag
+  #
+  version       : 0.1.0
+  name          : thespis_impl
+  edition       : '2018'
+  authors       : [ Naja Melan <najamelan@autistici.org> ]
+  description   : Reference implementation for the thespis actor model
+  license       : Unlicense
+  homepage      : https://github.com/thespis-rs/thespis_impl
+  repository    : https://github.com/thespis-rs/thespis_impl
+  documentation : https://docs.rs/thespis_impl
+  readme        : README.md
+  keywords      : [ async, futures, actor, thespis ]
+  categories    : [ Asynchronous, Concurrency ]
 
   metadata:
-    docs.rs:
-      all-features: true
+    docs:
+      rs:
+        features: [ external_doc ]
+
+
+badges:
+
+  maintenance : { status     : actively-developed      }
+  travis-ci   : { repository : thespis-rs/thespis_impl }
+
+
+features:
+
+  default: []
+
+  # only used internally, don't use
+  #
+  external_doc: []
+
 
 lib:
 
   bench: false
 
 
-
 dependencies:
 
-  thespis         : { path: ../thespis_iface }
+  thespis         : { path: ../thespis }
   failure         : ^0.1
   futures-preview : { version: ^0.3.0-alpha, features: [ std, compat ], default-features: false }
   log             : ^0.4
@@ -39,7 +73,7 @@ target:
 dev-dependencies:
 
   actix             : ^0.8
-  criterion         : { version: ^0.3           , features: [ real_blackbox ]          }
+  criterion         : { version: ^0.3 , features: [ real_blackbox ]                    }
   tokio             : { version: ^0.1 , default-features: false, features: [ rt-full ] }
 
   pretty_assertions : ^0.6
