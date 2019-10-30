@@ -77,7 +77,7 @@ dev-dependencies:
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.14
-  async_runtime     : { version: ^0.3, package: naja_async_runtime }
+  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, tokio_ct, tokio_tp, juliex] }
   simple_logger     : ^1
 
 

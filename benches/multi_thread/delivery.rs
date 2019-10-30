@@ -1,11 +1,11 @@
 use
 {
-	async_runtime     :: { rt                                                     } ,
-	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main  } ,
-	futures           :: { executor::{ block_on }, executor::{ LocalPool }        } ,
-	thespis           :: { *                                                      } ,
-	thespis_impl      :: { *                                                      } ,
-	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } } } ,
+	async_executors   :: { * } ,
+	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main           } ,
+	futures           :: { executor::{ block_on }, executor::{ LocalPool }, task::SpawnExt } ,
+	thespis           :: { *                                                               } ,
+	thespis_impl      :: { *                                                               } ,
+	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } }          } ,
 };
 
 
@@ -42,66 +42,164 @@ impl Handler< Show > for Sum
 
 
 
-fn send()
+fn send_threadpool()
 {
 	let bench = async move
 	{
-		let     sum  = Sum(5);
-		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+		let     sum  = Sum(5)                                          ;
+		let     mb   = Inbox::new()                                    ;
+		let mut addr = Addr::new( mb.sender() )                        ;
+		let mut pool = ThreadPool::new().expect( "create threadpool" ) ;
 
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		thread::spawn( move ||
+		for _i in 0..100usize
 		{
-			let thread_program = async move
-			{
-				for _i in 0..100usize
-				{
-					addr.send( Add( 10 ) ).await.expect( "Send failed" );
-				}
+			addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		}
 
-				let res = addr.call( Show{} ).await.expect( "Call failed" );
-				assert_eq!( 1005, res );
-			};
-
-			rt::spawn( thread_program ).expect( "spawn thread_program" );
-			rt::run();
-		});
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
 	};
 
-	rt::spawn( bench ).expect( "spawn send bench" );
-	rt::run();
+	block_on( bench );
 }
 
 
 
-fn call()
+fn call_threadpool()
 {
 	let bench = async move
 	{
-		let     sum  = Sum(5);
-		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+		let     sum  = Sum(5)                                          ;
+		let     mb   = Inbox::new()                                    ;
+		let mut addr = Addr::new( mb.sender() )                        ;
+		let mut pool = ThreadPool::new().expect( "create threadpool" ) ;
 
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		thread::spawn( move ||
+		for _i in 0..100usize
 		{
-			let thread_program = async move
-			{
-				for _i in 0..100usize
-				{
-					addr.call( Add( 10 ) ).await.expect( "Send failed" );
-				}
+			addr.call( Add( 10 ) ).await.expect( "Send failed" );
+		}
 
-				let res = addr.call( Show{} ).await.expect( "Call failed" );
-				assert_eq!( 1005, res );
-			};
-
-			rt::spawn( thread_program ).expect( "spawn thread_program" );
-			rt::run();
-		});
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
 	};
 
-	rt::spawn( bench ).expect( "spawn call bench" );
-	rt::run();
+	block_on( bench );
+}
+
+
+
+fn send_tokio_tp()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = TokioTp::new()           ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		for _i in 0..100usize
+		{
+			addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		}
+
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	block_on( bench );
+}
+
+
+
+fn call_tokio_tp()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = TokioTp::new()           ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		for _i in 0..100usize
+		{
+			addr.call( Add( 10 ) ).await.expect( "Send failed" );
+		}
+
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	block_on( bench );
+}
+
+
+
+fn send_juliex()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = Juliex::new()            ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		for _i in 0..100usize
+		{
+			addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		}
+
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	block_on( bench );
+}
+
+
+
+fn call_juliex()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = Juliex::new()            ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		for _i in 0..100usize
+		{
+			addr.call( Add( 10 ) ).await.expect( "Send failed" );
+		}
+
+		let res = addr.call( Show{} ).await.expect( "Call failed" );
+		assert_eq!( 1005, res );
+	};
+
+	block_on( bench );
 }
 
 
@@ -273,8 +371,12 @@ fn bench_calls( c: &mut Criterion )
 	(
 		"Multi Thread Delivery",
 
-		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
-			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
+		Benchmark::new   ( "Send ThreadPool x100"    , |b| b.iter( || send_threadpool() ) )
+			.with_function( "Call ThreadPool x100"    , |b| b.iter( || call_threadpool() ) )
+			.with_function( "Send TokioTp    x100"    , |b| b.iter( || send_tokio_tp  () ) )
+			.with_function( "Call TokioTp    x100"    , |b| b.iter( || call_tokio_tp  () ) )
+			.with_function( "Send Juliex     x100"    , |b| b.iter( || send_juliex    () ) )
+			.with_function( "Call Juliex     x100"    , |b| b.iter( || call_juliex    () ) )
 			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
 			// .with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
 			// .with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )

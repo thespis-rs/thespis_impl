@@ -45,9 +45,9 @@ flexi_logger = "^0.14"
 pretty_assertions = "^0.6"
 simple_logger = "^1"
 
-[dev-dependencies.async_runtime]
-package = "naja_async_runtime"
-version = "^0.3"
+[dev-dependencies.async_executors]
+features = ["localpool", "threadpool", "tokio_ct", "tokio_tp", "juliex"]
+path = "../../async_executors"
 
 [dev-dependencies.criterion]
 features = ["real_blackbox"]

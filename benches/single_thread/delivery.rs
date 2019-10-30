@@ -1,9 +1,9 @@
 use
 {
-	async_runtime     :: { rt } ,
+	async_executors   :: { * } ,
 	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
 	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, executor::{ LocalPool }, task::LocalSpawnExt } ,
+	futures           :: { future::{ TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, task::LocalSpawnExt } ,
 	thespis           :: { * } ,
 	thespis_impl      :: { * } ,
 };
@@ -67,11 +67,10 @@ impl Accu
 }
 
 
-fn send()
+fn send_localpool()
 {
-	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
+	let mut pool = LocalPool::new();
+	let mut exec = pool.handle();
 
 	let bench = async move
 	{
@@ -81,8 +80,7 @@ fn send()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { mb.start_fut( sum ).await; };
-		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
+		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -93,17 +91,16 @@ fn send()
 		assert_eq!( 1005, res );
 	};
 
-	exec.spawn_local( bench ).expect( "Spawn benchmark" );
+	pool.spawn_local( bench ).expect( "Spawn benchmark" );
 
 	pool.run();
 }
 
 
-fn call()
+fn call_localpool()
 {
-	let mut pool  = LocalPool::new();
-	let mut exec  = pool.spawner();
-	let mut exec2 = exec.clone();
+	let mut pool = LocalPool::new();
+	let mut exec = pool.handle();
 
 	let bench = async move
 	{
@@ -113,8 +110,7 @@ fn call()
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
-		let move_mb = async move { mb.start_fut( sum ).await; };
-		exec2.spawn_local( move_mb ).expect( "Spawning failed" );
+		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -125,19 +121,26 @@ fn call()
 		assert_eq!( 1005, res );
 	};
 
-	exec.spawn_local( bench ).expect( "Spawn benchmark" );
+	pool.spawn_local( bench ).expect( "Spawn benchmark" );
 
 	pool.run();
 }
 
 
-
-fn send_rt()
+fn send_tokio_ct()
 {
+	let mut pool = TokioCt::new();
+	let mut exec = pool.handle();
+
 	let bench = async move
 	{
-		let     sum  = Sum(5);
-		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+		let     sum              = Sum(5)                  ;
+		let     mb  : Inbox<Sum> = Inbox::new()            ;
+		let mut addr             = Addr::new( mb.sender() );
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
@@ -148,30 +151,39 @@ fn send_rt()
 		assert_eq!( 1005, res );
 	};
 
-	rt::spawn( bench ).expect( "spawn bench" );
-	rt::run();
+	pool.spawn_local( bench ).expect( "Spawn benchmark" );
+
+	pool.run().expect( "run TokioCt" );
 }
 
 
-
-fn call_rt()
+fn call_tokio_ct()
 {
+	let mut pool = TokioCt::new();
+	let mut exec = pool.handle();
+
 	let bench = async move
 	{
-		let     sum  = Sum(5);
-		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+		let     sum              = Sum(5)                  ;
+		let     mb  : Inbox<Sum> = Inbox::new()            ;
+		let mut addr             = Addr::new( mb.sender() );
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
 		for _i in 0..100usize
 		{
-			addr.call( Add( 10 ) ).await.expect( "Send failed" );
+			addr.call( Add( 10 ) ).await.expect( "Call failed" );
 		}
 
 		let res = addr.call( Show{} ).await.expect( "Call failed" );
 		assert_eq!( 1005, res );
 	};
 
-	rt::spawn( bench ).expect( "spawn bench" );
-	rt::run();
+	pool.spawn_local( bench ).expect( "Spawn benchmark" );
+
+	pool.run().expect( "run TokioCt" );
 }
 
 
@@ -306,14 +318,14 @@ fn bench_calls( c: &mut Criterion )
 	(
 		"Single Thread Delivery",
 
-		Benchmark::new   ( "Send x100"               , |b| b.iter( || send         () ) )
-			.with_function( "Call x100"               , |b| b.iter( || call         () ) )
-			.with_function( "Send RT x100"            , |b| b.iter( || send_rt      () ) )
-			.with_function( "Call RT x100"            , |b| b.iter( || call_rt      () ) )
-			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
-			.with_function( "async inline method x100", |b| b.iter( || inline_method() ) )
-			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
-			.with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )
+		Benchmark::new   ( "Send LocalPool x100"     , |b| b.iter( || send_localpool () ) )
+			.with_function( "Call LocalPool x100"     , |b| b.iter( || call_localpool () ) )
+			.with_function( "Send TokioCt x100"       , |b| b.iter( || send_tokio_ct  () ) )
+			.with_function( "Call TokioCt x100"       , |b| b.iter( || call_tokio_ct  () ) )
+			.with_function( "async method x100"       , |b| b.iter( || method         () ) )
+			.with_function( "async inline method x100", |b| b.iter( || inline_method  () ) )
+			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend   () ) )
+			.with_function( "actix send x100"         , |b| b.iter( || actix_send     () ) )
 	);
 }
 

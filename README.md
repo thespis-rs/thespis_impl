@@ -11,3 +11,12 @@ The reference implementation of the thespis actor model
 - use crossbeam channels? in pharos as well?
 - test runtime with threads
 
+## Types of channels:
+
+- futures
+- crossbeam
+- ring_channel
+- ringbuf with pointers
+- futures-intrusive
+
+
