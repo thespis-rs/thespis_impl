@@ -55,13 +55,23 @@ fn send_threadpool()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.send( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.send( Add( 10 ) ).await.expect( "Send failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -82,13 +92,23 @@ fn call_threadpool()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.call( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.call( Add( 10 ) ).await.expect( "Call failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -109,13 +129,23 @@ fn send_tokio_tp()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.send( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.send( Add( 10 ) ).await.expect( "Send failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -136,13 +166,23 @@ fn call_tokio_tp()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.call( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.call( Add( 10 ) ).await.expect( "Call failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -163,13 +203,23 @@ fn send_juliex()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.send( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.send( Add( 10 ) ).await.expect( "Send failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -190,13 +240,97 @@ fn call_juliex()
 		//
 		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
 
-		for _i in 0..100usize
+		let sender_thread = thread::spawn( move ||
 		{
-			addr.call( Add( 10 ) ).await.expect( "Send failed" );
-		}
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.call( Add( 10 ) ).await.expect( "Call failed" );
+				}
 
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
+	};
+
+	block_on( bench );
+}
+
+
+
+fn send_async_std()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = AsyncStd::new()          ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		let sender_thread = thread::spawn( move ||
+		{
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.send( Add( 10 ) ).await.expect( "Send failed" );
+				}
+
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
+	};
+
+	block_on( bench );
+}
+
+
+
+fn call_async_std()
+{
+	let bench = async move
+	{
+		let     sum  = Sum(5)                   ;
+		let     mb   = Inbox::new()             ;
+		let mut addr = Addr::new( mb.sender() ) ;
+		let mut pool = AsyncStd::new()          ;
+
+		// This is ugly right now. It will be more ergonomic in the future.
+		//
+		pool.spawn( mb.start_fut( sum ) ).expect( "Spawning failed" );
+
+		let sender_thread = thread::spawn( move ||
+		{
+			let thread_program = async move
+			{
+				for _i in 0..100usize
+				{
+					addr.call( Add( 10 ) ).await.expect( "Call failed" );
+				}
+
+				let res = addr.call( Show{} ).await.expect( "Call failed" );
+				assert_eq!( 1005, res );
+			};
+
+			block_on( thread_program );
+		});
+
+		sender_thread.join().expect( "join thread" );
 	};
 
 	block_on( bench );
@@ -377,6 +511,8 @@ fn bench_calls( c: &mut Criterion )
 			.with_function( "Call TokioTp    x100"    , |b| b.iter( || call_tokio_tp  () ) )
 			.with_function( "Send Juliex     x100"    , |b| b.iter( || send_juliex    () ) )
 			.with_function( "Call Juliex     x100"    , |b| b.iter( || call_juliex    () ) )
+			.with_function( "Send AsyncStd   x100"    , |b| b.iter( || send_async_std () ) )
+			.with_function( "Call AsyncStd   x100"    , |b| b.iter( || call_async_std () ) )
 			.with_function( "async method x100"       , |b| b.iter( || method       () ) )
 			// .with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend () ) )
 			// .with_function( "actix send x100"         , |b| b.iter( || actix_send   () ) )
