@@ -1,10 +1,10 @@
 use
 {
-	log           :: { *  } ,
-	thespis       :: { *  } ,
-	thespis_impl  :: { *  } ,
-	async_runtime :: { rt } ,
-
+	log               :: { *        } ,
+	thespis           :: { *        } ,
+	thespis_impl      :: { *        } ,
+	async_executors   :: { *        } ,
+	futures::executor :: { block_on } ,
 };
 
 
@@ -58,8 +58,9 @@ fn main()
 
 	let program = async move
 	{
+		let mut exec = ThreadPool::new().expect( "create threadpool" );
 		let     a    = MyActor{ seed: "seed".into() }                          ;
-		let mut addr = Addr::try_from( a ).expect( "Failed to create address" );
+		let mut addr = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 
 		let mut addr2 = addr.clone();
 
@@ -76,6 +77,5 @@ fn main()
 		assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }

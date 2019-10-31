@@ -129,11 +129,11 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox.
 	//
-	pub fn start( self, actor: A ) -> ThesRes<()> where A: Send
+	pub fn start( self, actor: A, exec: &mut impl Spawn ) -> ThesRes<()> where A: Send
 	{
 		let id = self.id;
 
-		Ok( rt::spawn( self.start_fut( actor ) )
+		Ok( exec.spawn( self.start_fut( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -141,11 +141,11 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_local( self, actor: A ) -> ThesRes<()>
+	pub fn start_local( self, actor: A, exec: &mut impl LocalSpawn ) -> ThesRes<()>
 	{
 		let id = self.id;
 
-		Ok( rt::spawn_local( self.start_fut_inner_local( actor ) )
+		Ok( exec.spawn_local( self.start_fut_inner_local( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}

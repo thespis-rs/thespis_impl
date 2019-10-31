@@ -1,9 +1,10 @@
 use
 {
-	std           :: { thread } ,
-	thespis       :: { *      } ,
-	thespis_impl  :: { *      } ,
-	async_runtime :: { rt     } ,
+	std               :: { thread   } ,
+	thespis           :: { *        } ,
+	thespis_impl      :: { *        } ,
+	async_executors   :: { *        } ,
+	futures::executor :: { block_on } ,
 };
 
 
@@ -37,7 +38,8 @@ fn main()
 	let program = async move
 	{
 		let     a    = MyActor;
-		let mut addr = Addr::try_from( a ).expect( "Failed to create address" );
+		let mut exec = ThreadPool::new().expect( "create threadpool" );
+		let mut addr = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 
 		// TODO: This might be a bug in async rust somewhere. It requires that addr is borrowed for static,
 		// which makes no sense. Moving it into an async block here works, but it's an ugly workaround.
@@ -56,13 +58,9 @@ fn main()
 				dbg!( result );
 			};
 
-			rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
-
-			rt::run();
+			block_on( thread_program );
 		});
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-
-	rt::run();
+	block_on( program );
 }

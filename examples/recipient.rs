@@ -1,8 +1,9 @@
 use
 {
-	thespis       :: { *  } ,
-	thespis_impl  :: { *  } ,
-	async_runtime :: { rt } ,
+	thespis           :: { *        } ,
+	thespis_impl      :: { *        } ,
+	async_executors   :: { *        } ,
+	futures::executor :: { block_on } ,
 };
 
 
@@ -43,11 +44,13 @@ fn main()
 {
 	let program = async move
 	{
+		let mut exec = ThreadPool::new().expect( "create threadpool" );
+
 		let a = MyActor;
 		let b = Other;
 
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b ).expect( "Failed to create address" );
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
 		let recs: Vec< BoxRecipient<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];
@@ -65,7 +68,5 @@ fn main()
 		}
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-
-	rt::run();
+	block_on( program );
 }

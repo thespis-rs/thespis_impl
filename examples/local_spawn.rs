@@ -1,10 +1,11 @@
-#![feature(optin_builtin_traits)]
+#![ feature( optin_builtin_traits ) ]
 //
 use
 {
-	thespis      :: { Actor, Message, Handler, Return, ReturnNoSend, Recipient } ,
-	thespis_impl :: { Addr                                                     } ,
-	async_runtime:: { rt, RtConfig                                             } ,
+	thespis         :: { Actor, Message, Handler, Return, ReturnNoSend, Recipient } ,
+	thespis_impl    :: { Addr                                                     } ,
+	async_executors :: { *                                                        } ,
+	futures         :: { task::LocalSpawnExt                                      } ,
 };
 
 
@@ -57,12 +58,12 @@ impl Handler<Ping> for MyActor
 
 fn main()
 {
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+	let mut exec = LocalPool::new();
 
 	let actor    = MyActor { i: 3 };
-	let mut addr = Addr::try_from_local( actor ).expect( "spawn actor locally" );
+	let mut addr = Addr::try_from_local( actor, &mut exec ).expect( "spawn actor locally" );
 
-	rt::spawn_local( async move
+	exec.spawn_local( async move
 	{
 		let ping = Ping( "ping".into() );
 
@@ -73,5 +74,5 @@ fn main()
 
 	}).expect( "spawn local" );
 
-	rt::run();
+	exec.run();
 }

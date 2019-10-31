@@ -5,9 +5,10 @@ use wasm_bindgen::prelude::*;
 
 use
 {
-	async_runtime:: { rt },
-	thespis      :: { *  },
-	thespis_impl :: { *  },
+	thespis              :: { * } ,
+	thespis_impl         :: { * } ,
+	wasm_bindgen_futures :: { * } ,
+	async_executors      :: { * } ,
 };
 
 
@@ -60,7 +61,9 @@ pub fn main() -> Result<(), JsValue>
 	{
 		// start new actor
 		//
-		let mut addr = Addr::try_from_local( MyActor { count: 10 } ).expect( "create addres for MyActor" );
+		let     a    = MyActor { count: 10 };
+		let mut exec = Bindgen{};
+		let mut addr = Addr::try_from_local( a, &mut exec ).expect( "create addres for MyActor" );
 
 		// send message and get future for result
 		//
@@ -80,7 +83,7 @@ pub fn main() -> Result<(), JsValue>
 	};
 
 
-	rt::spawn_local( program ).expect( "spawn program" );
+	spawn_local( program );
 
 	Ok(())
 }

@@ -53,7 +53,6 @@ mod import
 		thiserror     :: { Error } ,
 		thespis       :: { *     } ,
 		log           :: { *     } ,
-		async_runtime :: { rt    } ,
 
 		std ::
 		{
@@ -65,11 +64,11 @@ mod import
 
 		futures ::
 		{
-			stream  :: { StreamExt                    } ,
-			sink    :: { Sink, SinkExt                } ,
-			channel :: { oneshot, mpsc                } ,
-			future  :: { FutureExt                    } ,
-			task    :: { Context as TaskContext, Poll } ,
+			stream  :: { StreamExt                                       } ,
+			sink    :: { Sink, SinkExt                                   } ,
+			channel :: { oneshot, mpsc                                   } ,
+			future  :: { FutureExt                                       } ,
+			task    :: { Context as TaskContext, Poll, Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
 		},
 	};
 }

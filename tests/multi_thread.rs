@@ -14,9 +14,10 @@ use
 	thespis       :: { *                          } ,
 	log           :: { *                          } ,
 	thespis_impl  :: { *                          } ,
-	async_runtime :: { rt                         } ,
 	std           :: { thread                     } ,
 	common        :: { actors::{ Sum, Add, Show } } ,
+	async_executors :: { AsyncStd                 } ,
+	futures         :: { executor::block_on       } ,
 };
 
 
@@ -30,8 +31,9 @@ async fn sum_send() -> u64
 	let     mb  : Inbox<Sum> = Inbox::new(             );
 	let mut addr             = Addr ::new( mb.sender() );
 	let mut addr2            = addr.clone();
+	let mut exec             = AsyncStd{};
 
-	mb.start( sum ).expect( "Failed to start mailbox" );
+	mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 
 	thread::spawn( move ||
 	{
@@ -40,8 +42,7 @@ async fn sum_send() -> u64
 			addr2.send( Add( 10 ) ).await.expect( "Send failed" );
 		};
 
-		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
-		rt::run();
+		block_on( thread_program );
 
 	}).join().expect( "join thread" );
 
@@ -59,8 +60,9 @@ async fn sum_call() -> u64
 	let     mb  : Inbox<Sum> = Inbox::new(             );
 	let mut addr             = Addr ::new( mb.sender() );
 	let mut addr2            = addr.clone();
+	let mut exec             = AsyncStd{};
 
-	mb.start( sum ).expect( "Failed to start mailbox" );
+	mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 
 
 	let (tx, rx) = oneshot::channel::<()>();
@@ -73,8 +75,7 @@ async fn sum_call() -> u64
 			addr2.call( Add( 10 ) ).await.expect( "Call failed" );
 		};
 
-		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
-		rt::run();
+		block_on( thread_program );
 
 		tx.send(()).expect( "Signal end of thread" );
 
@@ -98,8 +99,9 @@ async fn move_call() -> u64
 	let     mb  : Inbox<Sum> = Inbox::new(             );
 	let mut addr             = Addr ::new( mb.sender() );
 	let mut addr2            = addr.clone();
+	let mut exec             = AsyncStd{};
 
-	mb.start( sum ).expect( "Failed to start mailbox" );
+	mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 
 
 	let (tx, rx) = oneshot::channel::<()>();
@@ -112,8 +114,7 @@ async fn move_call() -> u64
 			call_fut.await;
 		};
 
-		rt::spawn( thread_program ).expect( "Spawn thread 2 program" );
-		rt::run();
+		block_on( thread_program );
 
 		tx.send(()).expect( "Signal end of thread" );
 
@@ -145,8 +146,7 @@ fn test_basic_send()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -168,8 +168,7 @@ fn test_basic_call()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -192,7 +191,6 @@ fn test_move_call()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 

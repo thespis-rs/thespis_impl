@@ -23,11 +23,11 @@
 //
 use
 {
-	std           :: { any::Any, thread                        } ,
-	futures       :: { channel::oneshot, stream, sink::SinkExt } ,
-	thespis       :: { *                                       } ,
-	thespis_impl  :: { *                                       } ,
-	async_runtime :: { rt, RtConfig                            } ,
+	std           :: { any::Any, thread                                            } ,
+	futures       :: { channel::oneshot, stream, sink::SinkExt, executor::block_on } ,
+	thespis       :: { *                                                           } ,
+	thespis_impl  :: { *                                                           } ,
+	async_executors :: { AsyncStd                                                  } ,
 };
 
 
@@ -78,8 +78,10 @@ fn store_recipients()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b ).expect( "Failed to create address" );
+		let mut exec = AsyncStd{};
+
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
 		let mut recs: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr ), Box::new( addro ) ];
@@ -92,8 +94,7 @@ fn store_recipients()
 		assert_eq!( 2,  recs[ 1 ].call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -109,8 +110,10 @@ fn receiver_basic_use()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b ).expect( "Failed to create address" );
+		let mut exec = AsyncStd{};
+
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
 		let mut recs: Vec< Receiver<Count> > = vec![ Receiver::new( Box::new( addr ) ), Receiver::new( Box::new( addro ) ) ];
@@ -123,8 +126,7 @@ fn receiver_basic_use()
 		assert_eq!( 2,  recs[ 1 ].call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -135,15 +137,15 @@ fn receiver_basic_use()
 //
 fn receiver_box_any()
 {
-	rt::init( RtConfig::Local ).expect( "set executor" );
-
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b ).expect( "Failed to create address" );
+		let mut exec = AsyncStd{};
+
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
 		let recs: Vec< Box<dyn Any> > = vec!
@@ -164,8 +166,7 @@ fn receiver_box_any()
 		assert_eq!( 2,  recb.call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn_local( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -181,10 +182,12 @@ fn multi_thread()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
+		let mut exec = AsyncStd{};
+
 		// This will spawn the task for the mailbox on the current thread
 		//
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b ).expect( "Failed to create address" );
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 		let mut reca: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr.clone() ), Box::new( addro.clone() ) ];
 		let mut recb: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr )        , Box::new( addro )         ];
@@ -201,8 +204,7 @@ fn multi_thread()
 				reca[ 0 ].send( Count ).await.expect( "Send failed" );
 			};
 
-			rt::spawn( thread_program ).expect( "Spawn thread program" );
-			rt::run();
+			block_on( thread_program );
 
 			tx.send(()).expect( "Signal end of thread" );
 
@@ -217,8 +219,7 @@ fn multi_thread()
 		assert_eq!( 2,  recb[1].call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -233,8 +234,9 @@ fn stream_to_sink_addr()
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
+		let mut exec = AsyncStd{};
 
-		let mut addr    = Addr::try_from( a ).expect( "Failed to create address" );
+		let mut addr    = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
 		addr.send_all( &mut stream ).await.expect( "drain stream" );
@@ -250,8 +252,7 @@ fn stream_to_sink_addr()
 		assert_eq!( 4,  addr.call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -265,8 +266,9 @@ fn stream_to_sink_receiver()
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
+		let mut exec = AsyncStd{};
 
-		let addr        = Addr::try_from( a ).expect( "Failed to create address" );
+		let addr        = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let mut rec     = Receiver::new( addr.recipient() );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
@@ -283,8 +285,7 @@ fn stream_to_sink_receiver()
 		assert_eq!( 4,  rec.call( Count ).await.expect( "Call failed" ) );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -300,8 +301,10 @@ fn actor_id()
 		let a = MyActor { count: 0 };
 		let b = MyActor { count: 0 };
 
-		let addr  = Addr::try_from( a ).expect( "Failed to create address" );
-		let addrb = Addr::try_from( b ).expect( "Failed to create address" );
+		let mut exec = AsyncStd{};
+
+		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addrb = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 		let rec   = addr.recipient();
 
 		// return same value on subsequent calls
@@ -321,6 +324,5 @@ fn actor_id()
 		assert_ne!( addr.actor_id(), addrb.actor_id() );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }

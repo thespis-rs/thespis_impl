@@ -56,7 +56,6 @@ dependencies:
   log             : ^0.4
   regex           : { version: ^1, features: [ pattern ] }
   once_cell       : ^1
-  async_runtime   : { version: ^0.3, package: naja_async_runtime, default-features: false }
   thiserror       : ^1
   anyhow          : ^1
 

@@ -11,10 +11,11 @@ mod common;
 
 use
 {
-	thespis       :: { *                                     } ,
-	thespis_impl  :: { *,                                    } ,
-	async_runtime :: { rt, RtConfig                          } ,
-	common        :: { actors::{ Sum, SumNoSend, Add, Show } } ,
+	thespis         :: { *                                     } ,
+	thespis_impl    :: { *,                                    } ,
+	common          :: { actors::{ Sum, SumNoSend, Add, Show } } ,
+	async_executors :: { LocalPool                             } ,
+	futures         :: { task::LocalSpawnExt                   } ,
 };
 
 
@@ -24,27 +25,28 @@ use
 //
 fn test_not_send_actor()
 {
-	// TODO: if we remove this, it panics, but cargo test exit's zero... we have to verify this.
-	//
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+	let mut exec  = LocalPool::new();
+	let mut exec2 = exec.handle();
 
 	let program = async move
 	{
+
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
 		let actor = SumNoSend(5);
-		let mut addr = Addr::try_from_local( actor ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::try_from_local( actor, &mut exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
 		let result = addr.call( Show{} ).await.expect( "Call failed" );
 
+
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn_local( program ).expect( "Spawn program" );
-	rt::run();
+	exec.spawn_local( program ).expect( "spawn program" );
+	exec.run();
 }
 
 
@@ -54,9 +56,8 @@ fn test_not_send_actor()
 //
 fn test_send_actor()
 {
-	// TODO: if we remove this, it panics, but cargo test exit's zero... we have to verify this.
-	//
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+	let mut exec  = LocalPool::new();
+	let mut exec2 = exec.handle();
 
 	let program = async move
 	{
@@ -64,7 +65,7 @@ fn test_send_actor()
 		// of spawn_local.
 		//
 		let actor = Sum(5);
-		let mut addr = Addr::try_from_local( actor ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::try_from_local( actor, &mut exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -73,8 +74,8 @@ fn test_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn_local( program ).expect( "Spawn program" );
-	rt::run();
+	exec.spawn_local( program ).expect( "spawn program" );
+	exec.run();
 }
 
 
@@ -84,9 +85,8 @@ fn test_send_actor()
 //
 fn test_manually_not_send_actor()
 {
-	// TODO: if we remove this, it panics, but cargo test exit's zero... we have to verify this.
-	//
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+	let mut exec  = LocalPool::new();
+	let mut exec2 = exec.handle();
 
 	let program = async move
 	{
@@ -98,7 +98,7 @@ fn test_manually_not_send_actor()
 
 		let mut addr = Addr::new( mb.sender() );
 
-		rt::spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -107,8 +107,8 @@ fn test_manually_not_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn_local( program ).expect( "Spawn program" );
-	rt::run();
+	exec.spawn_local( program ).expect( "spawn program" );
+	exec.run();
 }
 
 
@@ -118,9 +118,8 @@ fn test_manually_not_send_actor()
 //
 fn test_manually_send_actor()
 {
-	// TODO: if we remove this, it panics, but cargo test exit's zero... we have to verify this.
-	//
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
+	let mut exec = LocalPool::new();
+	let mut exec2 = exec.handle();
 
 	let program = async move
 	{
@@ -132,7 +131,7 @@ fn test_manually_send_actor()
 
 		let mut addr = Addr::new( mb.sender() );
 
-		rt::spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -141,8 +140,8 @@ fn test_manually_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	rt::spawn_local( program ).expect( "Spawn program" );
-	rt::run();
+	exec.spawn_local( program ).expect( "spawn program" );
+	exec.run();
 }
 
 

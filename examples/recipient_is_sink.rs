@@ -1,9 +1,10 @@
 use
 {
-	futures       :: { stream, sink::SinkExt } ,
-	thespis       :: { *                     } ,
-	thespis_impl  :: { *                     } ,
-	async_runtime :: { rt                    } ,
+	futures           :: { stream, sink::SinkExt } ,
+	thespis           :: { *                     } ,
+	thespis_impl      :: { *                     } ,
+	async_executors   :: { *                     } ,
+	futures::executor :: { block_on              } ,
 };
 
 
@@ -29,10 +30,10 @@ fn main()
 {
 	let program = async move
 	{
-		let a = MyActor { count: 0 };
-
-		let mut addr    = Addr::try_from( a ).expect( "Failed to create address" );
-		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
+		let     a      = MyActor { count: 0 };
+		let mut exec   = ThreadPool::new().expect( "create threadpool" );
+		let mut addr   = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let mut stream = stream::iter( vec![ Count, Count, Count ].into_iter() );
 
 		addr.send_all( &mut stream ).await.expect( "drain stream" );
 
@@ -50,6 +51,5 @@ fn main()
 		dbg!( total );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }

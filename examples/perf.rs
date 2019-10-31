@@ -1,8 +1,9 @@
 use
 {
-	thespis       :: { *  } ,
-	thespis_impl  :: { *  } ,
-	async_runtime :: { rt } ,
+	thespis           :: { *        } ,
+	thespis_impl      :: { *        } ,
+	async_executors   :: { *        } ,
+	futures::executor :: { block_on } ,
 };
 
 
@@ -43,7 +44,8 @@ fn main()
 	let program = async move
 	{
 		let     sum  = Sum(5);
-		let mut addr = Addr::try_from( sum ).expect( "Failed to create address" );
+		let mut exec = ThreadPool::new().expect( "create threadpool" );
+		let mut addr = Addr::try_from( sum, &mut exec ).expect( "Failed to create address" );
 
 		for _i in 0..10_000_000usize
 		{
@@ -56,6 +58,5 @@ fn main()
 		dbg!( res );
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }

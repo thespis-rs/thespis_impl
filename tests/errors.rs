@@ -10,18 +10,22 @@ mod common;
 
 use
 {
-	thespis       :: { *                    } ,
-	log           :: { *                    } ,
-	thespis_impl  :: { *                    } ,
-	async_runtime :: { rt, RtConfig         } ,
-	std           :: { thread               } ,
-	common        :: { actors::{ Sum, Add } } ,
+	thespis         :: { *                    } ,
+	log             :: { *                    } ,
+	thespis_impl    :: { *                    } ,
+	std             :: { thread               } ,
+	common          :: { actors::{ Sum, Add } } ,
+	async_executors :: { AsyncStd, LocalPool  } ,
+	futures         :: { executor::block_on   } ,
+
 };
 
 
 
 async fn mb_closed()
 {
+	let mut exec = AsyncStd{};
+
 	let sum = Sum(5);
 
 	// Create mailbox
@@ -34,7 +38,7 @@ async fn mb_closed()
 	//
 	let _ = thread::spawn( move ||
 	{
-		mb.start( sum ).expect( "Failed to start mailbox" );
+		mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 		panic!( "terminate thread" );
 
 	}).join();
@@ -74,10 +78,16 @@ async fn mb_closed_before_response()
 
 	mb_thread.spawn( move ||
 	{
-		mb.start_local( sum ).expect( "Failed to start mailbox" );
+		let mut exec = LocalPool::new();
+
+		mb.start_local( sum, &mut exec ).expect( "Failed to start mailbox" );
+
+		exec.run();
+
 		panic!( "terminate thread" );
 
 	}).expect( "spawn mb_closed_before_response" );
+
 
 	match addr.call( Add(10) ).await
 	{
@@ -113,8 +123,7 @@ fn test_mb_closed()
 		mb_closed().await;
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
@@ -122,13 +131,11 @@ fn test_mb_closed()
 // TODO: double check. When spawning on a threadpool, panics in the worker threads from asserts
 // don't make the test fail!
 // This could be a problem for other tests as well.
-//
+
 #[test]
 //
 fn test_mb_closed_before_response()
 {
-	rt::init( RtConfig::Local ).expect( "init async_runtime" );
-
 	let program = async move
 	{
 		// let _ = simple_logger::init();
@@ -138,8 +145,7 @@ fn test_mb_closed_before_response()
 		mb_closed_before_response().await;
 	};
 
-	rt::spawn( program ).expect( "Spawn program" );
-	rt::run();
+	block_on( program );
 }
 
 
