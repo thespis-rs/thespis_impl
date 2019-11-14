@@ -129,7 +129,7 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox.
 	//
-	pub fn start( self, actor: A, exec: &mut impl Spawn ) -> ThesRes<()> where A: Send
+	pub fn start( self, actor: A, exec: &impl Spawn ) -> ThesRes<()> where A: Send
 	{
 		let id = self.id;
 
@@ -141,7 +141,7 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_local( self, actor: A, exec: &mut impl LocalSpawn ) -> ThesRes<()>
+	pub fn start_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
 	{
 		let id = self.id;
 

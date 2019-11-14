@@ -25,8 +25,8 @@ use
 //
 fn test_not_send_actor()
 {
-	let mut exec  = LocalPool::new();
-	let mut exec2 = exec.handle();
+	let mut exec  = LocalPool::default();
+	let exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -35,7 +35,7 @@ fn test_not_send_actor()
 		// of spawn_local.
 		//
 		let actor = SumNoSend(5);
-		let mut addr = Addr::try_from_local( actor, &mut exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::try_from_local( actor, &exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -56,8 +56,8 @@ fn test_not_send_actor()
 //
 fn test_send_actor()
 {
-	let mut exec  = LocalPool::new();
-	let mut exec2 = exec.handle();
+	let mut exec  = LocalPool::default();
+	let exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -65,7 +65,7 @@ fn test_send_actor()
 		// of spawn_local.
 		//
 		let actor = Sum(5);
-		let mut addr = Addr::try_from_local( actor, &mut exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::try_from_local( actor, &exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -85,8 +85,8 @@ fn test_send_actor()
 //
 fn test_manually_not_send_actor()
 {
-	let mut exec  = LocalPool::new();
-	let mut exec2 = exec.handle();
+	let mut exec  = LocalPool::default();
+	let exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -118,8 +118,8 @@ fn test_manually_not_send_actor()
 //
 fn test_manually_send_actor()
 {
-	let mut exec = LocalPool::new();
-	let mut exec2 = exec.handle();
+	let mut exec  = LocalPool::default();
+	let exec2 = exec.clone();
 
 	let program = async move
 	{

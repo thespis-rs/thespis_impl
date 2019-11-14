@@ -28,6 +28,8 @@ use
 // It's not quite clear what is the best way to do this, but this test passes for now
 // on x86_64 linux...
 //
+// TODO: this doesn't quite work either. Sometimes the the tests fails.
+//
 async fn mb_closed()
 {
 	let sum = Sum(5);
@@ -39,7 +41,7 @@ async fn mb_closed()
 
 	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();
 
-	let mut exec = ThreadPool::new().expect( "create threadpool" );
+	let exec = ThreadPool::new().expect( "create threadpool" );
 
 	exec.spawn( mb_fut ).expect( "spawn mailbox" );
 

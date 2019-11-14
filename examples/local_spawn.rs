@@ -58,10 +58,10 @@ impl Handler<Ping> for MyActor
 
 fn main()
 {
-	let mut exec = LocalPool::new();
+	let mut exec = LocalPool::default();
 
 	let actor    = MyActor { i: 3 };
-	let mut addr = Addr::try_from_local( actor, &mut exec ).expect( "spawn actor locally" );
+	let mut addr = Addr::try_from_local( actor, &exec ).expect( "spawn actor locally" );
 
 	exec.spawn_local( async move
 	{

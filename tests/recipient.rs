@@ -23,11 +23,11 @@
 //
 use
 {
-	std           :: { any::Any, thread                                            } ,
-	futures       :: { channel::oneshot, stream, sink::SinkExt, executor::block_on } ,
-	thespis       :: { *                                                           } ,
-	thespis_impl  :: { *                                                           } ,
-	async_executors :: { AsyncStd                                                  } ,
+	std           :: { any::Any, thread                                                       } ,
+	futures       :: { channel::oneshot, stream, sink::SinkExt, executor::block_on, StreamExt } ,
+	thespis       :: { *                                                                      } ,
+	thespis_impl  :: { *                                                                      } ,
+	async_executors :: { AsyncStd                                                             } ,
 };
 
 
@@ -237,7 +237,7 @@ fn stream_to_sink_addr()
 		let mut exec = AsyncStd{};
 
 		let mut addr    = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
+		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
 		addr.send_all( &mut stream ).await.expect( "drain stream" );
 
@@ -270,7 +270,7 @@ fn stream_to_sink_receiver()
 
 		let addr        = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let mut rec     = Receiver::new( addr.recipient() );
-		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() );
+		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
 		rec.send_all( &mut stream ).await.expect( "drain stream" );
 

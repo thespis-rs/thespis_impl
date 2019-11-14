@@ -1,10 +1,10 @@
 use
 {
-	futures           :: { stream, sink::SinkExt } ,
-	thespis           :: { *                     } ,
-	thespis_impl      :: { *                     } ,
-	async_executors   :: { *                     } ,
-	futures::executor :: { block_on              } ,
+	futures           :: { stream, StreamExt } ,
+	thespis           :: { *                 } ,
+	thespis_impl      :: { *                 } ,
+	async_executors   :: { *                 } ,
+	futures::executor :: { block_on          } ,
 };
 
 
@@ -31,19 +31,11 @@ fn main()
 	let program = async move
 	{
 		let     a      = MyActor { count: 0 };
-		let mut exec   = ThreadPool::new().expect( "create threadpool" );
-		let mut addr   = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let mut stream = stream::iter( vec![ Count, Count, Count ].into_iter() );
+		let     exec   = ThreadPool::new().expect( "create threadpool" );
+		let mut addr   = Addr::try_from( a, &exec ).expect( "Failed to create address" );
+		let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
-		addr.send_all( &mut stream ).await.expect( "drain stream" );
-
-		// This doesn't really work, we don't support it because:
-		//
-		// - stream needs to be a TryStream
-		// - the future will only complete when the sink is closed, but our addresses can only
-		//   close when they are dropped.
-		//
-		// stream.forward( &mut addr ).await.expect( "forward to sink" );
+		stream.forward( &mut addr ).await.expect( "forward to sink" );
 
 		let total = addr.call( Count ).await.expect( "Call failed" );
 

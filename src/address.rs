@@ -94,7 +94,7 @@ impl<A> Addr<A> where A: Actor
 	/// addr.call( MyMessage{} ).await?;
 	/// ```
 	//
-	pub fn try_from( actor: A, exec: &mut impl Spawn ) -> ThesRes<Self> where A: Send
+	pub fn try_from( actor: A, exec: &impl Spawn ) -> ThesRes<Self> where A: Send
 	{
 		let inbox: Inbox<A> = Inbox::new()                ;
 		let addr            = Self ::new( inbox.sender() );
@@ -117,7 +117,7 @@ impl<A> Addr<A> where A: Actor
 	/// addr.call( MyMessage{} ).await?;
 	/// ```
 	//
-	pub fn try_from_local( actor: A, exec: &mut impl LocalSpawn ) -> ThesRes<Self>
+	pub fn try_from_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
 	{
 		let inbox: Inbox<A> = Inbox::new()                ;
 		let addr            = Self ::new( inbox.sender() );
