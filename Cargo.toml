@@ -48,11 +48,6 @@ path = "../../async_executors"
 features = ["real_blackbox"]
 version = "^0.3"
 
-[dev-dependencies.tokio]
-default-features = false
-features = ["rt-full"]
-version = "^0.1"
-
 [features]
 default = []
 external_doc = []

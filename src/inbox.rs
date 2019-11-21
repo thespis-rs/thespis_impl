@@ -30,7 +30,7 @@ impl<A> Inbox<A> where A: Actor
 	//
 	pub fn new() -> Self
 	{
-		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 0 );
+		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
 		let (handle, msgs) = mpsc::unbounded();
 

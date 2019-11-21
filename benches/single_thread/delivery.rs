@@ -69,8 +69,8 @@ impl Accu
 
 fn send_localpool()
 {
-	let mut pool = LocalPool::new();
-	let mut exec = pool.handle();
+	let mut pool = LocalPool::default();
+	let     exec = pool.clone();
 
 	let bench = async move
 	{
@@ -99,8 +99,8 @@ fn send_localpool()
 
 fn call_localpool()
 {
-	let mut pool = LocalPool::new();
-	let mut exec = pool.handle();
+	let mut pool = LocalPool::default();
+	let     exec = pool.clone();
 
 	let bench = async move
 	{
@@ -129,8 +129,8 @@ fn call_localpool()
 
 fn send_tokio_ct()
 {
-	let mut pool = TokioCt::new();
-	let mut exec = pool.handle();
+	let mut pool = TokioCt::default();
+	let     exec = pool.clone();
 
 	let bench = async move
 	{
@@ -159,8 +159,8 @@ fn send_tokio_ct()
 
 fn call_tokio_ct()
 {
-	let mut pool = TokioCt::new();
-	let mut exec = pool.handle();
+	let mut pool = TokioCt::default();
+	let     exec = pool.clone();
 
 	let bench = async move
 	{

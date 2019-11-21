@@ -10,6 +10,7 @@ The reference implementation of the thespis actor model
 - use generic-channel crate? allow ring-channel, bounded channel?
 - use crossbeam channels? in pharos as well?
 - test runtime with threads
+- test in WASM
 
 ## Types of channels:
 

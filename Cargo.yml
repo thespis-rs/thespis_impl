@@ -70,14 +70,15 @@ target:
 
 dev-dependencies:
 
-  actix             : ^0.8
-  criterion         : { version: ^0.3 , features: [ real_blackbox ]                    }
-  tokio             : { version: ^0.1 , default-features: false, features: [ rt-full ] }
-
   pretty_assertions : ^0.6
   flexi_logger      : ^0.14
   async_executors   : { path: ../../async_executors, features: [localpool, threadpool, tokio_ct, tokio_tp, juliex, async_std] }
   simple_logger     : ^1
+
+  # for benchmarks
+  #
+  actix             : ^0.8
+  criterion         : { version: ^0.3 , features: [ real_blackbox ]                    }
 
 
 bench:

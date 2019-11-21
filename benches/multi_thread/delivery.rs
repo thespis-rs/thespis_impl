@@ -49,7 +49,7 @@ fn send_threadpool()
 		let     sum  = Sum(5)                                          ;
 		let     mb   = Inbox::new()                                    ;
 		let mut addr = Addr::new( mb.sender() )                        ;
-		let mut pool = ThreadPool::new().expect( "create threadpool" ) ;
+		let     pool = ThreadPool::new().expect( "create threadpool" ) ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -86,7 +86,7 @@ fn call_threadpool()
 		let     sum  = Sum(5)                                          ;
 		let     mb   = Inbox::new()                                    ;
 		let mut addr = Addr::new( mb.sender() )                        ;
-		let mut pool = ThreadPool::new().expect( "create threadpool" ) ;
+		let     pool = ThreadPool::new().expect( "create threadpool" ) ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -123,7 +123,7 @@ fn send_tokio_tp()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = TokioTp::new()           ;
+		let     pool = TokioTp::default()       ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -160,7 +160,7 @@ fn call_tokio_tp()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = TokioTp::new()           ;
+		let     pool = TokioTp::default()       ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -197,7 +197,7 @@ fn send_juliex()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = Juliex::new()            ;
+		let     pool = Juliex::default()        ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -234,7 +234,7 @@ fn call_juliex()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = Juliex::new()            ;
+		let     pool = Juliex::default()        ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -271,7 +271,7 @@ fn send_async_std()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = AsyncStd::new()          ;
+		let     pool = AsyncStd::default()      ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//
@@ -308,7 +308,7 @@ fn call_async_std()
 		let     sum  = Sum(5)                   ;
 		let     mb   = Inbox::new()             ;
 		let mut addr = Addr::new( mb.sender() ) ;
-		let mut pool = AsyncStd::new()          ;
+		let     pool = AsyncStd::default()      ;
 
 		// This is ugly right now. It will be more ergonomic in the future.
 		//

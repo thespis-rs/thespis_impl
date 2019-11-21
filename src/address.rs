@@ -57,6 +57,7 @@ fn clean_name( name: &str ) -> String
 	let re = Regex::new( r"\w+::" ).unwrap();
 	let s  = re.replace_all( name, "" );
 
+	// TODO: remove this
 	// this is just a specific one when using the Peer from remote
 	//
 	s.replace
@@ -163,7 +164,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {}", clean_name( std::any::type_name::<A>() ) );
+		trace!( "DROP address for: {} ~ {}", clean_name( std::any::type_name::<A>() ), self.id );
 	}
 }
 
