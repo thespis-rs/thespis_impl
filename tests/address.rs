@@ -10,7 +10,7 @@ use
 {
 	thespis         :: { *                                } ,
 	thespis_impl    :: { *,                               } ,
-	common          :: { actors::{ Sum }                  } ,
+	common          :: { actors::{ Sum, Add }             } ,
 	futures         :: { executor::block_on, future::join } ,
 };
 
@@ -25,9 +25,9 @@ fn stop_when_adresses_dropped_before_start_mb()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new() ;
-	let sender             = mb.sender()  ;
-	let sum                = Sum(5)       ;
+	let mb    : Inbox<Sum> = Inbox::new( "Sum".into() ) ;
+	let sender             = mb.sender()                ;
+	let sum                = Sum(5)                     ;
 
 	let program = async move
 	{
@@ -39,6 +39,9 @@ fn stop_when_adresses_dropped_before_start_mb()
 }
 
 
+// TODO: Maybe need a more realistic test. Here we await the mailbox while usually it will be
+// spawned, and we use join which has it's own polling strategy.
+//
 #[test]
 //
 fn stop_when_adresses_dropped()
@@ -47,14 +50,16 @@ fn stop_when_adresses_dropped()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new() ;
-	let sender             = mb.sender()  ;
-	let sum                = Sum(5)       ;
+	let mb    : Inbox<Sum> = Inbox::new( "Sum".into() ) ;
+	let sender             = mb.sender()                ;
+	let sum                = Sum(5)                     ;
 
 	let dropper = async move
 	{
-		let  addr  = Addr ::new( sender ) ;
-		let _addr2 = addr.clone()         ;
+		let  mut addr  = Addr ::new( sender ) ;
+		let     _addr2 = addr.clone()         ;
+
+		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 	};
 
 	let mailbox = async move

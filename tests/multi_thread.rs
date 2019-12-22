@@ -28,8 +28,8 @@ async fn sum_send() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new(             );
-	let mut addr             = Addr ::new( mb.sender() );
+	let     mb  : Inbox<Sum> = Inbox::new( "Sum".into() );
+	let mut addr             = Addr ::new( mb.sender()  );
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 
@@ -57,8 +57,8 @@ async fn sum_call() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new(             );
-	let mut addr             = Addr ::new( mb.sender() );
+	let     mb  : Inbox<Sum> = Inbox::new( "Sum".into() );
+	let mut addr             = Addr ::new( mb.sender()  );
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 
@@ -96,8 +96,8 @@ async fn move_call() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new(             );
-	let mut addr             = Addr ::new( mb.sender() );
+	let     mb  : Inbox<Sum> = Inbox::new( "Sum".into() );
+	let mut addr             = Addr ::new( mb.sender()  );
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 

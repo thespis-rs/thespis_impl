@@ -8,8 +8,9 @@ use crate::{ import::*, Inbox, envelope::*, error::* };
 //
 pub struct Addr< A: Actor >
 {
-	mb: mpsc::UnboundedSender< BoxEnvelope<A> >,
-	id: usize                                  ,
+	mb  : mpsc::UnboundedSender< BoxEnvelope<A> >,
+	id  : usize                                  ,
+	name: Option< &'static str >                 ,
 }
 
 
@@ -18,9 +19,15 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE address for: {} ~ {}", clean_name( std::any::type_name::<A>() ), self.id );
+		trace!
+		(
+			"CREATE address for: {} ~ {}{}"          ,
+			clean_name( std::any::type_name::<A>() ) ,
+			self.id                                  ,
+			Inbox::<A>::log_name( self.name )        ,
+		);
 
-		Self { mb: self.mb.clone(), id: self.id }
+		Self { mb: self.mb.clone(), id: self.id, name: self.name }
 	}
 }
 
@@ -43,12 +50,20 @@ impl<A: Actor> fmt::Debug for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Addr<{}> ~ {}", clean_name( std::any::type_name::<A>() ), &self.id )
+		write!
+		(
+			f                                        ,
+			"Addr<{}> ~ {}{}"                        ,
+			clean_name( std::any::type_name::<A>() ) ,
+			&self.id                                 ,
+			Inbox::<A>::log_name( self.name )        ,
+		)
 	}
 }
 
 
-/// Remove all paths from names
+/// Remove all paths from names.
+/// TODO: remove this function.
 //
 fn clean_name( name: &str ) -> String
 {
@@ -77,10 +92,10 @@ impl<A> Addr<A> where A: Actor
 	///
 	// TODO: take a impl trait instead of a concrete type. This leaks impl details.
 	//
-	pub fn new( mb: (usize, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
+	pub fn new( mb: (usize, Option<&'static str>, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
 	{
-		trace!( "CREATE address for: {}", clean_name( std::any::type_name::<A>() ) );
-		Self{ id: mb.0, mb: mb.1 }
+		trace!( "CREATE address for: {}{}", clean_name( std::any::type_name::<A>() ), Inbox::<A>::log_name( mb.1 ) );
+		Self{ id: mb.0, name: mb.1, mb: mb.2 }
 	}
 
 
@@ -97,7 +112,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn try_from( actor: A, exec: &impl Spawn ) -> ThesRes<Self> where A: Send
 	{
-		let inbox: Inbox<A> = Inbox::new()                ;
+		let inbox: Inbox<A> = Inbox::new( None )          ;
 		let addr            = Self ::new( inbox.sender() );
 
 		inbox.start( actor, exec )?;
@@ -120,7 +135,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn try_from_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
 	{
-		let inbox: Inbox<A> = Inbox::new()                ;
+		let inbox: Inbox<A> = Inbox::new( None )          ;
 		let addr            = Self ::new( inbox.sender() );
 
 		inbox.start_local( actor, exec )?;
@@ -137,6 +152,43 @@ impl<A> Addr<A> where A: Actor
 	pub fn id( &self ) -> usize
 	{
 		self.id
+	}
+
+
+	/// Get the name of the actor this address sends to.
+	///
+	/// This is a.
+	//
+	pub fn name( &self ) -> Option< &'static str >
+	{
+		self.name
+	}
+
+
+	/// Get the name of the actor this address sends to as a String, if no name is set returns the empty string.
+	//
+	pub fn string_name( &self ) -> String
+	{
+		match self.name
+		{
+			Some( s ) => format!( " - ({})", s ),
+			None      => String::new()          ,
+		}
+	}
+
+
+	/// Get the name of the actor this address sends to as a String, if no name is set returns the empty string.
+	///
+	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
+	/// for convenient use in log messages.
+	//
+	pub fn log_name( &self ) -> String
+	{
+		match self.name
+		{
+			Some( s ) => format!( " - ({})", s ),
+			None      => String::new()          ,
+		}
 	}
 }
 
@@ -164,7 +216,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {} ~ {}", clean_name( std::any::type_name::<A>() ), self.id );
+		trace!( "DROP address for: {} ~ {}{}", clean_name( std::any::type_name::<A>() ), self.id, Inbox::<A>::log_name( self.name ) );
 	}
 }
 
@@ -263,7 +315,8 @@ impl<A, M> Sink<M> for Addr<A>
 	}
 
 
-	/// Will only close when dropped, this method can never return ready
+	/// Will only close when dropped, this method can never return ready.
+	/// TODO: is this the right approach? It means tasks will hang if people call this.
 	//
 	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{

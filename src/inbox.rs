@@ -20,6 +20,7 @@ pub struct Inbox<A> where A: Actor
 	/// can impl Eq to say whether they refer to the same actor.
 	//
 	id    : usize,
+	name  : Option< &'static str>
 }
 
 
@@ -28,7 +29,7 @@ impl<A> Inbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new() -> Self
+	pub fn new( name: Option< &'static str > ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -39,14 +40,33 @@ impl<A> Inbox<A> where A: Actor
 		//
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
-		Self { handle, msgs, id }
+		Self
+		{
+			handle ,
+			msgs   ,
+			id     ,
+			name   ,
+		}
 	}
 
 	/// A handle to a channel sender that can be used for creating an address to this mailbox.
 	//
-	pub fn sender( &self ) -> (usize, mpsc::UnboundedSender<BoxEnvelope<A>>)
+	pub fn sender( &self ) -> (usize, Option<&'static str>, mpsc::UnboundedSender<BoxEnvelope<A>>)
 	{
-		(self.id, self.handle.clone())
+		(self.id, self.name, self.handle.clone())
+	}
+
+
+	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
+	/// for convenient use in log messages.
+	//
+	pub(crate) fn log_name( name: Option< &str> ) -> String
+	{
+		match name
+		{
+			Some( s ) => format!( " - ({})", s ),
+			None      => String::new()          ,
+		}
 	}
 
 
@@ -80,23 +100,23 @@ impl<A> Inbox<A> where A: Actor
 		// We need to drop the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, id } = self;
+		let Inbox{ mut msgs, handle, id, name } = self;
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}", id );
+		trace!( "mailbox: started for: {}{}", id, Self::log_name( name ) );
 
-		loop
+		while let Some( envl ) = msgs.next().await
 		{
-			match  msgs.next().await
-			{
-				Some( envl ) => { envl.handle( &mut actor ).await; }
-				None         => { break;                           }
-			}
+			trace!( "actor {}{} will process a message.", id, Self::log_name( name ) );
+
+			envl.handle( &mut actor ).await;
+
+			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( name ) );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}", id );
+		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( name ) );
 	}
 
 
@@ -107,27 +127,25 @@ impl<A> Inbox<A> where A: Actor
 		// We need to drop the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, id } = self;
+		let Inbox{ mut msgs, handle, id, name } = self;
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}", id );
+		trace!( "mailbox: started for: {}{}", id, Self::log_name( name ) );
 
-		loop
+		while let Some( envl ) = msgs.next().await
 		{
-			match  msgs.next().await
-			{
-				Some( envl ) => { envl.handle_local( &mut actor ).await; }
-				None         => { break;                                 }
-			}
+			envl.handle_local( &mut actor ).await;
+			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( name ) );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}", id );
+		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( name ) );
 	}
 
 
 	/// Spawn the mailbox.
+	/// TODO: remove the start and start_local
 	//
 	pub fn start( self, actor: A, exec: &impl Spawn ) -> ThesRes<()> where A: Send
 	{
@@ -175,7 +193,7 @@ impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
 
 impl<A> Default for Inbox<A> where A: Actor
 {
-	fn default() -> Self { Self::new() }
+	fn default() -> Self { Self::new( None ) }
 }
 
 
