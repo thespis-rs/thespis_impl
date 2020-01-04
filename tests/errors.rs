@@ -36,7 +36,7 @@ async fn mb_closed()
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new( "Sum".into() );
+	let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) );
 	let mut addr             = Addr ::new( mb.sender()  );
 
 	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();

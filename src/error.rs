@@ -6,7 +6,7 @@ pub type ThesRes<T> = Result<T, ThesErr>;
 
 /// Errors that can happen in thespis_impl.
 //
-#[ derive( Debug, Error ) ]
+#[ derive( Debug, Clone, Error ) ]
 //
 pub enum ThesErr
 {
@@ -22,7 +22,8 @@ pub enum ThesErr
 	},
 
 
-	/// The mailbox cannot take more messages right now.
+	/// The mailbox cannot take more messages right now. TODO: this only happens on
+	/// try_send on a future channel. For the moment there is no try_send in thespis.
 	//
 	#[ error( "The mailbox cannot take more messages right now. For actor: {actor}" ) ]
 	//

@@ -94,9 +94,9 @@ fn call_from_multiple_addrs()
 
 		// Create mailbox
 		//
-		let     mb  : Inbox<Sum> = Inbox::new( "Sum".into() );
-		let mut addr             = Addr ::new( mb.sender()  );
-		let mut addr2            = addr.clone()              ;
+		let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
+		let mut addr             = Addr ::new( mb.sender() )          ;
+		let mut addr2            = addr.clone()                       ;
 
 		mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 

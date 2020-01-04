@@ -19,8 +19,8 @@ pub struct Inbox<A> where A: Actor
 	/// This creates a unique id for every mailbox in the program. This way recipients
 	/// can impl Eq to say whether they refer to the same actor.
 	//
-	id    : usize,
-	name  : Option< &'static str>
+	id    : usize              ,
+	name  : Option< Arc<str> > ,
 }
 
 
@@ -29,7 +29,7 @@ impl<A> Inbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option< &'static str > ) -> Self
+	pub fn new( name: Option< Arc<str> > ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -51,16 +51,16 @@ impl<A> Inbox<A> where A: Actor
 
 	/// A handle to a channel sender that can be used for creating an address to this mailbox.
 	//
-	pub fn sender( &self ) -> (usize, Option<&'static str>, mpsc::UnboundedSender<BoxEnvelope<A>>)
+	pub fn sender( &self ) -> (usize, Option< Arc<str> >, mpsc::UnboundedSender<BoxEnvelope<A>>)
 	{
-		(self.id, self.name, self.handle.clone())
+		(self.id, self.name.clone(), self.handle.clone())
 	}
 
 
 	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
 	/// for convenient use in log messages.
 	//
-	pub(crate) fn log_name( name: Option< &str> ) -> String
+	pub(crate) fn log_name( name: &Option< Arc<str> > ) -> String
 	{
 		match name
 		{
@@ -104,19 +104,19 @@ impl<A> Inbox<A> where A: Actor
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}{}", id, Self::log_name( name ) );
+		trace!( "mailbox: started for: {}{}", id, Self::log_name( &name ) );
 
 		while let Some( envl ) = msgs.next().await
 		{
-			trace!( "actor {}{} will process a message.", id, Self::log_name( name ) );
+			trace!( "actor {}{} will process a message.", id, Self::log_name( &name ) );
 
 			envl.handle( &mut actor ).await;
 
-			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( name ) );
+			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( &name ) );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( name ) );
+		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( &name ) );
 	}
 
 
@@ -131,16 +131,16 @@ impl<A> Inbox<A> where A: Actor
 		drop( handle );
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}{}", id, Self::log_name( name ) );
+		trace!( "mailbox: started for: {}{}", id, Self::log_name( &name ) );
 
 		while let Some( envl ) = msgs.next().await
 		{
 			envl.handle_local( &mut actor ).await;
-			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( name ) );
+			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( &name ) );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( name ) );
+		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( &name ) );
 	}
 
 

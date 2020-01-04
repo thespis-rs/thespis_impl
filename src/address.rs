@@ -10,7 +10,7 @@ pub struct Addr< A: Actor >
 {
 	mb  : mpsc::UnboundedSender< BoxEnvelope<A> >,
 	id  : usize                                  ,
-	name: Option< &'static str >                 ,
+	name: Option< Arc<str> >                     ,
 }
 
 
@@ -21,13 +21,13 @@ impl< A: Actor > Clone for Addr<A>
 	{
 		trace!
 		(
-			"CREATE address for: {} ~ {}{}"          ,
-			clean_name( std::any::type_name::<A>() ) ,
-			self.id                                  ,
-			Inbox::<A>::log_name( self.name )        ,
+			"CREATE address for: {} ~ {}{}"           ,
+			clean_name( std::any::type_name::<A>() )  ,
+			self.id                                   ,
+			Inbox::<A>::log_name( &self.name )        ,
 		);
 
-		Self { mb: self.mb.clone(), id: self.id, name: self.name }
+		Self { mb: self.mb.clone(), id: self.id, name: self.name.clone() }
 	}
 }
 
@@ -52,11 +52,11 @@ impl<A: Actor> fmt::Debug for Addr<A>
 	{
 		write!
 		(
-			f                                        ,
-			"Addr<{}> ~ {}{}"                        ,
-			clean_name( std::any::type_name::<A>() ) ,
-			&self.id                                 ,
-			Inbox::<A>::log_name( self.name )        ,
+			f                                         ,
+			"Addr<{}> ~ {}{}"                         ,
+			clean_name( std::any::type_name::<A>() )  ,
+			&self.id                                  ,
+			Inbox::<A>::log_name( &self.name )        ,
 		)
 	}
 }
@@ -92,9 +92,9 @@ impl<A> Addr<A> where A: Actor
 	///
 	// TODO: take a impl trait instead of a concrete type. This leaks impl details.
 	//
-	pub fn new( mb: (usize, Option<&'static str>, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
+	pub fn new( mb: (usize, Option< Arc<str> >, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
 	{
-		trace!( "CREATE address for: {}{}", clean_name( std::any::type_name::<A>() ), Inbox::<A>::log_name( mb.1 ) );
+		trace!( "CREATE address for: {}{}", clean_name( std::any::type_name::<A>() ), Inbox::<A>::log_name( &mb.1 ) );
 		Self{ id: mb.0, name: mb.1, mb: mb.2 }
 	}
 
@@ -159,9 +159,9 @@ impl<A> Addr<A> where A: Actor
 	///
 	/// This is a.
 	//
-	pub fn name( &self ) -> Option< &'static str >
+	pub fn name( &self ) -> Option< Arc<str> >
 	{
-		self.name
+		self.name.clone()
 	}
 
 
@@ -169,7 +169,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn string_name( &self ) -> String
 	{
-		match self.name
+		match &self.name
 		{
 			Some( s ) => format!( " - ({})", s ),
 			None      => String::new()          ,
@@ -184,7 +184,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn log_name( &self ) -> String
 	{
-		match self.name
+		match &self.name
 		{
 			Some( s ) => format!( " - ({})", s ),
 			None      => String::new()          ,
@@ -216,7 +216,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {} ~ {}{}", clean_name( std::any::type_name::<A>() ), self.id, Inbox::<A>::log_name( self.name ) );
+		trace!( "DROP address for: {} ~ {}{}", clean_name( std::any::type_name::<A>() ), self.id, Inbox::<A>::log_name( &self.name ) );
 	}
 }
 

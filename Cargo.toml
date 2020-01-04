@@ -35,7 +35,7 @@ version = "^1"
 path = "../thespis"
 
 [dev-dependencies]
-actix = "^0.8"
+actix = "^0.9"
 flexi_logger = "^0.14"
 pretty_assertions = "^0.6"
 simple_logger = "^1"

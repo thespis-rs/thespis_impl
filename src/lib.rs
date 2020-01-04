@@ -57,8 +57,8 @@ mod import
 		std ::
 		{
 			fmt ,
-			pin         :: { Pin                               } ,
-			sync        :: { atomic::{ AtomicUsize, Ordering } } ,
+			pin         :: { Pin                                    } ,
+			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
 		},
 
 

@@ -94,7 +94,7 @@ fn test_manually_not_send_actor()
 		// of spawn_local.
 		//
 		let actor = SumNoSend(5);
-		let mb    = Inbox::new( "SumNoSend".into() );
+		let mb    = Inbox::new( Some( "SumNoSend".into() ) );
 
 		let mut addr = Addr::new( mb.sender() );
 
@@ -127,7 +127,7 @@ fn test_manually_send_actor()
 		// of spawn_local.
 		//
 		let actor = Sum(5);
-		let mb    = Inbox::new( "Sum".into() );
+		let mb    = Inbox::new( Some( "Sum".into() ) );
 
 		let mut addr = Addr::new( mb.sender() );
 

@@ -25,9 +25,9 @@ fn stop_when_adresses_dropped_before_start_mb()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new( "Sum".into() ) ;
-	let sender             = mb.sender()                ;
-	let sum                = Sum(5)                     ;
+	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
+	let sender             = mb.sender()                        ;
+	let sum                = Sum(5)                             ;
 
 	let program = async move
 	{
@@ -50,9 +50,9 @@ fn stop_when_adresses_dropped()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new( "Sum".into() ) ;
-	let sender             = mb.sender()                ;
-	let sum                = Sum(5)                     ;
+	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
+	let sender             = mb.sender()                        ;
+	let sum                = Sum(5)                             ;
 
 	let dropper = async move
 	{
