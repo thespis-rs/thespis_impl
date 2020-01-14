@@ -182,13 +182,16 @@ impl<A> Addr<A> where A: Actor
 	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
 	/// for convenient use in log messages.
 	//
-	pub fn log_name( &self ) -> String
+	pub fn identity( &self ) -> String
 	{
-		match &self.name
+		let mut identity = self.id().to_string();
+
+		if let Some(s) = &self.name
 		{
-			Some( s ) => format!( " - ({})", s ),
-			None      => String::new()          ,
+			write!( identity, " - ({})", s ).expect( "write to string" );
 		}
+
+		identity
 	}
 }
 
@@ -222,7 +225,7 @@ impl<A: Actor> Drop for Addr<A>
 
 
 
-impl<A, M> Recipient<M> for Addr<A>
+impl<A, M> Address<M> for Addr<A>
 
 	where  A: Actor + Handler<M> ,
 	       M: Message            ,
@@ -249,7 +252,7 @@ impl<A, M> Recipient<M> for Addr<A>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M, ThesErr>
+	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
 	{
 		Box::new( self.clone() )
 	}
@@ -321,18 +324,5 @@ impl<A, M> Sink<M> for Addr<A>
 	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		Poll::Pending
-	}
-}
-
-
-impl<A, M> Address<A, M> for Addr<A>
-
-	where  A: Actor + Handler<M>,
-	       M: Message           ,
-
-{
-	fn recipient( &self ) -> BoxRecipient<M, ThesErr>
-	{
-		Box::new( self.clone() )
 	}
 }

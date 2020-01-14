@@ -53,10 +53,10 @@ fn main()
 		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
-		let recs: Vec< BoxRecipient<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];
+		let recs: Vec< BoxAddress<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];
 
 		// or like this, but it clones internally. Note that the compiler is capable here of detecting
-		// that we want a Recipient to the message type Ping.
+		// that we want a Address to the message type Ping.
 		//
 		// let recs = vec![ addr.recipient(), addro.recipient() ];
 		//

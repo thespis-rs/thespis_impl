@@ -6,7 +6,7 @@ pub type ThesRes<T> = Result<T, ThesErr>;
 
 /// Errors that can happen in thespis_impl.
 //
-#[ derive( Debug, Clone, Error ) ]
+#[ derive( Debug, Clone, Error, PartialEq, Eq ) ]
 //
 pub enum ThesErr
 {

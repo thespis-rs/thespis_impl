@@ -35,8 +35,8 @@ impl<A> Inbox<A> where A: Actor
 
 		let (handle, msgs) = mpsc::unbounded();
 
-		// As far as I can tell from https://doc.rust-lang.org/nomicon/atomics.html
-		// this is a simple increment to a counter, so Relaxed should be enough here.
+		// We don't care for ordering here, as long as it's atomic and no two Actor's
+		// can have the same id.
 		//
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 

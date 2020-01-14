@@ -2,7 +2,7 @@
 //
 use
 {
-	thespis         :: { Actor, Message, Handler, Return, ReturnNoSend, Recipient } ,
+	thespis         :: { Actor, Message, Handler, Return, ReturnNoSend, Address } ,
 	thespis_impl    :: { Addr                                                     } ,
 	async_executors :: { *                                                        } ,
 	futures         :: { task::LocalSpawnExt                                      } ,

@@ -2,7 +2,7 @@
 
 // TODO:
 // - ✔ basic usage (using addr directly uses recipient, so that's already tested)
-//     Let's test storing Box<Recipient<M>> to several actors and send/call on that
+//     Let's test storing Box<Address<M>> to several actors and send/call on that
 //
 // - ✔ Receiver
 //   - ✔ construct receiver from address and send/call
@@ -84,7 +84,7 @@ fn store_recipients()
 		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
 
-		let mut recs: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr ), Box::new( addro ) ];
+		let mut recs: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr ), Box::new( addro ) ];
 
 		recs[ 0 ].send( Count ).await.expect( "Send failed" );
 		recs[ 1 ].send( Count ).await.expect( "Send failed" );
@@ -189,8 +189,8 @@ fn multi_thread()
 		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
 
-		let mut reca: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr.clone() ), Box::new( addro.clone() ) ];
-		let mut recb: Vec<Box< dyn Recipient<Count, Error=ThesErr> >> = vec![ Box::new( addr )        , Box::new( addro )         ];
+		let mut reca: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr.clone() ), Box::new( addro.clone() ) ];
+		let mut recb: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr )        , Box::new( addro )         ];
 
 		let (tx, rx) = oneshot::channel::<()>();
 
@@ -225,7 +225,7 @@ fn multi_thread()
 
 
 
-// Use send_all on a Recipient to forward all messages from a stream to Addr<A>
+// Use send_all on a Address to forward all messages from a stream to Addr<A>
 //
 #[ test ]
 //
@@ -269,10 +269,10 @@ fn stream_to_sink_receiver()
 		let mut exec = AsyncStd{};
 
 		let addr        = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let mut rec     = Receiver::new( addr.recipient() );
+		let mut clone   = Receiver::new( addr.clone_box() );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
-		rec.send_all( &mut stream ).await.expect( "drain stream" );
+		clone.send_all( &mut stream ).await.expect( "drain stream" );
 
 		// This doesn't really work:
 		// - stream needs to be a TryStream
@@ -282,7 +282,7 @@ fn stream_to_sink_receiver()
 		// let mut stream2 = stream::iter( vec![ Count, Count, Count ].into_iter() );
 		//  stream.forward( &mut addr ).await.expect( "forward to sink" );
 
-		assert_eq!( 4,  rec.call( Count ).await.expect( "Call failed" ) );
+		assert_eq!( 4,  clone.call( Count ).await.expect( "Call failed" ) );
 	};
 
 	block_on( program );
@@ -305,7 +305,7 @@ fn actor_id()
 
 		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let addrb = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
-		let rec   = addr.recipient();
+		let rec   = addr.clone_box();
 
 		// return same value on subsequent calls
 		//
@@ -315,7 +315,7 @@ fn actor_id()
 		//
 		assert_eq!( addr.actor_id(), addr.clone().actor_id() );
 
-		// return same value on Box<Recipient<_>>
+		// return same value on Box<Address<_>>
 		//
 		assert_eq!( addr.actor_id(), rec.actor_id() );
 

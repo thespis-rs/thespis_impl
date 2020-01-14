@@ -2,19 +2,19 @@ use crate::{ import::*, error::* };
 
 
 
-/// This type can be used when you need a concrete type as Recipient<M>. Eg,
+/// This type can be used when you need a concrete type as Address<M>. Eg,
 /// you can store this as BoxAny and then use down_cast from std::any::Any.
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxRecipient<M, ThesErr>>
+	rec: Pin<BoxAddress<M, ThesErr>>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxRecipient<M, ThesErr> ) -> Self
+	pub fn new( rec: BoxAddress<M, ThesErr> ) -> Self
 	{
 		Self { rec: Pin::from( rec ) }
 	}
@@ -55,7 +55,7 @@ impl<M: Message> Eq for Receiver<M>{}
 
 
 
-impl<M: Message> Recipient<M> for Receiver<M>
+impl<M: Message> Address<M> for Receiver<M>
 {
 	fn call( &mut self, msg: M ) -> Return<'_, Result< <M as Message>::Return, <Self as Sink<M>>::Error >>
 	{
@@ -68,7 +68,7 @@ impl<M: Message> Recipient<M> for Receiver<M>
 
 
 
-	fn clone_box( &self ) -> BoxRecipient<M, ThesErr>
+	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
 	{
 		self.rec.clone_box()
 	}
