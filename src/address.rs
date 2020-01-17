@@ -19,13 +19,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!
-		(
-			"CREATE address for: {} ~ {}{}"           ,
-			clean_name( std::any::type_name::<A>() )  ,
-			self.id                                   ,
-			Inbox::<A>::log_name( &self.name )        ,
-		);
+		trace!( "CREATE address for: {}", self );
 
 		Self { mb: self.mb.clone(), id: self.id, name: self.name.clone() }
 	}
@@ -50,37 +44,41 @@ impl<A: Actor> fmt::Debug for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
+		let name = match &self.name
+		{
+			Some( s ) => format!( ", {}", s ) ,
+			None      => String::new()        ,
+		};
+
 		write!
 		(
-			f                                         ,
-			"Addr<{}> ~ {}{}"                         ,
-			clean_name( std::any::type_name::<A>() )  ,
-			&self.id                                  ,
-			Inbox::<A>::log_name( &self.name )        ,
+			f                          ,
+			"Addr<{}> ~ {}{}"          ,
+			std::any::type_name::<A>() ,
+			&self.id                   ,
+			name                       ,
 		)
 	}
 }
 
 
-/// Remove all paths from names.
-/// TODO: remove this function.
-//
-fn clean_name( name: &str ) -> String
+
+impl<A: Actor> fmt::Display for Addr<A>
 {
-	use regex::Regex;
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		// TODO: check expect.
+		//
+		let t = std::any::type_name::<A>().split( "::" ).last().expect( "there to be no types on the root namespace" );
 
-	let re = Regex::new( r"\w+::" ).unwrap();
-	let s  = re.replace_all( name, "" );
-
-	// TODO: remove this
-	// this is just a specific one when using the Peer from remote
-	//
-	s.replace
-	(
-		"Peer<Compat01As03Sink<SplitSink<Framed<TcpStream, MulServTokioCodec<MultiServiceImpl<ServiceID, ConnID, Codecs>>>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>, MultiServiceImpl<ServiceID, ConnID, Codecs>>",
-		"Peer"
-	)
+		match &self.name
+		{
+			Some(n) => write!( f, "{} ({}, {})", t, self.id, n ) ,
+			None    => write!( f, "{} ({})"    , t, self.id    ) ,
+		}
+	}
 }
+
 
 
 
@@ -94,8 +92,11 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn new( mb: (usize, Option< Arc<str> >, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
 	{
-		trace!( "CREATE address for: {}{}", clean_name( std::any::type_name::<A>() ), Inbox::<A>::log_name( &mb.1 ) );
-		Self{ id: mb.0, name: mb.1, mb: mb.2 }
+		let new = Self{ id: mb.0, name: mb.1, mb: mb.2 };
+
+		trace!( "CREATE address for: {}", &new );
+
+		new
 	}
 
 
@@ -141,58 +142,6 @@ impl<A> Addr<A> where A: Actor
 		inbox.start_local( actor, exec )?;
 		Ok( addr )
 	}
-
-
-	/// Get the id of the mailbox this address sends to. There will be exactly one for each
-	/// actor, so you can use this for uniquely identifying your actors.
-	///
-	/// This is an atomic usize that is incremented for every new mailbox. There currently
-	/// is no overflow protection.
-	//
-	pub fn id( &self ) -> usize
-	{
-		self.id
-	}
-
-
-	/// Get the name of the actor this address sends to.
-	///
-	/// This is a.
-	//
-	pub fn name( &self ) -> Option< Arc<str> >
-	{
-		self.name.clone()
-	}
-
-
-	/// Get the name of the actor this address sends to as a String, if no name is set returns the empty string.
-	//
-	pub fn string_name( &self ) -> String
-	{
-		match &self.name
-		{
-			Some( s ) => format!( " - ({})", s ),
-			None      => String::new()          ,
-		}
-	}
-
-
-	/// Get the name of the actor this address sends to as a String, if no name is set returns the empty string.
-	///
-	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
-	/// for convenient use in log messages.
-	//
-	pub fn identity( &self ) -> String
-	{
-		let mut identity = self.id().to_string();
-
-		if let Some(s) = &self.name
-		{
-			write!( identity, " - ({})", s ).expect( "write to string" );
-		}
-
-		identity
-	}
 }
 
 
@@ -219,7 +168,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {} ~ {}{}", clean_name( std::any::type_name::<A>() ), self.id, Inbox::<A>::log_name( &self.name ) );
+		trace!( "DROP address for: {}", self );
 	}
 }
 
@@ -256,11 +205,28 @@ impl<A, M> Address<M> for Addr<A>
 	{
 		Box::new( self.clone() )
 	}
+}
 
 
-	fn actor_id( &self ) -> usize
+impl<A> Identify for Addr<A>
+
+	where  A: Actor,
+
+{
+	/// Get the id of the mailbox this address sends to. There will be exactly one for each
+	/// actor, so you can use this for uniquely identifying your actors.
+	///
+	/// This is an atomic usize that is incremented for every new mailbox. There currently
+	/// is no overflow protection.
+	//
+	fn id( &self ) -> usize
 	{
 		self.id
+	}
+
+	fn name( &self ) -> Option< Arc<str> >
+	{
+		self.name.clone()
 	}
 }
 

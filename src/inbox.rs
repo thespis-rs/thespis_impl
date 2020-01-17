@@ -57,19 +57,6 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Transform an Option to a name into an empty string or a formatted name: " - (<name>)"
-	/// for convenient use in log messages.
-	//
-	pub(crate) fn log_name( name: &Option< Arc<str> > ) -> String
-	{
-		match name
-		{
-			Some( s ) => format!( " - ({})", s ),
-			None      => String::new()          ,
-		}
-	}
-
-
 	/// Translate a futures SendError to a ThesErr.
 	/// Returns MailboxFull or MailboxClosed.
 	//
@@ -94,53 +81,49 @@ impl<A> Inbox<A> where A: Actor
 
 
 
-	async fn start_fut_inner( self, mut actor: A ) where A: Send
+	async fn start_fut_inner( mut self, mut actor: A ) where A: Send
 	{
-		// TODO: Clean this up...
-		// We need to drop the handle, otherwise the channel will never close and the program will not
+		// We need to disconnect the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, id, name } = self;
-		drop( handle );
+		self.handle.disconnect();
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}{}", id, Self::log_name( &name ) );
+		trace!( "mailbox: started for: {}", &self );
 
-		while let Some( envl ) = msgs.next().await
+		while let Some( envl ) = self.msgs.next().await
 		{
-			trace!( "actor {}{} will process a message.", id, Self::log_name( &name ) );
+			trace!( "actor {} will process a message.", &self );
 
 			envl.handle( &mut actor ).await;
 
-			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( &name ) );
+			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( &name ) );
+		trace!( "Mailbox stopped actor for {}", &self );
 	}
 
 
 
-	async fn start_fut_inner_local( self, mut actor: A )
+	async fn start_fut_inner_local( mut self, mut actor: A )
 	{
-		// TODO: Clean this up...
-		// We need to drop the handle, otherwise the channel will never close and the program will not
+		// We need to disconnect the handle, otherwise the channel will never close and the program will not
 		// terminate. Like this when the user drops all their handles, this loop will automatically break.
 		//
-		let Inbox{ mut msgs, handle, id, name } = self;
-		drop( handle );
+		self.handle.disconnect();
 
 		actor.started().await;
-		trace!( "mailbox: started for: {}{}", id, Self::log_name( &name ) );
+		trace!( "mailbox: started for: {}", &self );
 
-		while let Some( envl ) = msgs.next().await
+		while let Some( envl ) = self.msgs.next().await
 		{
 			envl.handle_local( &mut actor ).await;
-			trace!( "actor {}{} finished handling it's message. Waiting for next message", id, Self::log_name( &name ) );
+			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 		}
 
 		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}{}", id, Self::log_name( &name ) );
+		trace!( "Mailbox stopped actor for {}", &self );
 	}
 
 
@@ -171,7 +154,7 @@ impl<A> Inbox<A> where A: Actor
 
 
 
-impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
+impl<A: Actor + Send> Mailbox<A> for Inbox<A>
 {
 	fn start_fut( self, actor: A ) -> Return<'static, ()>
 	{
@@ -181,11 +164,28 @@ impl<A> Mailbox<A> for Inbox<A> where A: Actor + Send
 
 
 
-impl<A> MailboxLocal<A> for Inbox<A> where A: Actor
+impl<A: Actor> MailboxLocal<A> for Inbox<A>
 {
 	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, ()>
 	{
 		self.start_fut_inner_local( actor ).boxed_local()
+	}
+}
+
+
+
+impl<A: Actor> Identify for Inbox<A>
+{
+	fn id( &self ) -> usize
+	{
+		self.id
+	}
+
+
+
+	fn name( &self ) -> Option<Arc<str>>
+	{
+		self.name.clone()
 	}
 }
 
@@ -202,6 +202,23 @@ impl<A: Actor> fmt::Debug for Inbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Addr<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+		write!( f, "Inbox<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+	}
+}
+
+
+impl<A: Actor> fmt::Display for Inbox<A>
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		// TODO: check expect.
+		//
+		let t = std::any::type_name::<A>().split( "::" ).last().expect( "there to be no types on the root namespace" );
+
+		match &self.name
+		{
+			Some(n) => write!( f, "{} ({}, {})", t, self.id, n ) ,
+			None    => write!( f, "{} ({})"    , t, self.id    ) ,
+		}
 	}
 }

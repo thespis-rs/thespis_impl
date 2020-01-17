@@ -309,19 +309,19 @@ fn actor_id()
 
 		// return same value on subsequent calls
 		//
-		assert_eq!( addr.actor_id(), addr.actor_id() );
+		assert_eq!( addr.id(), addr.id() );
 
 		// return same value on clone
 		//
-		assert_eq!( addr.actor_id(), addr.clone().actor_id() );
+		assert_eq!( addr.id(), addr.clone().id() );
 
 		// return same value on Box<Address<_>>
 		//
-		assert_eq!( addr.actor_id(), rec.actor_id() );
+		assert_eq!( addr.id(), rec.id() );
 
 		// return different value for different actor
 		//
-		assert_ne!( addr.actor_id(), addrb.actor_id() );
+		assert_ne!( addr.id(), addrb.id() );
 	};
 
 	block_on( program );

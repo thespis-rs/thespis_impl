@@ -40,8 +40,6 @@ pub use
 
 
 
-
-
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout
 // the crate. The must all be unique.
 // Separate use imports per enabled features.
@@ -56,7 +54,7 @@ mod import
 
 		std ::
 		{
-			fmt         :: { self, Write                            } ,
+			fmt         :: { self                                   } ,
 			pin         :: { Pin                                    } ,
 			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
 		},

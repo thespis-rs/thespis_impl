@@ -47,7 +47,7 @@ impl<M: Message> PartialEq for Receiver<M>
 {
 	fn eq( &self, other: &Self ) -> bool
 	{
-		self.rec.actor_id() == other.rec.actor_id()
+		self.rec.id() == other.rec.id()
 	}
 }
 
@@ -72,12 +72,22 @@ impl<M: Message> Address<M> for Receiver<M>
 	{
 		self.rec.clone_box()
 	}
+}
 
 
 
-	fn actor_id( &self ) -> usize
+impl<M: Message> Identify for Receiver<M>
+{
+	fn id( &self ) -> usize
 	{
-		self.rec.actor_id()
+		self.rec.id()
+	}
+
+
+
+	fn name( &self ) -> Option<Arc<str>>
+	{
+		self.rec.name()
 	}
 }
 
