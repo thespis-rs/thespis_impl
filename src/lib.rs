@@ -23,7 +23,7 @@
 	variant_size_differences      ,
 )]
 
-mod address  ;
+mod addr     ;
 mod envelope ;
 mod error    ;
 mod inbox    ;
@@ -32,10 +32,10 @@ mod receiver ;
 
 pub use
 {
-	address  :: *  ,
-	error    :: *  ,
-	inbox    :: *  ,
-	receiver :: *  ,
+	addr     :: * ,
+	error    :: * ,
+	inbox    :: * ,
+	receiver :: * ,
 };
 
 
