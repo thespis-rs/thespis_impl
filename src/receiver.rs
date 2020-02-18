@@ -67,7 +67,6 @@ impl<M: Message> Address<M> for Receiver<M>
 	}
 
 
-
 	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
 	{
 		self.rec.clone_box()
@@ -82,7 +81,6 @@ impl<M: Message> Identify for Receiver<M>
 	{
 		self.rec.id()
 	}
-
 
 
 	fn name( &self ) -> Option<Arc<str>>
