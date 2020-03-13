@@ -3,9 +3,8 @@
 use
 {
 	thespis         :: { Actor, Message, Handler, Return, ReturnNoSend, Address } ,
-	thespis_impl    :: { Addr                                                     } ,
-	async_executors :: { *                                                        } ,
-	futures         :: { task::LocalSpawnExt                                      } ,
+	thespis_impl    :: { Addr                                                   } ,
+	futures         :: { task::LocalSpawnExt, executor::LocalPool               } ,
 };
 
 
@@ -58,7 +57,9 @@ impl Handler<Ping> for MyActor
 
 fn main()
 {
-	let mut exec = LocalPool::default();
+	let mut pool = LocalPool::new();
+	let     exec = pool.spawner();
+
 
 	let actor    = MyActor { i: 3 };
 	let mut addr = Addr::try_from_local( actor, &exec ).expect( "spawn actor locally" );
@@ -74,5 +75,5 @@ fn main()
 
 	}).expect( "spawn local" );
 
-	exec.run();
+	pool.run();
 }

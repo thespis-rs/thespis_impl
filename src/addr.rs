@@ -111,12 +111,12 @@ impl<A> Addr<A> where A: Actor
 	/// addr.call( MyMessage{} ).await?;
 	/// ```
 	//
-	pub fn try_from( actor: A, exec: &impl Spawn ) -> ThesRes<Self> where A: Send
+	pub fn try_from( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
 	{
 		let inbox: Inbox<A> = Inbox::new( None )          ;
 		let addr            = Self ::new( inbox.sender() );
 
-		inbox.start( actor, exec )?;
+		inbox.start( actor, &exec )?;
 		Ok( addr )
 	}
 
@@ -182,7 +182,7 @@ impl<A, M> Address<M> for Addr<A>
 {
 	fn call( &mut self, msg: M ) -> Return<'_, ThesRes< <M as Message>::Return >>
 	{
-		Box::pin( async move
+		async move
 		{
 			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
@@ -196,7 +196,8 @@ impl<A, M> Address<M> for Addr<A>
 			ret_rx.await
 
 				.map_err( |_| ThesErr::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
-		})
+
+		}.boxed()
 	}
 
 

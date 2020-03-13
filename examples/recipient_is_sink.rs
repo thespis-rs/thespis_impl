@@ -1,10 +1,9 @@
 use
 {
-	futures           :: { stream, StreamExt } ,
-	thespis           :: { *                 } ,
-	thespis_impl      :: { *                 } ,
-	async_executors   :: { *                 } ,
-	futures::executor :: { block_on          } ,
+	futures           :: { stream, StreamExt    } ,
+	thespis           :: { *                    } ,
+	thespis_impl      :: { *                    } ,
+	futures::executor :: { block_on, ThreadPool } ,
 };
 
 

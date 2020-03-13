@@ -100,6 +100,8 @@ impl<A> Inbox<A> where A: Actor
 			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 		}
 
+		// TODO: this will not be executed when the future for the mailbox get's dropped
+		//
 		actor.stopped().await;
 		trace!( "Mailbox stopped actor for {}", &self );
 	}

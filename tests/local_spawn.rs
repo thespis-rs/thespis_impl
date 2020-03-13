@@ -14,8 +14,7 @@ use
 	thespis         :: { *                                     } ,
 	thespis_impl    :: { *,                                    } ,
 	common          :: { actors::{ Sum, SumNoSend, Add, Show } } ,
-	async_executors :: { LocalPool                             } ,
-	futures         :: { task::LocalSpawnExt                   } ,
+	futures         :: { task::LocalSpawnExt, executor::LocalPool } ,
 };
 
 
@@ -25,8 +24,9 @@ use
 //
 fn test_not_send_actor()
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -46,7 +46,7 @@ fn test_not_send_actor()
 	};
 
 	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	pool.run();
 }
 
 
@@ -56,8 +56,9 @@ fn test_not_send_actor()
 //
 fn test_send_actor()
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -75,7 +76,7 @@ fn test_send_actor()
 	};
 
 	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	pool.run();
 }
 
 
@@ -85,8 +86,9 @@ fn test_send_actor()
 //
 fn test_manually_not_send_actor()
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -108,7 +110,7 @@ fn test_manually_not_send_actor()
 	};
 
 	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	pool.run();
 }
 
 
@@ -118,8 +120,9 @@ fn test_manually_not_send_actor()
 //
 fn test_manually_send_actor()
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -141,7 +144,7 @@ fn test_manually_send_actor()
 	};
 
 	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	pool.run();
 }
 
 

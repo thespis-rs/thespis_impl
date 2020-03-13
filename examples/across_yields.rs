@@ -1,10 +1,9 @@
 use
 {
-	log               :: { *        } ,
-	thespis           :: { *        } ,
-	thespis_impl      :: { *        } ,
-	async_executors   :: { *        } ,
-	futures::executor :: { block_on } ,
+	log               :: { *                    } ,
+	thespis           :: { *                    } ,
+	thespis_impl      :: { *                    } ,
+	futures::executor :: { block_on, ThreadPool } ,
 };
 
 

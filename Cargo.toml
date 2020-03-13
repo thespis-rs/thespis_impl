@@ -27,25 +27,26 @@ default-features = false
 features = ["std", "compat"]
 version = "^0.3"
 
-[dependencies.regex]
-features = ["pattern"]
-version = "^1"
-
 [dependencies.thespis]
 path = "../thespis"
 
 [dev-dependencies]
 actix = "^0.9"
-flexi_logger = "^0.14"
+flexi_logger = "^0.15"
 pretty_assertions = "^0.6"
 simple_logger = "^1"
 
 [dev-dependencies.async_executors]
-features = ["localpool", "threadpool", "juliex", "async_std"]
+features = ["localpool", "threadpool", "async_std"]
 path = "../../async_executors"
 
 [dev-dependencies.criterion]
-features = ["real_blackbox"]
+features = []
+version = "^0.3"
+
+[dev-dependencies.futures]
+default-features = false
+features = ["thread-pool"]
 version = "^0.3"
 
 [features]
@@ -73,11 +74,6 @@ version = "0.1.0"
 [package.metadata.docs]
 [package.metadata.docs.rs]
 features = ["external_doc"]
-
-[patch]
-[patch.crates-io]
-[patch.crates-io.juliex]
-git = "https://github.com/najamelan/juliex"
 
 [profile]
 [profile.release]

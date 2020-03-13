@@ -10,13 +10,12 @@ mod common;
 
 use
 {
-	thespis         :: { *                                                     } ,
-	log             :: { *                                                     } ,
-	thespis_impl    :: { *                                                     } ,
-	std             :: { thread                                                } ,
-	async_executors :: { *                                                     } ,
-	common          :: { actors::{ Sum, Add }                                  } ,
-	futures         :: { executor::block_on, future::FutureExt, task::SpawnExt } ,
+	thespis         :: { *                                                                     } ,
+	log             :: { *                                                                     } ,
+	thespis_impl    :: { *                                                                     } ,
+	std             :: { thread                                                                } ,
+	common          :: { actors::{ Sum, Add }                                                  } ,
+	futures         :: { executor::{ block_on, ThreadPool }, future::FutureExt, task::SpawnExt } ,
 
 };
 

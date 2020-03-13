@@ -1,9 +1,8 @@
 use
 {
-	thespis           :: { *        } ,
-	thespis_impl      :: { *        } ,
-	async_executors   :: { *        } ,
-	futures::executor :: { block_on } ,
+	thespis           :: { *                    } ,
+	thespis_impl      :: { *                    } ,
+	futures::executor :: { block_on, ThreadPool } ,
 };
 
 

@@ -54,7 +54,7 @@ dependencies:
   thespis     : { path: ../thespis }
   futures     : { version: ^0.3, features: [ std, compat ], default-features: false }
   log         : ^0.4
-  regex       : { version: ^1, features: [ pattern ] }
+  # regex       : { version: ^1, features: [ pattern ] }
   once_cell   : ^1
   thiserror   : ^1
   anyhow      : ^1
@@ -71,14 +71,15 @@ target:
 dev-dependencies:
 
   pretty_assertions : ^0.6
-  flexi_logger      : ^0.14
-  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, juliex, async_std] }
+  flexi_logger      : ^0.15
+  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, async_std] }
   simple_logger     : ^1
+  futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
 
   # for benchmarks
   #
   actix             : ^0.9
-  criterion         : { version: ^0.3 , features: [ real_blackbox ]                    }
+  criterion         : { version: ^0.3 , features: [] }
 
 
 bench:
@@ -101,10 +102,3 @@ profile:
 
     lto          : false
     debug        : true
-
-
-patch:
-
-  crates-io:
-
-    juliex: { git: "https://github.com/najamelan/juliex" }
