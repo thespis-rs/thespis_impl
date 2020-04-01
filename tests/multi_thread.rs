@@ -10,14 +10,14 @@ mod common;
 
 use
 {
-	futures       :: { channel::oneshot           } ,
-	thespis       :: { *                          } ,
-	log           :: { *                          } ,
-	thespis_impl  :: { *                          } ,
-	std           :: { thread                     } ,
-	common        :: { actors::{ Sum, Add, Show } } ,
-	async_executors :: { AsyncStd                 } ,
-	futures         :: { executor::block_on       } ,
+	futures       :: { channel::oneshot                      } ,
+	thespis       :: { *                                     } ,
+	log           :: { *                                     } ,
+	thespis_impl  :: { *                                     } ,
+	std           :: { thread                                } ,
+	common        :: { actors::{ Sum, Add, Show }, import::* } ,
+	async_executors :: { AsyncStd                            } ,
+	futures         :: { executor::block_on                  } ,
 };
 
 
@@ -28,8 +28,11 @@ async fn sum_send() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) );
-	let mut addr             = Addr ::new( mb.sender() );
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 
@@ -57,8 +60,11 @@ async fn sum_call() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) );
-	let mut addr             = Addr ::new( mb.sender() );
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 
@@ -96,8 +102,11 @@ async fn move_call() -> u64
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) );
-	let mut addr             = Addr ::new( mb.sender() );
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 	let mut addr2            = addr.clone();
 	let mut exec             = AsyncStd{};
 

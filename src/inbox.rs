@@ -1,4 +1,4 @@
-use crate::{ import::*, error::* };
+use crate::{ import::*, error::*, ChanReceiver };
 
 
 /// The mailbox implementation.
@@ -13,8 +13,7 @@ use crate::{ import::*, error::* };
 //
 pub struct Inbox<A> where A: Actor
 {
-	handle: mpsc::UnboundedSender  <BoxEnvelope<A>> ,
-	msgs  : mpsc::UnboundedReceiver<BoxEnvelope<A>> ,
+	msgs  : ChanReceiver<A> ,
 
 	/// This creates a unique id for every mailbox in the program. This way recipients
 	/// can impl Eq to say whether they refer to the same actor.
@@ -29,11 +28,9 @@ impl<A> Inbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option< Arc<str> > ) -> Self
+	pub fn new( name: Option< Arc<str> >, receiver: ChanReceiver<A> ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
-
-		let (handle, msgs) = mpsc::unbounded();
 
 		// We don't care for ordering here, as long as it's atomic and no two Actor's
 		// can have the same id.
@@ -42,18 +39,10 @@ impl<A> Inbox<A> where A: Actor
 
 		Self
 		{
-			handle ,
-			msgs   ,
+			msgs: receiver   ,
 			id     ,
 			name   ,
 		}
-	}
-
-	/// A handle to a channel sender that can be used for creating an address to this mailbox.
-	//
-	pub fn sender( &self ) -> (usize, Option< Arc<str> >, mpsc::UnboundedSender<BoxEnvelope<A>>)
-	{
-		(self.id, self.name.clone(), self.handle.clone())
 	}
 
 
@@ -83,11 +72,6 @@ impl<A> Inbox<A> where A: Actor
 
 	async fn start_fut_inner( mut self, mut actor: A ) where A: Send
 	{
-		// We need to disconnect the handle, otherwise the channel will never close and the program will not
-		// terminate. Like this when the user drops all their handles, this loop will automatically break.
-		//
-		self.handle.disconnect();
-
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
 
@@ -110,11 +94,6 @@ impl<A> Inbox<A> where A: Actor
 
 	async fn start_fut_inner_local( mut self, mut actor: A )
 	{
-		// We need to disconnect the handle, otherwise the channel will never close and the program will not
-		// terminate. Like this when the user drops all their handles, this loop will automatically break.
-		//
-		self.handle.disconnect();
-
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
 
@@ -190,14 +169,6 @@ impl<A: Actor> Identify for Inbox<A>
 		self.name.clone()
 	}
 }
-
-
-
-impl<A> Default for Inbox<A> where A: Actor
-{
-	fn default() -> Self { Self::new( None ) }
-}
-
 
 
 impl<A: Actor> fmt::Debug for Inbox<A>

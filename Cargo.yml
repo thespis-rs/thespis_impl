@@ -72,7 +72,8 @@ dev-dependencies:
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.15
-  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, async_std] }
+  async_executors   : { version: ^0.2, features: [localpool, threadpool, async_std] }
+  async-std         : { version: ^1, features: [ attributes ] }
   simple_logger     : ^1
   futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
 

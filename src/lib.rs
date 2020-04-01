@@ -23,20 +23,31 @@
 	variant_size_differences      ,
 )]
 
-mod addr     ;
-mod envelope ;
-mod error    ;
-mod inbox    ;
-mod receiver ;
+mod addr       ;
+mod clone_sink ;
+mod envelope   ;
+mod error      ;
+mod inbox      ;
+mod receiver   ;
 
 
 pub use
 {
-	addr     :: * ,
-	error    :: * ,
-	inbox    :: * ,
-	receiver :: * ,
+	addr       :: * ,
+	clone_sink :: * ,
+	error      :: * ,
+	inbox      :: * ,
+	receiver   :: * ,
 };
+
+
+/// Type of boxed channel sender for Addr.
+//
+pub type ChanSender<A> = Box< dyn CloneSink< 'static, thespis::BoxEnvelope<A>, futures::channel::mpsc::SendError > >;
+
+/// Type of boxed channel sender for Addr.
+//
+pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=thespis::BoxEnvelope<A>> + Send + Sync + Unpin >;
 
 
 

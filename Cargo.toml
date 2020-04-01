@@ -36,9 +36,13 @@ flexi_logger = "^0.15"
 pretty_assertions = "^0.6"
 simple_logger = "^1"
 
+[dev-dependencies.async-std]
+features = ["attributes"]
+version = "^1"
+
 [dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std"]
-path = "../../async_executors"
+version = "^0.2"
 
 [dev-dependencies.criterion]
 features = []

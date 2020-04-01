@@ -1,4 +1,4 @@
-use crate::{ import::*, Inbox, envelope::*, error::* };
+use crate::{ import::*, Inbox, ChanSender, envelope::*, error::* };
 
 
 
@@ -8,7 +8,7 @@ use crate::{ import::*, Inbox, envelope::*, error::* };
 //
 pub struct Addr< A: Actor >
 {
-	mb  : mpsc::UnboundedSender< BoxEnvelope<A> >,
+	mb  : ChanSender<A>,
 	id  : usize                                  ,
 	name: Option< Arc<str> >                     ,
 }
@@ -21,7 +21,7 @@ impl< A: Actor > Clone for Addr<A>
 	{
 		trace!( "CREATE address for: {}", self );
 
-		Self { mb: self.mb.clone(), id: self.id, name: self.name.clone() }
+		Self { mb: self.mb.clone_sink(), id: self.id, name: self.name.clone() }
 	}
 }
 
@@ -90,9 +90,9 @@ impl<A> Addr<A> where A: Actor
 	///
 	// TODO: take a impl trait instead of a concrete type. This leaks impl details.
 	//
-	pub fn new( mb: (usize, Option< Arc<str> >, mpsc::UnboundedSender<BoxEnvelope<A>>) ) -> Self
+	pub fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A> ) -> Self
 	{
-		let new = Self{ id: mb.0, name: mb.1, mb: mb.2 };
+		let new = Self{ id, name, mb: tx };
 
 		trace!( "CREATE address for: {}", &new );
 
@@ -113,8 +113,9 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn try_from( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
 	{
-		let inbox: Inbox<A> = Inbox::new( None )          ;
-		let addr            = Self ::new( inbox.sender() );
+		let (tx, rx) = mpsc::unbounded();
+		let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
+		let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
 
 		inbox.start( actor, &exec )?;
 		Ok( addr )
@@ -136,8 +137,9 @@ impl<A> Addr<A> where A: Actor
 	//
 	pub fn try_from_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
 	{
-		let inbox: Inbox<A> = Inbox::new( None )          ;
-		let addr            = Self ::new( inbox.sender() );
+		let (tx, rx) = mpsc::unbounded();
+		let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
+		let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
 
 		inbox.start_local( actor, exec )?;
 		Ok( addr )
@@ -241,9 +243,9 @@ impl<A, M> Sink<M> for Addr<A>
 {
 	type Error = ThesErr;
 
-	fn poll_ready( self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
+	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		match self.mb.poll_ready( cx )
+		match Pin::new( &mut self.mb ).poll_ready( cx )
 		{
 			Poll::Ready( p ) => match p
 			{
@@ -263,7 +265,7 @@ impl<A, M> Sink<M> for Addr<A>
 	{
 		let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
-		self.mb.start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ))
+		Pin::new( &mut self.mb ).start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ))
 	}
 
 

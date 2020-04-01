@@ -13,7 +13,7 @@ use
 {
 	thespis         :: { *                                     } ,
 	thespis_impl    :: { *,                                    } ,
-	common          :: { actors::{ Sum, SumNoSend, Add, Show } } ,
+	common          :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
 	futures         :: { task::LocalSpawnExt, executor::LocalPool } ,
 };
 
@@ -92,13 +92,13 @@ fn test_manually_not_send_actor()
 
 	let program = async move
 	{
-		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
-		// of spawn_local.
-		//
 		let actor = SumNoSend(5);
-		let mb    = Inbox::new( Some( "SumNoSend".into() ) );
 
-		let mut addr = Addr::new( mb.sender() );
+		let (tx, rx) = mpsc::unbounded()                        ;
+		let name     = Some( "SumNoSend".into() )               ;
+		let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+		let id       = mb.id()                                  ;
+		let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 
 		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
 
@@ -129,10 +129,12 @@ fn test_manually_send_actor()
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let actor = Sum(5);
-		let mb    = Inbox::new( Some( "Sum".into() ) );
-
-		let mut addr = Addr::new( mb.sender() );
+		let actor    = Sum(5)                                   ;
+		let (tx, rx) = mpsc::unbounded()                        ;
+		let name     = Some( "Sum".into() )                     ;
+		let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+		let id       = mb.id()                                  ;
+		let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 
 		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
 

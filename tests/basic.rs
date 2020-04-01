@@ -4,109 +4,92 @@ mod common;
 
 use
 {
-	thespis         :: { *                          } ,
-	thespis_impl    :: { *,                         } ,
-	common          :: { actors::{ Sum, Add, Show } } ,
-	async_executors :: { AsyncStd                   } ,
-	futures         :: { executor::block_on         } ,
+	thespis         :: { *                                     } ,
+	thespis_impl    :: { *,                                    } ,
+	common          :: { actors::{ Sum, Add, Show }, import::* } ,
+	async_executors :: { AsyncStd                              } ,
 };
 
 
 
 
-#[test]
+#[async_std::test]
 //
-fn test_basic_send()
+async fn test_basic_send()
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut exec = AsyncStd{};
 
-		let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
+	let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
 
-		addr.send( Add( 10 ) ).await.expect( "Send failed" );
+	addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
-		let result = addr.call( Show{} ).await.expect( "Call failed" );
+	let result = addr.call( Show{} ).await.expect( "Call failed" );
 
-		assert_eq!( 15, result );
-	};
-
-	block_on( program );
+	assert_eq!( 15, result );
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn test_basic_call()
+async fn test_basic_call()
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut exec = AsyncStd{};
 
-		let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
+	let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
 
-		addr.call( Add(10) ).await.expect( "Send failed" );
+	addr.call( Add(10) ).await.expect( "Send failed" );
 
-		let result = addr.call( Show{} ).await.expect( "Call failed" );
+	let result = addr.call( Show{} ).await.expect( "Call failed" );
 
-		assert_eq!( 15, result );
-	};
-
-	block_on( program );
+	assert_eq!( 15, result );
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn send_from_multiple_addrs()
+async fn send_from_multiple_addrs()
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut exec = AsyncStd{};
 
-		let mut addr  = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
-		let mut addr2 = addr.clone();
+	let mut addr  = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
+	let mut addr2 = addr.clone();
 
-		addr .send( Add( 10 ) ).await.expect( "Send failed" );
-		addr2.send( Add( 10 ) ).await.expect( "Send failed" );
+	addr .send( Add( 10 ) ).await.expect( "Send failed" );
+	addr2.send( Add( 10 ) ).await.expect( "Send failed" );
 
-		let resp = addr.call( Show{} ).await.expect( "Call failed" );
+	let resp = addr.call( Show{} ).await.expect( "Call failed" );
 
-		assert_eq!( 25, resp );
-	};
-
-	block_on( program );
+	assert_eq!( 25, resp );
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn call_from_multiple_addrs()
+async fn call_from_multiple_addrs()
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut exec = AsyncStd{};
 
-		let sum = Sum(5);
+	let sum = Sum(5);
 
-		// Create mailbox
-		//
-		let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-		let mut addr             = Addr ::new( mb.sender() )          ;
-		let mut addr2            = addr.clone()                       ;
+	let (tx, rx) = mpsc::unbounded();
 
-		mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
+	// Create mailbox
+	//
+	let name = Some( "Sum".into() )                      ;
+	let mb   = Inbox::new( name.clone(), Box::new(rx) )  ;
+	let id   = mb.id()                                   ;
+	let mut addr  = Addr ::new( id, name, Box::new(tx) ) ;
+	let mut addr2 = addr.clone()                         ;
 
-		addr .call( Add( 10 ) ).await.expect( "Send failed" );
-		addr2.call( Add( 10 ) ).await.expect( "Send failed" );
+	mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
 
-		let resp = addr.call ( Show{} ).await.expect( "Call failed" );
+	addr .call( Add( 10 ) ).await.expect( "Send failed" );
+	addr2.call( Add( 10 ) ).await.expect( "Send failed" );
 
-		assert_eq!( 25, resp );
-	};
+	let resp = addr.call ( Show{} ).await.expect( "Call failed" );
 
-	block_on( program );
+	assert_eq!( 25, resp );
 }

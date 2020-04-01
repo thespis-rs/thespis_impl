@@ -10,7 +10,7 @@ use
 {
 	thespis         :: { *                                } ,
 	thespis_impl    :: { *,                               } ,
-	common          :: { actors::{ Sum, Add }             } ,
+	common          :: { actors::{ Sum, Add }, import::*  } ,
 	futures         :: { executor::block_on, future::join } ,
 };
 
@@ -25,14 +25,16 @@ fn stop_when_adresses_dropped_before_start_mb()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-	let sender             = mb.sender()                        ;
-	let sum                = Sum(5)                             ;
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let sum      = Sum(5)                                   ;
 
 	let program = async move
 	{
-		let  addr  = Addr ::new( sender ) ;
-		let _addr2 = addr.clone()         ;
+		let  addr  = Addr ::new( id, name, Box::new(tx) ) ;
+		let _addr2 = addr.clone()                         ;
 	};
 
 	block_on( join( program, mb.start_fut( sum ) ) );
@@ -50,14 +52,16 @@ fn stop_when_adresses_dropped()
 
 	// Create mailbox
 	//
-	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-	let sender             = mb.sender()                        ;
-	let sum                = Sum(5)                             ;
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let sum      = Sum(5)                                   ;
 
 	let dropper = async move
 	{
-		let  mut addr  = Addr ::new( sender ) ;
-		let     _addr2 = addr.clone()         ;
+		let  mut addr  = Addr ::new( id, name, Box::new(tx) ) ;
+		let     _addr2 = addr.clone()                         ;
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 	};

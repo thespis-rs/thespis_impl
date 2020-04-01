@@ -269,7 +269,7 @@ fn stream_to_sink_receiver()
 		let mut exec = AsyncStd{};
 
 		let addr        = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let mut clone   = Receiver::new( addr.clone_box() );
+		let mut clone   = Receiver::new( Address::clone_box(&addr) );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
 		clone.send_all( &mut stream ).await.expect( "drain stream" );
@@ -305,7 +305,7 @@ fn actor_id()
 
 		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
 		let addrb = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
-		let rec   = addr.clone_box();
+		let rec   = Address::clone_box( &addr );
 
 		// return same value on subsequent calls
 		//

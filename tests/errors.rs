@@ -14,7 +14,7 @@ use
 	log             :: { *                                                                     } ,
 	thespis_impl    :: { *                                                                     } ,
 	std             :: { thread                                                                } ,
-	common          :: { actors::{ Sum, Add }                                                  } ,
+	common          :: { actors::{ Sum, Add }, import::*                                       } ,
 	futures         :: { executor::{ block_on, ThreadPool }, future::FutureExt, task::SpawnExt } ,
 
 };
@@ -35,8 +35,11 @@ async fn mb_closed()
 
 	// Create mailbox
 	//
-	let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) );
-	let mut addr             = Addr ::new( mb.sender()  );
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
 
 	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();
 
