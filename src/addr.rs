@@ -87,8 +87,6 @@ impl<A> Addr<A> where A: Actor
 	/// Create a new address. The simplest way is to use Addr::try_from( Actor ).
 	/// This way allows more control. You need to manually make the mailbox. See the
 	/// no_rt example in the repository.
-	///
-	// TODO: take a impl trait instead of a concrete type. This leaks impl details.
 	//
 	pub fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A> ) -> Self
 	{

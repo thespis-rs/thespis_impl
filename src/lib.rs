@@ -60,7 +60,6 @@ mod import
 {
 	pub(crate) use
 	{
-		async_chanx   :: { ChanErr } ,
 		thiserror     :: { Error   } ,
 		thespis       :: { *       } ,
 		log           :: { *       } ,
@@ -77,7 +76,7 @@ mod import
 		{
 			stream  :: { StreamExt                                       } ,
 			sink    :: { Sink, SinkExt                                   } ,
-			channel :: { oneshot, mpsc                                   } ,
+			channel :: { oneshot                                         } ,
 			future  :: { FutureExt                                       } ,
 			task    :: { Context as TaskContext, Poll, Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
 		},

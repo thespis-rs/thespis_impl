@@ -84,16 +84,16 @@ async fn main()
 	let sum_in_thread = Arbiter::new();
 	let sum_thread    = Arbiter::new();
 
-	let sum_in      = SumIn{ count: 0 };
+	let sum_in = SumIn{ count: 0 };
 	let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread, |_| sum_in );
 
-	let sum      = Sum{ total: 5, inner: sum_in_addr };
+	let sum = Sum{ total: 5, inner: sum_in_addr };
 	let sum_addr = Sum::start_in_arbiter( &sum_thread, |_| sum );
 
 
 	for _ in 0..MESSAGES
 	{
-		sum_addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		sum_addr.do_send( Add( 10 ) );
 	}
 
 	let res = sum_addr.send( Show{} ).await.expect( "Call failed" );

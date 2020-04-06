@@ -73,7 +73,7 @@ dev-dependencies:
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.15
-  async_executors   : { version: ^0.2, features: [localpool, threadpool, async_std, spawn_handle] }
+  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, async_std, tokio_ct, spawn_handle] }
   async-std         : { version: ^1, features: [ attributes ] }
   simple_logger     : ^1
   futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
@@ -105,6 +105,18 @@ example:
 
   - name: method_perf
     path: examples/perf/method.rs
+
+  - name: thespis_local_perf
+    path: examples/perf/thespis_local.rs
+
+  - name: actix_local_perf
+    path: examples/perf/actix_local.rs
+
+  - name: thespis_unbounded_perf
+    path: examples/perf/thespis_unbounded.rs
+
+  - name: actix_unbounded_perf
+    path: examples/perf/actix_unbounded.rs
 
 
 profile:
