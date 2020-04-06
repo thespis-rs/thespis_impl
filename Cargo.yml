@@ -58,6 +58,7 @@ dependencies:
   once_cell   : ^1
   thiserror   : ^1
   anyhow      : ^1
+  async_chanx : { path: ../../async_chanx }
 
 target:
 
@@ -72,26 +73,38 @@ dev-dependencies:
 
   pretty_assertions : ^0.6
   flexi_logger      : ^0.15
-  async_executors   : { version: ^0.2, features: [localpool, threadpool, async_std] }
+  async_executors   : { version: ^0.2, features: [localpool, threadpool, async_std, spawn_handle] }
   async-std         : { version: ^1, features: [ attributes ] }
   simple_logger     : ^1
   futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
 
   # for benchmarks
   #
-  actix             : ^0.9
-  criterion         : { version: ^0.3 , features: [] }
-
+  actix-rt          : ^1
+  actix             : ^0.10.0-alpha
+  criterion         : { version: ^0.3, features: [] }
+  tokio             : { version: ^0.2, features: [ sync ] }
 
 bench:
 
-  - name   : single_thread_delivery
-    path   : benches/single_thread/delivery.rs
-    harness: false
+  # - name   : single_thread_delivery
+  #   path   : benches/single_thread/delivery.rs
+  #   harness: false
 
   - name   : multi_thread_delivery
     path   : benches/multi_thread/delivery.rs
     harness: false
+
+example:
+
+  - name: actix_perf
+    path: examples/perf/actix.rs
+
+  - name: thespis_perf
+    path: examples/perf/thespis.rs
+
+  - name: method_perf
+    path: examples/perf/method.rs
 
 
 profile:
@@ -101,5 +114,5 @@ profile:
     opt-level    : 3
     codegen-units: 1
 
-    lto          : false
+    lto          : true
     debug        : true

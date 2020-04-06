@@ -46,27 +46,14 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Translate a futures SendError to a ThesErr.
-	/// Returns MailboxFull or MailboxClosed.
-	//
-	pub fn mb_error( e: mpsc::SendError, context: String ) -> ThesErr
-	{
-		// Can only happen if using bounded channels
-		//
-		if e.is_full()
-		{
-			ThesErr::MailboxFull{ actor: context }.into()
-		}
-
-		// is disconnected
-		// Can only happen if the thread in which the mailbox lives panics. Otherwise
-		// this addr will keep the mailbox alive.
-		//
-		else
-		{
-			ThesErr::MailboxClosed{ actor: context }.into()
-		}
-	}
+	// /// Translate a futures SendError to a ThesErr.
+	// /// Returns MailboxFull or MailboxClosed.
+	// //
+	// pub fn mb_error( e: ChanErr<BoxEnvelope<A>>, context: String ) -> ThesErr
+	// {
+	// 	// only error possible.
+	// 	ThesErr::MailboxClosed{ actor: context }.into()
+	// }
 
 
 

@@ -40,10 +40,11 @@ pub use
 	receiver   :: * ,
 };
 
+use async_chanx::ChanErr;
 
 /// Type of boxed channel sender for Addr.
 //
-pub type ChanSender<A> = Box< dyn CloneSink< 'static, thespis::BoxEnvelope<A>, futures::channel::mpsc::SendError > >;
+pub type ChanSender<A> = Box< dyn CloneSink< 'static, thespis::BoxEnvelope<A>, ChanErr<thespis::BoxEnvelope<A>> > >;
 
 /// Type of boxed channel sender for Addr.
 //
@@ -59,9 +60,10 @@ mod import
 {
 	pub(crate) use
 	{
-		thiserror     :: { Error } ,
-		thespis       :: { *     } ,
-		log           :: { *     } ,
+		async_chanx   :: { ChanErr } ,
+		thiserror     :: { Error   } ,
+		thespis       :: { *       } ,
+		log           :: { *       } ,
 
 		std ::
 		{

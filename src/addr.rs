@@ -1,4 +1,4 @@
-use crate::{ import::*, Inbox, ChanSender, envelope::*, error::* };
+use crate::{ import::*, ChanSender, envelope::*, error::* };
 
 
 
@@ -8,9 +8,9 @@ use crate::{ import::*, Inbox, ChanSender, envelope::*, error::* };
 //
 pub struct Addr< A: Actor >
 {
-	mb  : ChanSender<A>,
-	id  : usize                                  ,
-	name: Option< Arc<str> >                     ,
+	mb  : ChanSender<A>      ,
+	id  : usize              ,
+	name: Option< Arc<str> > ,
 }
 
 
@@ -100,50 +100,50 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
-	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
-	/// Will consume your actor and return an address.
-	///
-	/// TODO: have doc examples tested by rustdoc
-	///
-	/// ```ignore
-	/// let addr = Addr::try_from( MyActor{} )?;
-	/// addr.call( MyMessage{} ).await?;
-	/// ```
-	//
-	pub fn try_from( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
-	{
-		let (tx, rx) = mpsc::unbounded();
-		let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
-		let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
+	// /// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
+	// /// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
+	// /// Will consume your actor and return an address.
+	// ///
+	// /// TODO: have doc examples tested by rustdoc
+	// ///
+	// /// ```ignore
+	// /// let addr = Addr::try_from( MyActor{} )?;
+	// /// addr.call( MyMessage{} ).await?;
+	// /// ```
+	// //
+	// pub fn try_from( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
+	// {
+	// 	let (tx, rx) = mpsc::unbounded();
+	// 	let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
+	// 	let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
 
-		inbox.start( actor, &exec )?;
-		Ok( addr )
-	}
+	// 	inbox.start( actor, &exec )?;
+	// 	Ok( addr )
+	// }
 
-	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
-	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
-	/// Will consume your actor and return an address.
-	///
-	/// This will spawn the mailbox on the current thread. You need to set up async_runtime to enable
-	/// spawn_local.
-	///
-	/// TODO: have doc examples tested by rustdoc
-	///
-	/// ```ignore
-	/// let addr = Addr::try_from( MyActor{} )?;
-	/// addr.call( MyMessage{} ).await?;
-	/// ```
-	//
-	pub fn try_from_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
-	{
-		let (tx, rx) = mpsc::unbounded();
-		let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
-		let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
+	// /// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
+	// /// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
+	// /// Will consume your actor and return an address.
+	// ///
+	// /// This will spawn the mailbox on the current thread. You need to set up async_runtime to enable
+	// /// spawn_local.
+	// ///
+	// /// TODO: have doc examples tested by rustdoc
+	// ///
+	// /// ```ignore
+	// /// let addr = Addr::try_from( MyActor{} )?;
+	// /// addr.call( MyMessage{} ).await?;
+	// /// ```
+	// //
+	// pub fn try_from_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
+	// {
+	// 	let (tx, rx) = mpsc::unbounded();
+	// 	let inbox: Inbox<A>    = Inbox::new( None, Box::new(rx) )          ;
+	// 	let addr               = Self ::new( inbox.id(), inbox.name(), Box::new(tx) );
 
-		inbox.start_local( actor, exec )?;
-		Ok( addr )
-	}
+	// 	inbox.start_local( actor, exec )?;
+	// 	Ok( addr )
+	// }
 }
 
 
@@ -190,9 +190,9 @@ impl<A, M> Address<M> for Addr<A>
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
 			let result               = self.mb.send( envl ).await                   ;
 
-			// MailboxClosed or MailboxFull
+			// MailboxClosed
 			//
-			result.map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ) )?;
+			result.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )?;
 
 
 			ret_rx.await
@@ -250,9 +250,9 @@ impl<A, M> Sink<M> for Addr<A>
 			Poll::Ready( p ) => match p
 			{
 				Ok (_) => Poll::Ready( Ok(()) ),
-				Err(e) =>
+				Err(_) =>
 				{
-					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) ) ) )
+					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ) )
 				}
 			}
 
@@ -265,7 +265,13 @@ impl<A, M> Sink<M> for Addr<A>
 	{
 		let envl: BoxEnvelope<A>= Box::new( SendEnvelope::new( msg ) );
 
-		Pin::new( &mut self.mb ).start_send( envl ).map_err( |e| Inbox::<A>::mb_error( e, format!("{:?}", self) ))
+		Pin::new( &mut self.mb )
+
+			.start_send( envl )
+
+			// if poll_ready wasn't called, the underlying code panics in tokio-sync.
+			//
+			.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )
 	}
 
 
@@ -276,9 +282,9 @@ impl<A, M> Sink<M> for Addr<A>
 			Poll::Ready( p ) => match p
 			{
 				Ok (_) => Poll::Ready( Ok(()) ),
-				Err(e) =>
+				Err(_) =>
 				{
-					Poll::Ready( Err( Inbox::<A>::mb_error( e, format!("{:?}", self) )))
+					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ))
 				}
 			}
 

@@ -22,17 +22,17 @@ pub enum ThesErr
 	},
 
 
-	/// The mailbox cannot take more messages right now. TODO: this only happens on
-	/// try_send on a future channel. For the moment there is no try_send in thespis.
-	//
-	#[ error( "The mailbox cannot take more messages right now. For actor: {actor}" ) ]
-	//
-	MailboxFull
-	{
-		/// The actor concerned by the error.
-		//
-		actor: String
-	},
+	// /// The mailbox cannot take more messages right now. TODO: this only happens on
+	// /// try_send on a future channel. For the moment there is no try_send in thespis.
+	// //
+	// #[ error( "The mailbox cannot take more messages right now. For actor: {actor}" ) ]
+	// //
+	// MailboxFull
+	// {
+	// 	/// The actor concerned by the error.
+	// 	//
+	// 	actor: String
+	// },
 
 
 	/// The mailbox was closed before the result of the computation got returned upon `call`.
