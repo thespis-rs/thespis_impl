@@ -77,23 +77,25 @@ impl Handler< Show > for SumIn
 
 fn main()
 {
-	let (tx, rx)    = mpsc::channel( BOUNDED )                                                          ;
-	let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                                ;
-	let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
+	let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
+	let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+	let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+	let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), Box::new( tx ) )                   ;
 
-	let (tx, rx)     = mpsc::channel( BOUNDED )                                                    ;
-	let     sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
-	let mut sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
-	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+	let (tx, rx)     = mpsc::channel( BOUNDED )                                                        ;
+	let     tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+	let     sum_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+	let mut sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), Box::new( tx ) )                         ;
+	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                             ;
 	let     sum_in   = SumIn{ count: 0 };
 
-	let mut exec = TokioCt::try_from( &mut Builder::new() ).expect( "create tokio runtime" );
-	let handle = exec.handle_local();
+	let exec = TokioCt::try_from( &mut Builder::new() ).expect( "create tokio runtime" );
+	let ex2  = exec.clone();
 
 	exec.block_on( async move
 	{
-		handle.spawn_local( sum_in_mb.start_fut( sum_in ) ).expect( "spawn sum_in_mb" );
-		handle.spawn_local( sum_mb   .start_fut( sum    ) ).expect( "spawn sum_mb"    );
+		ex2.spawn_local( sum_in_mb.start_fut( sum_in ) ).expect( "spawn sum_in_mb" );
+		ex2.spawn_local( sum_mb   .start_fut( sum    ) ).expect( "spawn sum_mb"    );
 
 		for _ in 0..MESSAGES
 		{

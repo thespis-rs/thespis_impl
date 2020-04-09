@@ -338,13 +338,15 @@ fn spsc( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (tx, rx)    = mpsc::channel( BOUNDED )                                                          ;
-					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                                ;
-					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
+					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
+					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx ) ;
 
 					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
 					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
-					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
+					let tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx ) ;
 					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
 
 					let sumin_thread = thread::spawn( move ||
@@ -435,14 +437,16 @@ fn spsc( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (tx, rx)    = mpsc::channel( BOUNDED )                                                          ;
-					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                                ;
-					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
+					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
+					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx )                               ;
 
-					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
-					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
-					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), Box::new( TokioSender::new( tx ) ) ) ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+					let (tx, rx) = mpsc::channel( BOUNDED )                                                           ;
+					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                                 ;
+					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx )                                        ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                                                ;
 
 					let sumin_thread = thread::spawn( move ||
 					{

@@ -40,11 +40,14 @@ pub use
 	receiver   :: * ,
 };
 
-use async_chanx::ChanErr;
+
+/// A boxed error type for the sink
+//
+pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
 
 /// Type of boxed channel sender for Addr.
 //
-pub type ChanSender<A> = Box< dyn CloneSink< 'static, thespis::BoxEnvelope<A>, ChanErr<thespis::BoxEnvelope<A>> > >;
+pub type ChanSender<A> = Box< dyn CloneSink< 'static, thespis::BoxEnvelope<A>, SinkError> >;
 
 /// Type of boxed channel sender for Addr.
 //

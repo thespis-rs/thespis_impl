@@ -77,14 +77,16 @@ impl Handler< Show > for SumIn
 
 fn main()
 {
-	let (tx, rx)    = mpsc::unbounded_channel()                                                       ;
-	let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
-	let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), Box::new( TokioUnboundedSender::new(tx) ) ) ;
+	let (tx, rx)    = mpsc::unbounded_channel()                                                                ;
+	let tx          = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+	let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                                       ;
+	let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx )                                        ;
 
-	let (tx, rx)     = mpsc::unbounded_channel()                                                 ;
-	let     sum_mb   = Inbox::new( None, Box::new( rx ) )                                        ;
-	let mut sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), Box::new( TokioUnboundedSender::new(tx) ) ) ;
-	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                       ;
+	let (tx, rx)     = mpsc::unbounded_channel()                                                                ;
+	let     tx       = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+	let     sum_mb   = Inbox::new( None, Box::new( rx ) )                                                       ;
+	let mut sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx )                                              ;
+	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                                      ;
 
 	let sumin_thread = thread::spawn( move ||
 	{
