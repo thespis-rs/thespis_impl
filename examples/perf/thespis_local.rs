@@ -3,12 +3,13 @@
 //
 use
 {
-	async_executors   :: { *          } ,
-	async_chanx       :: { *          } ,
-	thespis           :: { *          } ,
-	thespis_impl      :: { *          } ,
-	std               :: { convert::TryFrom     } ,
-	futures           :: { task::LocalSpawnExt   } ,
+	async_executors   :: { *                            } ,
+	async_chanx       :: { *                            } ,
+	thespis           :: { *                            } ,
+	thespis_impl      :: { *                            } ,
+	async_trait       :: { *                            } ,
+	std               :: { convert::TryFrom             } ,
+	futures           :: { task::LocalSpawnExt          } ,
 	tokio             :: { sync::mpsc, runtime::Builder } ,
 };
 
@@ -40,38 +41,39 @@ impl Message for Add  { type Return = () ; }
 impl Message for Show { type Return = u64; }
 
 
+#[ async_trait ]
+//
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	async fn handle( &mut self, msg: Add )
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
 		self.total += msg.0 + inner;
-
-	})}
+	}
 }
 
 
+#[ async_trait ]
+//
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.total
-
-	})}
+	}
 }
 
 
+#[ async_trait ]
+//
 impl Handler< Show > for SumIn
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 

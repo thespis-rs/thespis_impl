@@ -9,6 +9,7 @@ use
 	std               :: { thread                 } ,
 	tokio             :: { sync::mpsc             } ,
 	futures           :: { SinkExt                } ,
+	async_trait       :: { async_trait            } ,
 };
 
 
@@ -39,38 +40,39 @@ impl Message for Add  { type Return = () ; }
 impl Message for Show { type Return = u64; }
 
 
+#[ async_trait ]
+//
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	async fn handle( &mut self, msg: Add )
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
 		self.total += msg.0 + inner;
-
-	})}
+	}
 }
 
 
+#[ async_trait ]
+//
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.total
-
-	})}
+	}
 }
 
 
+#[ async_trait ]
+//
 impl Handler< Show > for SumIn
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 

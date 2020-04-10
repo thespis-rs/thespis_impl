@@ -28,6 +28,7 @@ path = "../thespis"
 [dev-dependencies]
 actix = "^0.10.0-alpha"
 actix-rt = "^1"
+async-trait = "^0.1"
 flexi_logger = "^0.15"
 pretty_assertions = "^0.6"
 simple_logger = "^1"

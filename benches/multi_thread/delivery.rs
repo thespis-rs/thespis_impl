@@ -2,12 +2,13 @@ use
 {
 	async_chanx       :: { * } ,
 	criterion         :: { Criterion, criterion_group, criterion_main, BatchSize           } ,
-	futures           :: { executor::{ block_on }, channel::oneshot } ,
+	futures           :: { executor::{ block_on }, channel::oneshot                        } ,
 	thespis           :: { *                                                               } ,
 	thespis_impl      :: { *                                                               } ,
 	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } }          } ,
 	tokio             :: { sync::mpsc                                                      } ,
-	actix             :: { Actor as _, ActorFuture } ,
+	actix             :: { Actor as _, ActorFuture                                         } ,
+	async_trait       :: { async_trait                                                     } ,
 };
 
 
@@ -40,38 +41,34 @@ impl Message for Add  { type Return = () ; }
 impl Message for Show { type Return = u64; }
 
 
-impl Handler< Add > for Sum
+#[async_trait] impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	async fn handle( &mut self, msg: Add )
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
 		self.total += msg.0 + inner;
 
-	})}
+	}
 }
 
 
-impl Handler< Show > for Sum
+#[async_trait] impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.total
-
-	})}
+	}
 }
 
 
-impl Handler< Show > for SumIn
+#[async_trait] impl Handler< Show > for SumIn
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
-
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 
