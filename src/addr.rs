@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, envelope::*, error::* };
+use crate::{ import::*, ChanSender, BoxEnvelope, envelope::*, error::* };
 
 
 
