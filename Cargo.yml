@@ -88,9 +88,9 @@ dev-dependencies:
 
 bench:
 
-  # - name   : single_thread_delivery
-  #   path   : benches/single_thread/delivery.rs
-  #   harness: false
+  - name   : single_thread_delivery
+    path   : benches/single_thread/delivery.rs
+    harness: false
 
   - name   : multi_thread_delivery
     path   : benches/multi_thread/delivery.rs

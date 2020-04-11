@@ -1,43 +1,132 @@
 use
 {
-	async_executors   :: { * } ,
-	actix             :: { Actor as AxActor, Message as AxMessage, Handler as AxHandler, Context as AxContext, Arbiter } ,
-	criterion         :: { Criterion, Benchmark, criterion_group, criterion_main } ,
-	futures           :: { future::{ TryFutureExt }, compat::Future01CompatExt, executor::{ block_on }, task::LocalSpawnExt } ,
-	thespis           :: { * } ,
-	thespis_impl      :: { * } ,
+	async_chanx       :: { *                                                     } ,
+	async_executors   :: { *                                                     } ,
+	criterion         :: { Criterion, criterion_group, criterion_main, BatchSize } ,
+	futures           :: { executor::{ block_on }                                } ,
+	thespis           :: { *                                                     } ,
+	thespis_impl      :: { *                                                     } ,
+	std               :: { convert::TryFrom                                      } ,
+	tokio             :: { sync::mpsc, runtime::Builder                          } ,
+	actix             :: { Actor as _, ActorFuture                               } ,
+	async_trait       :: { async_trait                                           } ,
 };
 
 
+const BOUNDED: usize = 11;
 
-#[ derive( Actor ) ] struct Sum( u64 );
 
-struct Add (u64);
-struct Show     ;
+fn termial( n: u64 ) -> u64
+{
+	n * ( n + 1 ) / 2
+}
+
+
+#[ derive( Actor ) ] struct Sum
+{
+	pub total: u64,
+	pub inner: Addr<SumIn>,
+}
+
+
+#[ derive( Actor ) ] struct SumIn
+{
+	pub count: u64,
+}
+
+
+struct Add ( u64 );
+struct Show       ;
 
 impl Message for Add  { type Return = () ; }
 impl Message for Show { type Return = u64; }
 
 
-impl Handler< Add > for Sum
+#[async_trait] impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	async fn handle( &mut self, msg: Add )
 	{
+		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
-		self.0 += msg.0;
+		self.total += msg.0 + inner;
 
-	})}
+	}
 }
 
 
-impl Handler< Show > for Sum
+#[async_trait] impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	async fn handle( &mut self, _msg: Show ) -> u64
 	{
+		self.total
+	}
+}
 
-		self.0
 
-	})}
+#[async_trait] impl Handler< Show > for SumIn
+{
+	async fn handle( &mut self, _msg: Show ) -> u64
+	{
+		self.count += 1;
+		self.count
+	}
+}
+
+
+
+struct ActixSum
+{
+	pub total: u64,
+	pub inner: actix::Addr<SumIn>,
+}
+
+impl actix::Actor for ActixSum { type Context = actix::Context<Self>; }
+impl actix::Actor for SumIn    { type Context = actix::Context<Self>; }
+
+impl actix::Message for Add  { type Result = () ; }
+impl actix::Message for Show { type Result = u64; }
+
+
+impl actix::Handler< Add > for ActixSum
+{
+	type Result = actix::ResponseActFuture< Self, <Add as actix::Message>::Result >;
+
+	fn handle( &mut self, msg: Add, _ctx: &mut Self::Context ) -> Self::Result
+	{
+		let action = self.inner.send( Show );
+
+		let act_fut = actix::fut::wrap_future::<_, Self>(action);
+
+		let update_self = act_fut.map( move |result, actor, _ctx|
+		{
+			actor.total += msg.0 + result.expect( "Call SumIn" );
+		});
+
+		Box::pin( update_self )
+	}
+}
+
+
+impl actix::Handler< Show > for ActixSum
+{
+	type Result = u64;
+
+	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
+	{
+		self.total
+	}
+}
+
+
+impl actix::Handler< Show > for SumIn
+{
+	type Result = u64;
+
+	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
+	{
+		self.count += 1;
+		self.count
+	}
 }
 
 
@@ -52,258 +141,7 @@ impl Accu
 		self.0 += v.0;
 	}
 
-	#[ inline( always ) ]
-	//
-	async fn add_inline( &mut self, v: Add )
-	{
-		self.0 += v.0;
-	}
-
-
-	async fn show( &mut self ) -> u64
-	{
-		self.0
-	}
-}
-
-
-fn send_localpool()
-{
-	let mut pool = LocalPool::default();
-	let     exec = pool.clone();
-
-	let bench = async move
-	{
-		let     sum              = Sum(5)                  ;
-		let     mb  : Inbox<Sum> = Inbox::new()            ;
-		let mut addr             = Addr::new( mb.sender() );
-
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
-
-		for _i in 0..100usize
-		{
-			addr.send( Add( 10 ) ).await.expect( "Send failed" );
-		}
-
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
-	};
-
-	pool.spawn_local( bench ).expect( "Spawn benchmark" );
-
-	pool.run();
-}
-
-
-fn call_localpool()
-{
-	let mut pool = LocalPool::default();
-	let     exec = pool.clone();
-
-	let bench = async move
-	{
-		let     sum              = Sum(5)                  ;
-		let     mb  : Inbox<Sum> = Inbox::new()            ;
-		let mut addr             = Addr::new( mb.sender() );
-
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
-
-		for _i in 0..100usize
-		{
-			addr.call( Add( 10 ) ).await.expect( "Call failed" );
-		}
-
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
-	};
-
-	pool.spawn_local( bench ).expect( "Spawn benchmark" );
-
-	pool.run();
-}
-
-
-fn send_tokio_ct()
-{
-	let mut pool = TokioCt::default();
-	let     exec = pool.clone();
-
-	let bench = async move
-	{
-		let     sum              = Sum(5)                  ;
-		let     mb  : Inbox<Sum> = Inbox::new()            ;
-		let mut addr             = Addr::new( mb.sender() );
-
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
-
-		for _i in 0..100usize
-		{
-			addr.send( Add( 10 ) ).await.expect( "Send failed" );
-		}
-
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
-	};
-
-	pool.spawn_local( bench ).expect( "Spawn benchmark" );
-
-	pool.run().expect( "run TokioCt" );
-}
-
-
-fn call_tokio_ct()
-{
-	let mut pool = TokioCt::default();
-	let     exec = pool.clone();
-
-	let bench = async move
-	{
-		let     sum              = Sum(5)                  ;
-		let     mb  : Inbox<Sum> = Inbox::new()            ;
-		let mut addr             = Addr::new( mb.sender() );
-
-		// This is ugly right now. It will be more ergonomic in the future.
-		//
-		exec.spawn_local( mb.start_fut( sum ) ).expect( "Spawning failed" );
-
-		for _i in 0..100usize
-		{
-			addr.call( Add( 10 ) ).await.expect( "Call failed" );
-		}
-
-		let res = addr.call( Show{} ).await.expect( "Call failed" );
-		assert_eq!( 1005, res );
-	};
-
-	pool.spawn_local( bench ).expect( "Spawn benchmark" );
-
-	pool.run().expect( "run TokioCt" );
-}
-
-
-fn actix_dosend()
-{
-	actix::System::run( ||
-	{
-		Arbiter::spawn( Box::pin( async
-		{
-			let sum  = AxSum(5)    ;
-			let addr = sum.start() ;
-
-			for _i in 0..100usize
-			{
-				addr.do_send( AxAdd( 10 ) );
-			}
-
-			let res = addr.send( AxShow{} ).compat().await.unwrap();
-
-			assert_eq!( 1005, res );
-
-			actix::System::current().stop();
-
-			Ok(())
-
-		}).compat());
-
-	}).unwrap();
-}
-
-
-fn actix_send()
-{
-	actix::System::run( ||
-	{
-		Arbiter::spawn( Box::pin( async
-		{
-			let sum  = AxSum(5)    ;
-			let addr = sum.start() ;
-
-			for _i in 0..100usize
-			{
-				addr.send( AxAdd( 10 ) ).compat().await.unwrap();
-			}
-
-			let res = addr.send( AxShow{} ).compat().await.unwrap();
-
-			assert_eq!( 1005, res );
-
-			actix::System::current().stop();
-
-			Ok(())
-
-		}).compat());
-
-	}).unwrap();
-}
-
-
-fn method()
-{
-	block_on( async
-	{
-		let mut sum = Accu(5);
-
-		for _i in 0..100usize
-		{
-			sum.add( Add( 10 ) ).await;
-		}
-
-		let res = sum.show().await;
-		assert_eq!( 1005, res );
-	})
-}
-
-
-fn inline_method()
-{
-	block_on( async
-	{
-		let mut sum = Accu(5);
-
-		for _i in 0..100usize
-		{
-			sum.add_inline( Add( 10 ) ).await;
-		}
-
-		let res = sum.show().await;
-		assert_eq!( 1005, res );
-	})
-}
-
-
-// --------------------------------------------------------------------
-
-struct AxSum (u64);
-struct AxAdd (u64);
-struct AxShow     ;
-
-impl AxMessage for AxAdd  { type Result  = ()              ; }
-impl AxMessage for AxShow { type Result  = u64             ; }
-impl AxActor   for AxSum  { type Context = AxContext<Self> ; }
-
-
-impl AxHandler< AxAdd > for AxSum
-{
-	type Result  = ()
-;
-	fn handle( &mut self, msg: AxAdd, _ctx: &mut AxContext<Self> )
-	{
-		self.0 += msg.0;
-	}
-}
-
-
-impl AxHandler< AxShow > for AxSum
-{
-	type Result  = u64
-;
-	fn handle( &mut self, _msg: AxShow, _ctx: &mut AxContext<Self> ) -> Self::Result
+	async fn show( &self ) -> u64
 	{
 		self.0
 	}
@@ -311,23 +149,230 @@ impl AxHandler< AxShow > for AxSum
 
 
 
-
-fn bench_calls( c: &mut Criterion )
+fn seq( c: &mut Criterion )
 {
-	c.bench
-	(
-		"Single Thread Delivery",
+	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-		Benchmark::new   ( "Send LocalPool x100"     , |b| b.iter( || send_localpool () ) )
-			.with_function( "Call LocalPool x100"     , |b| b.iter( || call_localpool () ) )
-			.with_function( "Send TokioCt x100"       , |b| b.iter( || send_tokio_ct  () ) )
-			.with_function( "Call TokioCt x100"       , |b| b.iter( || call_tokio_ct  () ) )
-			.with_function( "async method x100"       , |b| b.iter( || method         () ) )
-			.with_function( "async inline method x100", |b| b.iter( || inline_method  () ) )
-			.with_function( "actix do_send x100"      , |b| b.iter( || actix_dosend   () ) )
-			.with_function( "actix send x100"         , |b| b.iter( || actix_send     () ) )
-	);
+
+	let mut group = c.benchmark_group( "seq" );
+
+	for msgs in [ 1, 100, 10000 ].iter()
+	{
+		// match buffer_size
+		// {
+		// 	10  => { group.sample_size( 100 ); }
+		// 	100 => { group.sample_size( 50  ); }
+		// 	200 => { group.sample_size( 30  ); }
+		// 	_   => { unreachable!();           }
+		// }
+
+		group.sample_size( 30 );
+
+		group.bench_function
+		(
+			format!( "send: {} msgs", &msgs ),
+
+			|b| b.iter_batched
+			(
+				move || // setup
+				{
+					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
+					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx ) ;
+
+					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
+					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
+					let tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx ) ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+
+					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
+					let sumin = SumIn{ count: 0 };
+
+					let sumin_handle = exec.spawn_handle( sum_in_mb.start_fut( sumin ) ).expect( "spawn" );
+					let sum_handle   = exec.spawn_handle( sum_mb   .start_fut( sum   ) ).expect( "spawn" );
+
+					(sum_addr, sumin_handle, sum_handle, exec)
+				},
+
+
+				|(mut sum_addr, sumin_handle, sum_handle, exec)| // measure
+				{
+					exec.block_on( async move
+					{
+						for _ in 0..*msgs
+						{
+							sum_addr.send( Add(10) ).await.expect( "Send failed" );
+						}
+
+						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
+
+						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+
+						drop( sum_addr );
+
+						sumin_handle.await;
+						sum_handle  .await;
+					});
+				},
+
+				BatchSize::SmallInput
+			)
+		);
+
+
+		// Currently doesn't work, as it won't wait until the message is processed, so the
+		// assert comes to early. We would have to synchronize somehow.
+		//
+		// group.bench_function
+		// (
+		// 	format!( "actix do_send: {} msgs", &msgs ),
+
+		// 	|b| b.iter
+		// 	(
+		// 		||
+		// 		{
+		// 			actix_rt::System::new( "main" ).block_on( async move
+		// 			{
+		// 				let sum_in      = SumIn{ count: 0 };
+		// 				let sum_in_addr = SumIn::start( sum_in );
+
+		// 				let sum      = ActixSum{ total: 5, inner: sum_in_addr };
+		// 				let sum_addr = ActixSum::start( sum );
+
+		// 				for _ in 0..*msgs
+		// 				{
+		// 					sum_addr.do_send( Add(10) );
+		// 				}
+
+		// 				let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
+
+		// 				assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+
+		// 				actix_rt::System::current().stop();
+		// 			});
+		// 		}
+		// 	)
+		// );
+
+
+		group.bench_function
+		(
+			format!( "call: {} msgs", &msgs ),
+
+			|b| b.iter_batched
+			(
+				move || // setup
+				{
+					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
+					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
+					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx ) ;
+
+					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
+					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
+					let tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
+					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx ) ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+
+					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
+					let sumin = SumIn{ count: 0 };
+
+					let sumin_handle = exec.spawn_handle( sum_in_mb.start_fut( sumin ) ).expect( "spawn" );
+					let sum_handle   = exec.spawn_handle( sum_mb   .start_fut( sum   ) ).expect( "spawn" );
+
+					(sum_addr, sumin_handle, sum_handle, exec)
+				},
+
+
+				|(mut sum_addr, sumin_handle, sum_handle, exec)| // measure
+				{
+					exec.block_on( async move
+					{
+						for _ in 0..*msgs
+						{
+							sum_addr.call( Add(10) ).await.expect( "Send failed" );
+						}
+
+						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
+
+						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+
+						drop( sum_addr );
+
+						sumin_handle.await;
+						sum_handle  .await;
+					});
+				},
+
+				BatchSize::SmallInput
+			)
+		);
+
+
+		group.bench_function
+		(
+			format!( "actix send: {} msgs", &msgs ),
+
+			|b| b.iter
+			(
+				||
+				{
+					actix_rt::System::new( "main" ).block_on( async move
+					{
+						let sum_in      = SumIn{ count: 0 };
+						let sum_in_addr = SumIn::start( sum_in );
+
+						let sum      = ActixSum{ total: 5, inner: sum_in_addr };
+						let sum_addr = ActixSum::start( sum );
+
+						for _ in 0..*msgs
+						{
+							sum_addr.send( Add(10) ).await.expect( "Send failed" );
+						}
+
+						let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
+
+						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+
+						actix_rt::System::current().stop();
+					});
+				}
+			)
+		);
+
+
+
+
+
+		group.bench_function
+		(
+			format!( "async method: {} msgs", &msgs ),
+
+			|b| b.iter
+			(
+				||
+				{
+					let res = block_on( async
+					{
+						let mut sum  = Accu( 5 );
+
+						for _i in 0..*msgs
+						{
+							sum.add( Add( 10 ) ).await;
+						}
+
+						sum.show().await
+					});
+
+					assert_eq!( msgs*10 + 5, res );
+				}
+			)
+		);
+	}
 }
 
-criterion_group!( benches, bench_calls );
-criterion_main! ( benches              );
+
+criterion_group!( benches, seq );
+criterion_main! ( benches      );
