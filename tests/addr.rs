@@ -33,8 +33,8 @@ fn stop_when_adresses_dropped_before_start_mb()
 
 	let program = async move
 	{
-		let  addr  = Addr ::new( id, name, Box::new(tx) ) ;
-		let _addr2 = addr.clone()                         ;
+		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
+		let addr  = Addr ::new( id, name, tx ) ;
 	};
 
 	block_on( join( program, mb.start_fut( sum ) ) );
@@ -60,7 +60,8 @@ fn stop_when_adresses_dropped()
 
 	let dropper = async move
 	{
-		let  mut addr  = Addr ::new( id, name, Box::new(tx) ) ;
+		let      tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
+		let  mut addr  = Addr ::new( id, name, tx ) ;
 		let     _addr2 = addr.clone()                         ;
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );

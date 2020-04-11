@@ -3,10 +3,17 @@ use super::import::*;
 
 #[ allow( dead_code ) ]
 //
-#[ derive( Actor ) ] pub struct SumNoSend( pub u64 );
+#[ derive( Actor ) ] pub struct SumNoSend( pub u64, PhantomData<*mut ()> );
 
-impl !Send for SumNoSend {}
-impl !Sync for SumNoSend {}
+impl SumNoSend
+{
+	#[ allow( dead_code ) ]
+	//
+	pub fn new( start: u64 ) -> SumNoSend
+	{
+		Self( start, PhantomData )
+	}
+}
 
 
 #[ derive( Actor ) ] pub struct Sum( pub u64 );

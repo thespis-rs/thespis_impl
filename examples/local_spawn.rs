@@ -1,17 +1,15 @@
-#![ feature( optin_builtin_traits ) ]
-//
 use
 {
 	thespis         :: { Actor, Message, Handler, Return, ReturnNoSend, Address } ,
 	thespis_impl    :: { Addr                                                   } ,
 	futures         :: { task::LocalSpawnExt, executor::LocalPool               } ,
+	std             :: { marker::PhantomData, rc::Rc                            } ,
 };
 
 
-#[ derive( Actor, Debug ) ] struct MyActor { i: u8 }
+#[ derive( Actor, Debug ) ] struct MyActor { i: u8, nosend: PhantomData<Rc<()>>}
 #[ derive( Clone, Debug ) ] struct Ping( String )   ;
 
-impl !Send for MyActor {}
 
 impl Message for Ping
 {
@@ -61,8 +59,8 @@ fn main()
 	let     exec = pool.spawner();
 
 
-	let actor    = MyActor { i: 3 };
-	let mut addr = Addr::try_from_local( actor, &exec ).expect( "spawn actor locally" );
+	let actor    = MyActor { i: 3, nosend: PhantomData };
+	let mut addr = Addr::try_from_actor_local( actor, &exec ).expect( "spawn actor locally" );
 
 	exec.spawn_local( async move
 	{

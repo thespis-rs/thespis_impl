@@ -8,5 +8,6 @@ pub mod import
 		futures       :: { future::{ FutureExt }, SinkExt, channel::mpsc } ,
 		thespis       :: { * } ,
 		log           :: { * } ,
+		std           :: { marker::PhantomData } ,
 	};
 }

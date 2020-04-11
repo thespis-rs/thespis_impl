@@ -74,7 +74,7 @@ mod import
 
 		std ::
 		{
-			fmt         :: { self                                   } ,
+			fmt                                                       ,
 			pin         :: { Pin                                    } ,
 			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
 		},

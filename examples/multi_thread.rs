@@ -36,9 +36,8 @@ fn main()
 {
 	let program = async move
 	{
-		let     a    = MyActor;
-		let mut exec = ThreadPool::new().expect( "create threadpool" );
-		let mut addr = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let     exec = ThreadPool::new().expect( "create threadpool" );
+		let mut addr = Addr::try_from_actor( MyActor, &exec ).expect( "Failed to create address" );
 
 		thread::spawn( move ||
 		{

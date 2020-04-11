@@ -57,9 +57,9 @@ fn main()
 
 	let program = async move
 	{
-		let mut exec = ThreadPool::new().expect( "create threadpool" );
+		let     exec = ThreadPool::new().expect( "create threadpool" );
 		let     a    = MyActor{ seed: "seed".into() }                          ;
-		let mut addr = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let mut addr = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
 
 		let mut addr2 = addr.clone();
 

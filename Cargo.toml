@@ -22,6 +22,10 @@ log = "^0.4"
 once_cell = "^1"
 thiserror = "^1"
 
+[dependencies.async_chanx]
+optional = true
+path = "../../async_chanx"
+
 [dependencies.futures]
 default-features = false
 features = ["std", "compat"]
@@ -29,6 +33,10 @@ version = "^0.3"
 
 [dependencies.thespis]
 path = "../thespis"
+
+[dependencies.tokio]
+optional = true
+version = "^0.2"
 
 [dev-dependencies]
 actix = "^0.10.0-alpha"
@@ -40,9 +48,6 @@ simple_logger = "^1"
 [dev-dependencies.async-std]
 features = ["attributes"]
 version = "^1"
-
-[dev-dependencies.async_chanx]
-path = "../../async_chanx"
 
 [dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std", "tokio_ct", "spawn_handle"]
@@ -90,6 +95,7 @@ name = "actix_unbounded_perf"
 path = "examples/perf/actix_unbounded.rs"
 
 [features]
+convenience = ["tokio/sync", "async_chanx"]
 default = []
 external_doc = []
 

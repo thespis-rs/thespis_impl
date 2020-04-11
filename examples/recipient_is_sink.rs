@@ -31,7 +31,7 @@ fn main()
 	{
 		let     a      = MyActor { count: 0 };
 		let     exec   = ThreadPool::new().expect( "create threadpool" );
-		let mut addr   = Addr::try_from( a, &exec ).expect( "Failed to create address" );
+		let mut addr   = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
 		let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
 		stream.forward( &mut addr ).await.expect( "forward to sink" );

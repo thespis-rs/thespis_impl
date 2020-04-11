@@ -78,10 +78,10 @@ fn store_recipients()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let addr  = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from_actor( b, &exec ).expect( "Failed to create address" );
 
 
 		let mut recs: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr ), Box::new( addro ) ];
@@ -110,10 +110,10 @@ fn receiver_basic_use()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let addr  = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from_actor( b, &exec ).expect( "Failed to create address" );
 
 
 		let mut recs: Vec< Receiver<Count> > = vec![ Receiver::new( Box::new( addr ) ), Receiver::new( Box::new( addro ) ) ];
@@ -142,10 +142,10 @@ fn receiver_box_any()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let addr  = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from_actor( b, &exec ).expect( "Failed to create address" );
 
 
 		let recs: Vec< Box<dyn Any> > = vec!
@@ -182,12 +182,12 @@ fn multi_thread()
 		let a = MyActor { count: 0 };
 		let b = Other   { count: 0 };
 
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
 		// This will spawn the task for the mailbox on the current thread
 		//
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let addr  = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from_actor( b, &exec ).expect( "Failed to create address" );
 
 		let mut reca: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr.clone() ), Box::new( addro.clone() ) ];
 		let mut recb: Vec<Box< dyn Address<Count, Error=ThesErr> >> = vec![ Box::new( addr )        , Box::new( addro )         ];
@@ -234,9 +234,9 @@ fn stream_to_sink_addr()
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let mut addr    = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let mut addr    = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
 		addr.send_all( &mut stream ).await.expect( "drain stream" );
@@ -266,9 +266,9 @@ fn stream_to_sink_receiver()
 	let program = async move
 	{
 		let a = MyActor { count: 0 };
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let addr        = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
+		let addr        = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
 		let mut clone   = Receiver::new( Address::clone_box(&addr) );
 		let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
 
@@ -301,10 +301,10 @@ fn actor_id()
 		let a = MyActor { count: 0 };
 		let b = MyActor { count: 0 };
 
-		let mut exec = AsyncStd{};
+		let exec = AsyncStd{};
 
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addrb = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let addr  = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+		let addrb = Addr::try_from_actor( b, &exec ).expect( "Failed to create address" );
 		let rec   = Address::clone_box( &addr );
 
 		// return same value on subsequent calls

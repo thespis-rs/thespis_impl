@@ -7,7 +7,6 @@ use
 	async_chanx       :: { *          } ,
 	thespis           :: { *                            } ,
 	thespis_impl      :: { *                            } ,
-	async_trait       :: { *                            } ,
 	std               :: { convert::TryFrom             } ,
 	futures           :: { task::LocalSpawnExt          } ,
 	tokio             :: { sync::mpsc, runtime::Builder } ,

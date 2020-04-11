@@ -43,13 +43,9 @@ fn main()
 {
 	let program = async move
 	{
-		let mut exec = ThreadPool::new().expect( "create threadpool" );
-
-		let a = MyActor;
-		let b = Other;
-
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
+		let exec  = ThreadPool::new().expect( "create threadpool" );
+		let addr  = Addr::try_from_actor( MyActor, &exec ).expect( "Failed to create address" );
+		let addro = Addr::try_from_actor( Other  , &exec ).expect( "Failed to create address" );
 
 
 		let recs: Vec< BoxAddress<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];

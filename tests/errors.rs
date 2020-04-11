@@ -39,7 +39,8 @@ async fn mb_closed()
 	let name     = Some( "Sum".into() )                     ;
 	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
 	let id       = mb.id()                                  ;
-	let mut addr = Addr ::new( id, name, Box::new(tx) )     ;
+	let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
+	let mut addr = Addr ::new( id, name, tx )     ;
 
 	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();
 

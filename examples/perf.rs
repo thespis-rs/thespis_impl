@@ -44,7 +44,7 @@ fn main()
 	{
 		let     sum  = Sum(5);
 		let mut exec = ThreadPool::new().expect( "create threadpool" );
-		let mut addr = Addr::try_from( sum, &mut exec ).expect( "Failed to create address" );
+		let mut addr = Addr::try_from_actor( sum, &mut exec ).expect( "Failed to create address" );
 
 		for _i in 0..10_000_000usize
 		{
