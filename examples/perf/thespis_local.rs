@@ -4,7 +4,7 @@
 use
 {
 	async_executors   :: { *                            } ,
-	async_chanx       :: { *                            } ,
+	async_chanx       :: { *          } ,
 	thespis           :: { *                            } ,
 	thespis_impl      :: { *                            } ,
 	async_trait       :: { *                            } ,
@@ -41,39 +41,38 @@ impl Message for Add  { type Return = () ; }
 impl Message for Show { type Return = u64; }
 
 
-#[ async_trait ]
-//
 impl Handler< Add > for Sum
 {
-	async fn handle( &mut self, msg: Add )
+	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
 		self.total += msg.0 + inner;
-	}
+
+	})}
 }
 
 
-#[ async_trait ]
-//
 impl Handler< Show > for Sum
 {
-	async fn handle( &mut self, _msg: Show ) -> u64
+	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
 	{
+
 		self.total
-	}
+
+	})}
 }
 
 
-#[ async_trait ]
-//
 impl Handler< Show > for SumIn
 {
-	async fn handle( &mut self, _msg: Show ) -> u64
+	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
 	{
+
 		self.count += 1;
 		self.count
-	}
+
+	})}
 }
 
 

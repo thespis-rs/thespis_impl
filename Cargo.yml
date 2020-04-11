@@ -77,7 +77,6 @@ dev-dependencies:
   async-std         : { version: ^1, features: [ attributes ] }
   simple_logger     : ^1
   futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
-  async-trait       : ^0.1
 
   # for benchmarks
   #
