@@ -17,9 +17,16 @@ use
 
 
 
-#[test]
+// TODO: this test is a bit of non-sense. This has nothing to do with adresses, but
+// depends entirely on the channel. We don't even need to construct an adress to
+// make this work. Since we are generic over the channel, this could work with some
+// channels and not others.
 //
-fn stop_when_adresses_dropped_before_start_mb()
+// It's good to have at least one test.
+//
+#[async_std::test]
+//
+async fn stop_when_adresses_dropped_before_start_mb()
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
@@ -35,9 +42,10 @@ fn stop_when_adresses_dropped_before_start_mb()
 	{
 		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
 		let addr  = Addr ::new( id, name, tx ) ;
+		drop( addr );
 	};
 
-	block_on( join( program, mb.start_fut( sum ) ) );
+	join( program, mb.start_fut( sum ) ).await;
 }
 
 

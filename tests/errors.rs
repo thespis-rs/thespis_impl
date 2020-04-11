@@ -1,22 +1,18 @@
-#![ feature( optin_builtin_traits ) ]
-
-// TODO:
+// Tested:
 //
 // - ✔ let thread of mailbox crash and verify mailbox closed error
 // - ✔ let thread of mailbox crash and verify mailbox closed before response error
-// - mailbox full (need bounded channels for that)
 //
 mod common;
 
 use
 {
-	thespis         :: { *                                                                     } ,
-	log             :: { *                                                                     } ,
-	thespis_impl    :: { *                                                                     } ,
-	std             :: { thread                                                                } ,
-	common          :: { actors::{ Sum, Add }, import::*                                       } ,
-	futures         :: { executor::{ block_on, ThreadPool }, future::FutureExt, task::SpawnExt } ,
-
+	async_executors :: { *                                } ,
+	thespis         :: { *                                } ,
+	thespis_impl    :: { *                                } ,
+	common          :: { actors::{ Sum, Add }, import::*  } ,
+	futures         :: { channel::oneshot, task::SpawnExt } ,
+	std             :: { panic::AssertUnwindSafe          } ,
 };
 
 
@@ -24,38 +20,38 @@ use
 // What we need to achieve here is that the mailbox is spawned, then closed while we
 // keep the addr to try and Send. We should then get a MailboxClosed error.
 //
-// It's not quite clear what is the best way to do this, but this test passes for now
-// on x86_64 linux...
+#[async_std::test]
 //
-// TODO: this doesn't quite work either. Sometimes the the tests fails.
-//
-async fn mb_closed()
+async fn test_mb_closed()
 {
-	let sum = Sum(5);
-
 	// Create mailbox
 	//
 	let (tx, rx) = mpsc::unbounded()                        ;
 	let name     = Some( "Sum".into() )                     ;
 	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
 	let id       = mb.id()                                  ;
-	let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
+	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
 	let mut addr = Addr ::new( id, name, tx )     ;
 
-	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();
+	let (trigger_tx, trigger_rx) = oneshot::channel();
 
-	let exec = ThreadPool::new().expect( "create threadpool" );
-
-	exec.spawn( mb_fut ).expect( "spawn mailbox" );
-
-	// If we drop the handle in the same thread, the mb never actually runs.
-	//
-	thread::spawn( move ||
+	let mb_task = async move
 	{
-		drop( handle );
+		mb.start_fut( Sum(5) ).await;
 
-	}).join().expect( "join thread" );
+		trigger_tx.send(()).expect( "send trigger" );
+	};
 
+	let mb_handle = AsyncStd.spawn_handle( mb_task ).expect( "spawn mailbox" );
+
+	addr.call( Add(10) ).await.expect( "call" );
+
+	drop( mb_handle );
+
+	// since we drop the handle, it's gonna fire not because of the send, but
+	// because it get's dropped, so we don't care for success here.
+	//
+	let _ = trigger_rx.await;
 
 	match addr.send( Add(10) ).await
 	{
@@ -76,90 +72,63 @@ async fn mb_closed()
 
 
 
-#[test]
-//
-fn test_mb_closed()
+#[ derive( Actor ) ] struct Panic;
+
+struct Void;
+
+impl Message for Void { type Return = (); }
+
+impl Handler<Void> for Panic
 {
-	let program = async move
+	fn handle( &mut self, _: Void ) -> Return<'_, ()>
 	{
-		// let _ = simple_logger::init();
+		// Avoid printing the thread panicked message in test output.
+		//
+		std::panic::set_hook(Box::new(|_| ()));
+		panic!();
+	}
+}
 
-		trace!( "start program" );
 
-		mb_closed().await;
+#[async_std::test]
+//
+async fn test_mb_closed_before_response()
+{
+	// flexi_logger::Logger::with_str( "warn, thespis_impl=trace" ).start().expect( "flexi_logger");
+
+	// Create mailbox
+	//
+	let (tx, rx) = mpsc::unbounded()                        ;
+	let name     = Some( "Sum".into() )                     ;
+	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                  ;
+	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
+	let mut addr = Addr ::new( id, name, tx )     ;
+
+
+	let mb_task = async move
+	{
+		let _ = AssertUnwindSafe( mb.start_fut( Panic ) ).catch_unwind().await;
 	};
 
-	block_on( program );
+	AsyncStd.spawn( mb_task ).expect( "spawn mailbox" );
+
+
+	match addr.call( Void ).await
+	{
+		Ok (_) => assert!( false, "Call should fail" ),
+
+		Err(e) =>
+		{
+			if let ThesErr::MailboxClosedBeforeResponse{..} = e {}
+
+			else
+			{
+				assert!( false, "Wrong error returned: {:?}", e )
+			}
+		}
+	}
 }
 
 
 
-// TODO: I don't manage to trigger MailboxClosedBeforeResponse...
-//
-// #[test]
-// //
-// fn test_mb_closed_before_response()
-// {
-// 	let program = async move
-// 	{
-// 		// let _ = simple_logger::init();
-
-// 		trace!( "start program" );
-
-// 		mb_closed_before_response().await;
-// 	};
-
-// 	block_on( program );
-// }
-
-
-
-
-
-// This works because the thread program only spawns when the outer task is already running, so
-// the mailbox will only be closed after the outer task runs. Hence, the send actually works,
-// but the response is never built.
-//
-// async fn mb_closed_before_response()
-// {
-// 	flexi_logger::Logger::with_str( "warn, thespis_impl=trace" ).start().expect( "flexi_logger");
-
-// 	let sum = Sum(5);
-
-// 	// Create mailbox
-// 	//
-// 	let     mb  : Inbox<Sum> = Inbox::new(             );
-// 	let mut addr             = Addr ::new( mb.sender() );
-
-// 	let (mb_fut, handle) = mb.start_fut( sum ).remote_handle();
-
-// 	let mut exec = ThreadPool::new().expect( "create threadpool" );
-
-// 	exec.spawn( mb_fut ).expect( "spawn mailbox" );
-
-
-// 	// If we drop the handle in the same thread, the mb never actually runs.
-// 	//
-// 	thread::spawn( move ||
-// 	{
-// 		thread::yield_now();
-// 		drop( handle );
-
-// 	});
-
-
-// 	match addr.call( Add(10) ).await
-// 	{
-// 		Ok (_) => assert!( false, "Call should fail" ),
-
-// 		Err(e) =>
-// 		{
-// 			if let ThesErr::MailboxClosedBeforeResponse{..} = e {}
-
-// 			else
-// 			{
-// 				assert!( false, "Wrong error returned: {:?}", e )
-// 			}
-// 		}
-// 	}
-// }
