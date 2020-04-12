@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, BoxEnvelope, Inbox, envelope::*, error::* };
+use crate::{ import::*, ChanSender, BoxEnvelope, envelope::*, error::* };
 
 
 
@@ -121,7 +121,7 @@ impl<A> Addr<A> where A: Actor
 	pub fn try_from_actor( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
 	{
 		use async_chanx::TokioSender;
-		use crate::SinkError;
+		use crate::{ SinkError, Inbox };
 
 		let (tx, rx) = tokio::sync::mpsc::channel( 16 );
 		let mb       = Inbox::new( None, Box::new(rx) ) ;
@@ -159,7 +159,7 @@ impl<A> Addr<A> where A: Actor
 	pub fn try_from_actor_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
 	{
 		use async_chanx::TokioSender;
-		use crate::SinkError;
+		use crate::{ SinkError, Inbox };
 
 		let (tx, rx) = tokio::sync::mpsc::channel( 16 );
 		let mb       = Inbox::new( None, Box::new(rx) ) ;
@@ -213,7 +213,7 @@ impl<A, M> Address<M> for Addr<A>
 
 
 
-	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
+	fn clone_box<'a>( &self ) -> BoxAddress<'a, M, ThesErr>
 	{
 		Box::new( self.clone() )
 	}

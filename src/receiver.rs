@@ -8,26 +8,25 @@ use crate::{ import::*, error::* };
 //
 pub struct Receiver<M: Message>
 {
-	rec: Pin<BoxAddress<M, ThesErr>>
+	rec: BoxAddress<'static, M, ThesErr>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxAddress<M, ThesErr> ) -> Self
+	pub fn new( rec: BoxAddress<'static, M, ThesErr> ) -> Self
 	{
-		Self { rec: Pin::from( rec ) }
+		Self { rec }
 	}
 }
-
 
 
 impl<M: Message> Clone for Receiver<M>
 {
 	fn clone( &self ) -> Self
 	{
-		Self { rec: Pin::from( self.rec.clone_box() ) }
+		Self { rec: self.rec.clone_box() }
 	}
 }
 
@@ -37,7 +36,7 @@ impl<M: Message> fmt::Debug for Receiver<M>
 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 	{
-		write!( f, "Receiver: {:?}", &self.rec )
+		write!( f, "Receiver: {:?}", &self.rec.name() )
 	}
 }
 
@@ -68,7 +67,7 @@ impl<M: Message> Address<M> for Receiver<M>
 	}
 
 
-	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
+	fn clone_box<'a>( &self ) -> BoxAddress<'a, M, ThesErr>
 	{
 		self.rec.clone_box()
 	}
@@ -98,19 +97,19 @@ impl<M: Message> Sink<M> for Receiver<M>
 
 	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		self.rec.as_mut().poll_ready( cx )
+		Pin::new( &mut self.rec ).poll_ready( cx )
 	}
 
 
 	fn start_send( mut self: Pin<&mut Self>, msg: M ) -> Result<(), Self::Error>
 	{
-		self.rec.as_mut().start_send( msg )
+		Pin::new( &mut self.rec ).start_send( msg )
 	}
 
 
 	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		self.rec.as_mut().poll_flush( cx )
+		Pin::new( &mut self.rec ).poll_flush( cx )
 	}
 
 
@@ -118,6 +117,6 @@ impl<M: Message> Sink<M> for Receiver<M>
 	//
 	fn poll_close( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		self.rec.as_mut().poll_close( cx )
+		Pin::new( &mut self.rec ).poll_close( cx )
 	}
 }
