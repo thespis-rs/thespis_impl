@@ -302,11 +302,10 @@ impl<A, M> Sink<M> for Addr<A>
 	}
 
 
-	/// Will only close when dropped, this method can never return ready.
-	/// TODO: is this the right approach? It means tasks will hang if people call this.
+	/// This is a no-op. The address can only really close when dropped. Close has no meaning before that.
 	//
 	fn poll_close( self: Pin<&mut Self>, _cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		Poll::Pending
+		Ok(()).into()
 	}
 }
