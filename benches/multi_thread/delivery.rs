@@ -5,7 +5,7 @@ use
 	futures           :: { executor::{ block_on }, channel::oneshot                        } ,
 	thespis           :: { *                                                               } ,
 	thespis_impl      :: { *                                                               } ,
-	std               :: { thread, sync::{ Arc, atomic::{ AtomicU64, Ordering } }          } ,
+	std               :: { thread, sync::{ Arc, Mutex }          } ,
 	tokio             :: { sync::mpsc                                                      } ,
 	actix             :: { Actor as _, ActorFuture                                         } ,
 };
@@ -132,7 +132,7 @@ impl actix::Handler< Show > for SumIn
 }
 
 
-struct Accu( AtomicU64 );
+struct Accu( Mutex<u64> );
 
 impl Accu
 {
@@ -140,12 +140,12 @@ impl Accu
 	//
 	async fn add( &self, v: Add )
 	{
-		self.0.fetch_add( v.0, Ordering::Relaxed );
+		*self.0.lock().unwrap() += v.0;
 	}
 
 	async fn show( &self ) -> u64
 	{
-		self.0.load( Ordering::Relaxed )
+		*self.0.lock().unwrap()
 	}
 }
 
@@ -340,7 +340,7 @@ fn spsc( c: &mut Criterion )
 				{
 					let (start_tx, start_rx) = oneshot::channel();
 
-					let sum  = Arc::new( Accu( AtomicU64::from( 5 ) ) );
+					let sum  = Arc::new( Accu( Mutex::new( 5 ) ) );
 					let sum2 = sum.clone();
 
 					let sender_thread = thread::spawn( move ||
