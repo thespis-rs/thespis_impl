@@ -45,7 +45,7 @@ features:
 
   # Add convenience methods that allow creating Addr and starting actors with less boilerplate.
   #
-  convenience: [ tokio/sync, async_chanx ]
+  convenience: [ tokio/sync, tokio/stream, async_chanx ]
 
 
 lib:
@@ -76,6 +76,7 @@ target:
 
 dev-dependencies:
 
+  async_chanx       : { path: ../../async_chanx }
   pretty_assertions : ^0.6
   flexi_logger      : ^0.15
   async_executors   : { path: ../../async_executors, features: [localpool, threadpool, async_std, tokio_ct, spawn_handle] }
@@ -122,6 +123,11 @@ example:
 
   - name: actix_unbounded_perf
     path: examples/perf/actix_unbounded.rs
+
+  - name             : basic
+    path             : examples/basic.rs
+    required-features: [ convenience ]
+
 
 
 profile:

@@ -28,62 +28,56 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	fn handle( &mut self, msg: Add ) -> Return<()> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, msg: Add )
 	{
 		trace!( "called sum with: {:?}", msg );
 
 		self.0 += msg.0;
-
-	})}
+	}
 }
 
 
 
 impl Handler< Show > for Sum
 {
-	fn handle( &mut self, _msg: Show ) -> Return<u64> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Show ) -> u64
 	{
 		trace!( "called sum with: Show" );
 
 		self.0
-
-	})}
+	}
 }
 
 
 
 impl Handler< Add > for SumNoSend
 {
-	fn handle( &mut self, _: Add ) -> Return<()> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _: Add )
 	{
 		unreachable!( "Can't spawn !Send actor on threadpool" );
+	}
 
-	})}
-
-	fn handle_local( &mut self, msg: Add ) -> ReturnNoSend<()> { Box::pin( async move
+	#[async_fn_nosend] fn handle_local( &mut self, msg: Add )
 	{
 		trace!( "called sum with: {:?}", msg );
 
 		self.0 += msg.0;
-
-	})}
+	}
 }
 
 
 
 impl Handler< Show > for SumNoSend
 {
-	fn handle( &mut self, _: Show ) -> Return<u64> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _: Show ) -> u64
 	{
 		unreachable!( "Can't spawn !Send actor on threadpool" );
+	}
 
-	})}
-
-	fn handle_local( &mut self, _msg: Show ) -> ReturnNoSend<u64> { Box::pin( async move
+	#[async_fn_nosend] fn handle_local( &mut self, _msg: Show ) -> u64
 	{
 		trace!( "called sum with: Show" );
 
 		self.0
-
-	})}
+	}
 }

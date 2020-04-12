@@ -1,7 +1,7 @@
 # Auto-generated from "Cargo.yml"
 [dependencies]
 console_log = "^0.1"
-futures-preview = "^0.3.0-alpha"
+futures = "^0.3"
 log = "^0.4"
 wasm-bindgen = "^0.2"
 wasm-bindgen-futures = "^0.4"
@@ -14,7 +14,7 @@ path = "../../../../async_executors"
 path = "../../../thespis"
 
 [dependencies.thespis_impl]
-default-features = false
+features = ["convenience"]
 path = "../../../thespis_impl"
 
 [dependencies.web-sys]

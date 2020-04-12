@@ -24,17 +24,12 @@ impl MyActor
 struct Ping( String );
 
 
-impl Message for Ping
-{
-	type Return = String;
-}
+impl Message for Ping { type Return = String; }
 
 
 impl Handler< Ping > for MyActor
 {
-	// If you forget the move on the end, it won't compile and error messages will be shit!!!
-	//
-	fn handle( &mut self, msg: Ping ) -> Return<String> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, msg: Ping ) -> String
 	{
 		trace!( "Ping handler called" );
 
@@ -45,8 +40,7 @@ impl Handler< Ping > for MyActor
 		self.seed += " - after yield";
 
 		self.seed.clone()
-
-	})}
+	}
 }
 
 

@@ -49,6 +49,9 @@ simple_logger = "^1"
 features = ["attributes"]
 version = "^1"
 
+[dev-dependencies.async_chanx]
+path = "../../async_chanx"
+
 [dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std", "tokio_ct", "spawn_handle"]
 path = "../../async_executors"
@@ -94,8 +97,13 @@ path = "examples/perf/thespis_unbounded.rs"
 name = "actix_unbounded_perf"
 path = "examples/perf/actix_unbounded.rs"
 
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+required-features = ["convenience"]
+
 [features]
-convenience = ["tokio/sync", "async_chanx"]
+convenience = ["tokio/sync", "tokio/stream", "async_chanx"]
 default = []
 external_doc = []
 

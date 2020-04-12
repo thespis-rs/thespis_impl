@@ -20,21 +20,19 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Ping ) -> String
 	{
 		"MyActor".into()
-
-	})}
+	}
 }
 
 
 impl Handler< Ping > for Other
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Ping ) -> String
 	{
 		"Other".into()
-
-	})}
+	}
 }
 
 
