@@ -1,9 +1,12 @@
+// Demonstrates modifying mutable state accross await points. No synchronization needed.
+
 use
 {
-	log               :: { *                    } ,
-	thespis           :: { *                    } ,
-	thespis_impl      :: { *                    } ,
-	futures::executor :: { block_on, ThreadPool } ,
+	log               :: { *            } ,
+	thespis           :: { *            } ,
+	thespis_impl      :: { *            } ,
+	futures::executor :: { ThreadPool   } ,
+	std               :: { error::Error } ,
 };
 
 
@@ -44,31 +47,28 @@ impl Handler< Ping > for MyActor
 }
 
 
-
-fn main()
+#[async_std::main]
+//
+async fn main() -> Result< (), Box<dyn Error> >
 {
-	simple_logger::init().unwrap();
+	simple_logger::init()?;
 
-	let program = async move
-	{
-		let     exec = ThreadPool::new().expect( "create threadpool" );
-		let     a    = MyActor{ seed: "seed".into() }                          ;
-		let mut addr = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+	let     exec  = ThreadPool::new()?;
+	let     a     = MyActor{ seed: "seed".into() };
+	let mut addr  = Addr::builder().start( a, &exec )?;
+	let mut addr2 = addr.clone();
 
-		let mut addr2 = addr.clone();
+	trace!( "calling addr.call( Ping( 'ping' ) )" );
+	let result  = addr.call( Ping( "ping".into() ) ).await?;
 
-		trace!( "calling addr.call( Ping( 'ping' ) )" );
-		let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
+	trace!( "calling addr.call( Ping( 'pang' ) )" );
+	let result2 = addr2.call( Ping( "pang".into() ) ).await?;
 
-		trace!( "calling addr.call( Ping( 'pang' ) )" );
-		let result2 = addr2.call( Ping( "pang".into() ) ).await.expect( "Call failed" );
+	info!( "We got a result: {}", result );
+	assert_eq!( "seedpingbla - after yield".to_string(), result );
 
-		info!( "We got a result: {}", result );
-		assert_eq!( "seedpingbla - after yield".to_string(), result );
+	info!( "We got a result: {}", result2 );
+	assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
 
-		info!( "We got a result: {}", result2 );
-		assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
-	};
-
-	block_on( program );
+	Ok(())
 }

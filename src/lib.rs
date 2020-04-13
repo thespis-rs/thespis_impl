@@ -23,21 +23,23 @@
 	variant_size_differences      ,
 )]
 
-mod addr       ;
-mod clone_sink ;
-mod envelope   ;
-mod error      ;
-mod inbox      ;
-mod receiver   ;
+mod actor_builder ;
+mod addr          ;
+mod clone_sink    ;
+mod envelope      ;
+mod error         ;
+mod inbox         ;
+mod receiver      ;
 
 
 pub use
 {
-	addr       :: * ,
-	clone_sink :: * ,
-	error      :: * ,
-	inbox      :: * ,
-	receiver   :: * ,
+	actor_builder :: * ,
+	addr          :: * ,
+	clone_sink    :: * ,
+	error         :: * ,
+	inbox         :: * ,
+	receiver      :: * ,
 };
 
 
@@ -68,15 +70,16 @@ mod import
 {
 	pub(crate) use
 	{
-		thiserror     :: { Error   } ,
-		thespis       :: { *       } ,
-		log           :: { *       } ,
+		thiserror       :: { Error   } ,
+		thespis         :: { *       } ,
+		log             :: { *       } ,
+		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 
 		std ::
 		{
-			fmt                                                       ,
-			pin         :: { Pin                                    } ,
-			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
+			fmt                                                  ,
+			pin    :: { Pin                                    } ,
+			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
 		},
 
 

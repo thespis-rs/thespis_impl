@@ -1,9 +1,9 @@
 use
 {
-	thespis         :: { *                                        } ,
-	thespis_impl    :: { Addr                                     } ,
-	futures         :: { task::LocalSpawnExt, executor::LocalPool } ,
-	std             :: { marker::PhantomData, rc::Rc              } ,
+	thespis         :: { *                                         } ,
+	thespis_impl    :: { Addr                                      } ,
+	futures         :: { task::LocalSpawnExt, executor::LocalPool  } ,
+	std             :: { marker::PhantomData, rc::Rc, error::Error } ,
 };
 
 
@@ -52,24 +52,28 @@ impl Handler<Ping> for MyActor
 }
 
 
-fn main()
+#[async_std::main]
+//
+async fn main() -> Result< (), Box<dyn Error> >
 {
 	let mut pool = LocalPool::new();
 	let     exec = pool.spawner();
 
 	let actor    = MyActor { i: 3, nosend: PhantomData };
-	let mut addr = Addr::try_from_actor_local( actor, &exec ).expect( "spawn actor locally" );
+	let mut addr = Addr::builder().start_local( actor, &exec )?;
 
 	exec.spawn_local( async move
 	{
 		let ping = Ping( "ping".into() );
 
-		let result_local  = addr.call( ping.clone() ).await.expect( "Call local"  );
+		let result_local = addr.call( ping.clone() ).await.expect( "Call" );
 
 		assert_eq!( "pong".to_string(), result_local );
 		dbg!( result_local );
 
-	}).expect( "spawn local" );
+	})?;
 
 	pool.run();
+
+	Ok(())
 }

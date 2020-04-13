@@ -4,6 +4,7 @@ use
 	thespis           :: { *                    } ,
 	thespis_impl      :: { *                    } ,
 	futures::executor :: { block_on, ThreadPool } ,
+	std               :: { error::Error         } ,
 };
 
 
@@ -33,16 +34,16 @@ impl Handler< Ping > for MyActor
 
 #[async_std::main]
 //
-async fn main()
+async fn main() -> Result< (), Box<dyn Error> >
 {
-	let     exec = ThreadPool::new().expect( "create threadpool" );
-	let mut addr = Addr::try_from_actor( MyActor, &exec ).expect( "Failed to create address" );
+	let     exec = ThreadPool::new()?;
+	let mut addr = Addr::builder().start( MyActor, &exec )?;
 
 	let handle = thread::spawn( move ||
 	{
 		let thread_program = async move
 		{
-			let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call failed" );
+			let result  = addr.call( Ping( "ping".into() ) ).await.expect( "Call" );
 
 			assert_eq!( "pong".to_string(), result );
 			dbg!( result );
@@ -51,5 +52,7 @@ async fn main()
 		block_on( thread_program );
 	});
 
-	handle.join().expect( "thread succeeds" );
+	handle.join().unwrap();
+
+	Ok(())
 }

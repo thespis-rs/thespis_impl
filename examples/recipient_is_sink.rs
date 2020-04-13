@@ -4,6 +4,7 @@ use
 	thespis           :: { *                 } ,
 	thespis_impl      :: { *                 } ,
 	futures::executor :: { ThreadPool        } ,
+	std               :: { error::Error      } ,
 	// async_executors   :: { ThreadPool        } ,
 };
 
@@ -27,17 +28,19 @@ impl Handler< Count > for MyActor
 
 #[async_std::main]
 //
-async fn main()
+async fn main() -> Result< (), Box<dyn Error> >
 {
 	let     a      = MyActor { count: 0 };
-	let     exec   = ThreadPool::new().expect( "create threadpool" );
-	let mut addr   = Addr::try_from_actor( a, &exec ).expect( "Failed to create address" );
+	let     exec   = ThreadPool::new()?;
+	let mut addr   = Addr::builder().start( a, &exec )?;
 	let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
 
-	stream.forward( &mut addr ).await.expect( "forward to sink" );
+	stream.forward( &mut addr ).await?;
 
-	let total = addr.call( Count ).await.expect( "Call failed" );
+	let total = addr.call( Count ).await?;
 
 	assert_eq!( 4, total );
 	dbg!( total );
+
+	Ok(())
 }

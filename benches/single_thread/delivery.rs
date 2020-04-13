@@ -1,13 +1,12 @@
 use
 {
-	async_chanx       :: { *                                                     } ,
 	async_executors   :: { *                                                     } ,
 	criterion         :: { Criterion, criterion_group, criterion_main, BatchSize } ,
 	futures           :: { executor::{ block_on }                                } ,
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { *                                                     } ,
 	std               :: { convert::TryFrom                                      } ,
-	tokio             :: { sync::mpsc, runtime::Builder                          } ,
+	tokio             :: { runtime::Builder                                      } ,
 	actix             :: { Actor as _, ActorFuture                               } ,
 };
 
@@ -179,16 +178,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
-					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
-					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx ) ;
-
-					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
-					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
-					let tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx ) ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
+					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
 
 					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
@@ -268,16 +260,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (tx, rx)    = mpsc::channel( BOUNDED )                                                        ;
-					let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                              ;
-					let tx          = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-					let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx ) ;
-
-					let (tx, rx) = mpsc::channel( BOUNDED )                                                    ;
-					let sum_mb   = Inbox::new( None, Box::new( rx ) )                                          ;
-					let tx       = Box::new( TokioSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-					let sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx ) ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                                         ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
+					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
 
 					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };

@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, BoxEnvelope, envelope::*, error::* };
+use crate::{ import::*, ActorBuilder, ChanSender, BoxEnvelope, envelope::*, error::* };
 
 
 
@@ -98,78 +98,11 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
-	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
-	/// Will consume your actor and return an address.
-	///
-	/// It uses a [`tokio::sync::mpsc`] channel with a 16 msg buffer.
-	///
-	/// ## Errors
-	///
-	/// - [`ThesErr::Spawn`] with the id of the mailbox when spawning fails.
-	///
-	///
-	/// TODO: have doc examples tested by rustdoc
-	///
-	/// ```ignore
-	/// let addr = Addr::try_from( MyActor{} )?;
-	/// addr.call( MyMessage{} ).await?;
-	/// ```
+	/// Produces a builder for convenient creation of both [`Addr`] and [`Inbox`].
 	//
-	#[ cfg( feature = "convenience" ) ]
-	//
-	pub fn try_from_actor( actor: A, exec: impl Spawn ) -> ThesRes<Self> where A: Send
+	pub fn builder() -> ActorBuilder<A>
 	{
-		use async_chanx::TokioSender;
-		use crate::{ SinkError, Inbox };
-
-		let (tx, rx) = tokio::sync::mpsc::channel( 16 );
-		let mb       = Inbox::new( None, Box::new(rx) ) ;
-		let id       = mb.id();
-
-		let tx    = Box::new( TokioSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-		let addr  = Addr::new( id, None, tx ) ;
-
-		exec.spawn( mb.start_fut( actor ) ).map_err( |_| ThesErr::Spawn{ actor: format!( "{}", id ) } )?;
-		Ok( addr )
-	}
-
-	/// Automatically create a mailbox (thespis_impl::single_thread::Inbox) and an address from your
-	/// actor. This avoids the boilerplate of manually having to create the mailbox and the address.
-	/// Will consume your actor and return an address.
-	///
-	/// This will spawn the mailbox on the current thread. You need to set up async_runtime to enable
-	/// spawn_local.
-	///
-	/// It uses a [`tokio::sync::mpsc`] channel with a 16 msg buffer.
-	///
-	/// ## Errors
-	///
-	/// - [`ThesErr::Spawn`] with the id of the mailbox when spawning fails.
-	///
-	/// TODO: have doc examples tested by rustdoc
-	///
-	/// ```ignore
-	/// let addr = Addr::try_from( MyActor{} )?;
-	/// addr.call( MyMessage{} ).await?;
-	/// ```
-	//
-	#[ cfg( feature = "convenience" ) ]
-	//
-	pub fn try_from_actor_local( actor: A, exec: &impl LocalSpawn ) -> ThesRes<Self>
-	{
-		use async_chanx::TokioSender;
-		use crate::{ SinkError, Inbox };
-
-		let (tx, rx) = tokio::sync::mpsc::channel( 16 );
-		let mb       = Inbox::new( None, Box::new(rx) ) ;
-		let id       = mb.id();
-
-		let tx    = Box::new( TokioSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-		let addr  = Addr::new( id, None, tx ) ;
-
-		exec.spawn_local( mb.start_fut_local( actor ) ).map_err( |_| ThesErr::Spawn{ actor: format!( "{}", id ) } )?;
-		Ok( addr )
+		Default::default()
 	}
 }
 

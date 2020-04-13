@@ -26,6 +26,10 @@ thiserror = "^1"
 optional = true
 path = "../../async_chanx"
 
+[dependencies.async_executors]
+features = ["spawn_handle"]
+version = "^0.2"
+
 [dependencies.futures]
 default-features = false
 features = ["std", "compat"]
@@ -54,7 +58,7 @@ path = "../../async_chanx"
 
 [dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std", "tokio_ct", "spawn_handle"]
-path = "../../async_executors"
+version = "^0.2"
 
 [dev-dependencies.criterion]
 features = []
@@ -97,15 +101,10 @@ path = "examples/perf/thespis_unbounded.rs"
 name = "actix_unbounded_perf"
 path = "examples/perf/actix_unbounded.rs"
 
-[[example]]
-name = "basic"
-path = "examples/basic.rs"
-required-features = ["convenience"]
-
 [features]
-convenience = ["tokio/sync", "tokio/stream", "async_chanx"]
 default = []
 external_doc = []
+tokio_channel = ["tokio/sync", "tokio/stream", "async_chanx"]
 
 [lib]
 bench = false
