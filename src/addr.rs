@@ -146,7 +146,7 @@ impl<A, M> Address<M> for Addr<A>
 
 
 
-	fn clone_box<'a>( &self ) -> BoxAddress<'a, M, ThesErr>
+	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
 	{
 		Box::new( self.clone() )
 	}

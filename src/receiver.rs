@@ -8,14 +8,14 @@ use crate::{ import::*, error::* };
 //
 pub struct Receiver<M: Message>
 {
-	rec: BoxAddress<'static, M, ThesErr>
+	rec: BoxAddress<M, ThesErr>
 }
 
 impl<M: Message> Receiver<M>
 {
 	/// Create a new Receiver
 	//
-	pub fn new( rec: BoxAddress<'static, M, ThesErr> ) -> Self
+	pub fn new( rec: BoxAddress<M, ThesErr> ) -> Self
 	{
 		Self { rec }
 	}
@@ -67,7 +67,7 @@ impl<M: Message> Address<M> for Receiver<M>
 	}
 
 
-	fn clone_box<'a>( &self ) -> BoxAddress<'a, M, ThesErr>
+	fn clone_box( &self ) -> BoxAddress<M, ThesErr>
 	{
 		self.rec.clone_box()
 	}
