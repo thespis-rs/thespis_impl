@@ -3,10 +3,11 @@
 pub use
 {
 	criterion         :: { Criterion, criterion_group, criterion_main     } ,
-	futures           :: { FutureExt                                      } ,
+	futures           :: { FutureExt, channel::oneshot                    } ,
 	thespis           :: { *                                              } ,
 	thespis_impl      :: { *                                              } ,
 	std               :: { thread, sync::{ Arc, Mutex }, convert::TryFrom } ,
+	std               :: { marker::PhantomData, rc::Rc                    } ,
 	actix             :: { Actor as _, ActorFuture, Arbiter, System       } ,
 	futures           :: { executor::block_on                             } ,
 	async_executors   :: { *                                              } ,
@@ -29,14 +30,15 @@ pub const fn termial( n: usize ) -> usize
 }
 
 
-#[ derive( Actor ) ] pub struct Sum
+#[ derive( Actor, Debug ) ] pub struct Sum
 {
 	pub total: u64,
 	pub inner: Addr<SumIn>,
+	pub _nosend: PhantomData<Rc<()>>,
 }
 
 
-#[ derive( Actor ) ] pub struct SumIn
+#[ derive( Actor, Debug ) ] pub struct SumIn
 {
 	pub count: u64,
 }
@@ -51,20 +53,30 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	#[async_fn] fn handle( &mut self, msg: Add )
+	#[async_fn_nosend] fn handle_local( &mut self, msg: Add )
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
 		self.total += msg.0 + inner;
+	}
+
+	#[async_fn] fn handle( &mut self, _msg: Add )
+	{
+		unreachable!( "non send actor" );
 	}
 }
 
 
 impl Handler< Show > for Sum
 {
-	#[async_fn] fn handle( &mut self, _msg: Show ) -> u64
+	#[async_fn_nosend] fn handle_local( &mut self, _msg: Show ) -> u64
 	{
 		self.total
+	}
+
+	#[async_fn] fn handle( &mut self, _msg: Show ) -> u64
+	{
+		unreachable!( "non send actor" );
 	}
 }
 
@@ -79,11 +91,13 @@ impl Handler< Show > for SumIn
 }
 
 
-
+#[ derive( Debug ) ]
+//
 pub struct ActixSum
 {
 	pub total: u64,
 	pub inner: actix::Addr<SumIn>,
+	pub _nosend: PhantomData<Rc<()>>,
 }
 
 impl actix::Actor for ActixSum { type Context = actix::Context<Self>; }
