@@ -90,7 +90,7 @@ dev-dependencies:
   actix-rt          : ^1
   actix             : ^0.10.0-alpha
   criterion         : { version: ^0.3, features: [] }
-  tokio             : { version: ^0.2, features: [ sync ] }
+  tokio             : { version: ^0.2, features: [ sync, macros ] }
 
 
 bench:
@@ -101,6 +101,10 @@ bench:
 
   - name   : multi_thread_delivery
     path   : benches/multi_thread/delivery.rs
+    harness: false
+
+  - name   : contention
+    path   : benches/multi_thread/contention.rs
     harness: false
 
 
@@ -120,6 +124,12 @@ example:
 
   - name: actix_local_perf
     path: examples/perf/actix_local.rs
+
+  - name: actix_mpsc_perf
+    path: examples/perf/actix_mpsc.rs
+
+  - name: thespis_mpsc_perf
+    path: examples/perf/thespis_mpsc.rs
 
   - name: thespis_unbounded_perf
     path: examples/perf/thespis_unbounded.rs

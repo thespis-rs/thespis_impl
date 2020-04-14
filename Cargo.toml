@@ -16,6 +16,11 @@ harness = false
 name = "multi_thread_delivery"
 path = "benches/multi_thread/delivery.rs"
 
+[[bench]]
+harness = false
+name = "contention"
+path = "benches/multi_thread/contention.rs"
+
 [dependencies]
 anyhow = "^1"
 log = "^0.4"
@@ -70,7 +75,7 @@ features = ["thread-pool"]
 version = "^0.3"
 
 [dev-dependencies.tokio]
-features = ["sync"]
+features = ["sync", "macros"]
 version = "^0.2"
 
 [[example]]
@@ -92,6 +97,14 @@ path = "examples/perf/thespis_local.rs"
 [[example]]
 name = "actix_local_perf"
 path = "examples/perf/actix_local.rs"
+
+[[example]]
+name = "actix_mpsc_perf"
+path = "examples/perf/actix_mpsc.rs"
+
+[[example]]
+name = "thespis_mpsc_perf"
+path = "examples/perf/thespis_mpsc.rs"
 
 [[example]]
 name = "thespis_unbounded_perf"
