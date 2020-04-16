@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub mod actors;
 
 
@@ -11,3 +13,5 @@ pub mod import
 		std           :: { marker::PhantomData } ,
 	};
 }
+
+pub type DynError = Box< dyn std::error::Error + Send + Sync >;

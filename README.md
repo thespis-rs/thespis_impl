@@ -4,6 +4,8 @@ The reference implementation of the thespis actor model
 
 ## TODO
 
+- !Send Messages.
+
 - test supervision + error message logged when actor panics (does it have actor name in it?).
 - document the fact that we use catch_unwind
 
