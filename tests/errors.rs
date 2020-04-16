@@ -117,7 +117,7 @@ async fn test_mb_closed_before_response()
 
 		Err(e) =>
 		{
-			if let ThesErr::MailboxClosedBeforeResponse{..} = e {}
+			if let ThesErr::ActorStoppedBeforeResponse{..} = e {}
 
 			else
 			{

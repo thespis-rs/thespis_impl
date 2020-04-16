@@ -35,11 +35,12 @@ pub enum ThesErr
 	// },
 
 
-	/// The mailbox was closed before the result of the computation got returned upon `call`.
+	/// Either the actor panicked during processing of the message or the mailbox was dropped.
+	/// Only returned when doing a `call`.
 	//
 	#[ error( "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {actor}" ) ]
 	//
-	MailboxClosedBeforeResponse
+	ActorStoppedBeforeResponse
 	{
 		/// The actor concerned by the error.
 		//

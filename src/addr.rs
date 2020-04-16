@@ -139,7 +139,7 @@ impl<A, M> Address<M> for Addr<A>
 
 			ret_rx.await
 
-				.map_err( |_| ThesErr::MailboxClosedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
+				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
 
 		}.boxed()
 	}

@@ -4,9 +4,12 @@ The reference implementation of the thespis actor model
 
 ## TODO
 
+- ActorBuilder has start and start_handle, but Inbox only has start.
+
 - !Send Messages.
 
 - test supervision + error message logged when actor panics (does it have actor name in it?).
+  - look at other api's for supervision, akka, erlang.
 - document the fact that we use catch_unwind
 
 - supervisor type? take a closure that produces the actor?

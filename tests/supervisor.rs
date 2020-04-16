@@ -33,6 +33,9 @@ impl Handler< Add > for Counter
 }
 
 
+// Actor that can supervise other actors. It will start the actor for the first time
+// if it's not already started.
+//
 #[ derive( Actor ) ] struct Supervisor { /*self_addr: Addr<Self>,*/ exec: Box< dyn Spawn + Send> }
 
 struct Supervise<A: Actor>
@@ -98,8 +101,8 @@ async fn supervise() -> Result< (), DynError >
 
 	AsyncStd.spawn( supervisor )?;
 
-	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::MailboxClosedBeforeResponse{..} ) ));
-	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::MailboxClosedBeforeResponse{..} ) ));
+	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::ActorStoppedBeforeResponse{..} ) ));
+	assert!(matches!( addr.send( Add(10) ).await, Ok(()) ));
 
 	assert_eq!( addr.call( Add(11) ).await, Ok(11) );
 
@@ -122,8 +125,8 @@ async fn supervisor() -> Result< (), DynError >
 
 	let mut addr = supervisor.call( supervise ).await?.unwrap();
 
-	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::MailboxClosedBeforeResponse{..} ) ));
-	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::MailboxClosedBeforeResponse{..} ) ));
+	assert!(matches!( addr.call( Add(10) ).await, Err( ThesErr::ActorStoppedBeforeResponse{..} ) ));
+	assert!(matches!( addr.send( Add(10) ).await, Ok(()) ));
 
 	assert_eq!( addr.call( Add(11) ).await, Ok(11) );
 

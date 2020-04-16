@@ -65,7 +65,7 @@ impl<A: Actor> ActorBuilder<A>
 	}
 
 
-	/// Set the channel to use for communication between Addr and Inbox.
+	/// Set the channel to use for communication between `Addr` and `Inbox`.
 	///
 	/// This option is incompatible with bounded.
 	///
