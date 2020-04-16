@@ -74,7 +74,7 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	pub fn channel( mut self, tx: ChanSender<A>, rx: ChanReceiver<A> ) -> Self
 	{
-		debug_assert!( self.bounded.is_none() );
+		debug_assert!( self.bounded == Some( BOUNDED ) );
 
 		self.tx = tx.into();
 		self.rx = rx.into();
