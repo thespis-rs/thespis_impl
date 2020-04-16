@@ -44,23 +44,21 @@ impl Message for Count
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Count ) -> u8
 	{
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 
 impl Handler< Count > for Other
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Count ) -> u8
 	{
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 
