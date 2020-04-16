@@ -82,9 +82,6 @@ impl Handler<Void> for Panic
 {
 	fn handle( &mut self, _: Void ) -> Return<'_, ()>
 	{
-		// Avoid printing the thread panicked message in test output.
-		//
-		std::panic::set_hook(Box::new(|_| ()));
 		panic!();
 	}
 }
