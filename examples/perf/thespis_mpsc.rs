@@ -74,7 +74,7 @@ async fn main() -> Result< (), DynError >
 
 	// Verify result.
 	//
-	let res = sum_addr.call( Show{} ).await?;
+	let res = sum_addr.call( Show ).await?;
 	drop( sum_addr );
 
 	assert_eq!( MPSC_TOTAL, res as usize );
