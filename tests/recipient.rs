@@ -1,5 +1,3 @@
-#![ feature( optin_builtin_traits ) ]
-
 // TODO:
 // - ✔ basic usage (using addr directly uses recipient, so that's already tested)
 //     Let's test storing Box<Address<M>> to several actors and send/call on that

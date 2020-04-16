@@ -1,5 +1,3 @@
-#![ feature( optin_builtin_traits ) ]
-
 // Tested:
 //
 // - ✔ Send message to another thread

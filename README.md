@@ -5,6 +5,9 @@ The reference implementation of the thespis actor model
 ## TODO
 
 - test supervision + error message logged when actor panics (does it have actor name in it?).
+- document the fact that we use catch_unwind
+
+- supervisor type? take a closure that produces the actor?
 
 - Isolating mutable state and enforcing immutable messages guarantees implicit synchronization. However, the concept of asynchronous messaging and no global state challenges coordination. An application may require consensus or a concerted view of state between multiple actors. When multiple actors must be strictly orchestrated in order to provide a distinct application function, correct messaging can become very demanding. Thus, many implementations provide higher-level abstractions that implement low-level coordination protocols based on complex message flows, but hide the internal complexity from the developer. For Erlang, OTP is a standard library that contains a rich set of abstractions, generic protocol implementations and behaviors.
 

@@ -1,5 +1,3 @@
-#![ feature( optin_builtin_traits ) ]
-
 // Tested:
 //
 // - verify actor stops when all adresses are dropped.
