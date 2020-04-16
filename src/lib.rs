@@ -58,7 +58,7 @@ pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError>
 
 /// Type of boxed channel sender for Addr.
 //
-pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Sync + Unpin >;
+pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 
 
