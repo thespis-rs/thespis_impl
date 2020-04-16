@@ -46,18 +46,10 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	// /// Translate a futures SendError to a ThesErr.
-	// /// Returns MailboxFull or MailboxClosed.
-	// //
-	// pub fn mb_error( e: ChanErr<BoxEnvelope<A>>, context: String ) -> ThesErr
-	// {
-	// 	// only error possible.
-	// 	ThesErr::MailboxClosed{ actor: context }.into()
-	// }
 
+	async fn start_fut_inner( mut self, mut actor: A ) -> Option<Self>
 
-
-	async fn start_fut_inner( mut self, mut actor: A ) where A: Send
+		where A: Send
 	{
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
@@ -66,7 +58,11 @@ impl<A> Inbox<A> where A: Actor
 		{
 			trace!( "actor {} will process a message.", &self );
 
-			envl.handle( &mut actor ).await;
+			if let Err( e ) = AssertUnwindSafe( envl.handle( &mut actor ) ).catch_unwind().await
+			{
+				error!( "Actor panicked: {}, with error: {:?}", &self, e );
+				return Some(self);
+			}
 
 			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 		}
@@ -75,34 +71,47 @@ impl<A> Inbox<A> where A: Actor
 		//
 		actor.stopped().await;
 		trace!( "Mailbox stopped actor for {}", &self );
+
+		None
 	}
 
 
 
-	async fn start_fut_inner_local( mut self, mut actor: A )
+	async fn start_fut_inner_local( mut self, mut actor: A ) -> Option<Self>
 	{
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
 
 		while let Some( envl ) = self.msgs.next().await
 		{
-			envl.handle_local( &mut actor ).await;
+			if let Err( e ) = AssertUnwindSafe( envl.handle_local( &mut actor ) ).catch_unwind().await
+			{
+				error!( "Actor panicked: {}, with error: {:?}", &self, e );
+				return Some(self);
+			}
+
 			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 		}
 
 		actor.stopped().await;
 		trace!( "Mailbox stopped actor for {}", &self );
+
+		None
 	}
 
 
 	/// Spawn the mailbox.
-	/// TODO: remove the start and start_local
 	//
-	pub fn start( self, actor: A, exec: &impl Spawn ) -> ThesRes<()> where A: Send
+	pub fn start( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
+
+		ThesRes< JoinHandle< Option<Self> > >
+
+		where A: Send
+
 	{
 		let id = self.id;
 
-		Ok( exec.spawn( self.start_fut( actor ) )
+		Ok( exec.spawn_handle( self.start_fut( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -110,11 +119,14 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
+	pub fn start_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
+
+		-> ThesRes< JoinHandle< Option<Self> > >
+
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_local( self.start_fut_inner_local( actor ) )
+		Ok( exec.spawn_handle_local( self.start_fut_inner_local( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -124,7 +136,7 @@ impl<A> Inbox<A> where A: Actor
 
 impl<A: Actor + Send> Mailbox<A> for Inbox<A>
 {
-	fn start_fut( self, actor: A ) -> Return<'static, ()>
+	fn start_fut( self, actor: A ) -> Return<'static, Option<Self>>
 	{
 		self.start_fut_inner( actor ).boxed()
 	}
@@ -134,7 +146,7 @@ impl<A: Actor + Send> Mailbox<A> for Inbox<A>
 
 impl<A: Actor> MailboxLocal<A> for Inbox<A>
 {
-	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, ()>
+	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, Option<Self>>
 	{
 		self.start_fut_inner_local( actor ).boxed_local()
 	}

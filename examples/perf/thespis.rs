@@ -18,7 +18,6 @@ async fn main()
 	let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
 	let (mut sum_addr, sum_mb)   = Addr::builder().bounded( Some(BOUNDED) ).build() ;
 
-	let sum    = Sum  { total: 5, inner: sum_in_addr } ;
 	let sum_in = SumIn{ count: 0 }                     ;
 
 	let sumin_thread = thread::spawn( move ||
@@ -28,7 +27,9 @@ async fn main()
 
 	let sum_thread = thread::spawn( move ||
 	{
-		block_on( sum_mb.start_fut( sum ) );
+		let sum    = Sum  { total: 5, inner: sum_in_addr, _nosend: PhantomData } ;
+
+		block_on( sum_mb.start_fut_local( sum ) );
 	});
 
 

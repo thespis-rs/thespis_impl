@@ -166,7 +166,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn( fut ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		exec.spawn( async { fut.await; } ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
 
 		Ok(addr)
 	}
@@ -176,9 +176,12 @@ impl<A: Actor> ActorBuilder<A>
 	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
 	/// you call [`JoinHandle::detach`] on it.
 	//
-	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle<()> ) -> Result< (Addr<A>, JoinHandle<()>), ThesErr >
+	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Inbox<A>> > )
+
+		-> Result< (Addr<A>, JoinHandle< Option<Inbox<A>> >), ThesErr >
 
 		where A: Send
+
 	{
 		let (addr, mb) = self.build();
 		let fut = mb.start_fut( actor );
@@ -203,7 +206,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn_local( fut ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		exec.spawn_local( async { fut.await; } ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
 
 		Ok(addr)
 	}
@@ -213,7 +216,10 @@ impl<A: Actor> ActorBuilder<A>
 	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
 	/// you call [`JoinHandle::detach`] on it.
 	//
-	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle<()> ) -> Result< (Addr<A>, JoinHandle<()>), ThesErr >
+	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Inbox<A>> > )
+
+		-> Result< (Addr<A>, JoinHandle< Option<Inbox<A>> >), ThesErr >
+
 	{
 		let (addr, mb) = self.build();
 		let fut = mb.start_fut_local( actor );

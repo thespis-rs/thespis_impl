@@ -2,16 +2,16 @@
 
 pub use
 {
-	criterion         :: { Criterion, criterion_group, criterion_main     } ,
-	futures           :: { FutureExt, channel::oneshot                    } ,
-	thespis           :: { *                                              } ,
-	thespis_impl      :: { *                                              } ,
-	std               :: { thread, sync::{ Arc, Mutex }, convert::TryFrom } ,
-	std               :: { marker::PhantomData, rc::Rc                    } ,
-	actix             :: { Actor as _, ActorFuture, Arbiter, System       } ,
-	futures           :: { executor::block_on                             } ,
-	async_executors   :: { *                                              } ,
-	tokio             :: { runtime::Builder as TokBuilder                 } ,
+	criterion         :: { Criterion, criterion_group, criterion_main       } ,
+	futures           :: { FutureExt, channel::oneshot, task::LocalSpawnExt } ,
+	thespis           :: { *                                                } ,
+	thespis_impl      :: { *                                                } ,
+	std               :: { thread, sync::{ Arc, Mutex }, convert::TryFrom   } ,
+	std               :: { marker::PhantomData, rc::Rc                      } ,
+	actix             :: { Actor as _, ActorFuture, Arbiter, System         } ,
+	futures           :: { executor::block_on                               } ,
+	async_executors   :: { *                                                } ,
+	tokio             :: { runtime::Builder as TokBuilder                   } ,
 };
 
 pub type DynError = Box< dyn std::error::Error + Send + Sync + 'static >;

@@ -80,6 +80,7 @@ mod import
 			fmt                                                  ,
 			pin    :: { Pin                                    } ,
 			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
+			panic  :: { AssertUnwindSafe                       } ,
 		},
 
 
