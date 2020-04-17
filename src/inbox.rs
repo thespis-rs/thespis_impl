@@ -102,7 +102,22 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox.
 	//
-	pub fn start( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
+	pub fn start( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
+
+		where A: Send
+
+	{
+		let id = self.id;
+
+		Ok( exec.spawn( async { self.start_fut( actor ).await; } )
+
+			.map_err( |_e| ThesErr::Spawn{ /* TODO: source: e.into(), */actor: format!("{:?}", id) } )? )
+	}
+
+
+	/// Spawn the mailbox.
+	//
+	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
 
 		ThesRes< JoinHandle< Option<Self> > >
 
@@ -119,7 +134,19 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
+	pub fn start_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
+	{
+		let id = self.id;
+
+		Ok( exec.spawn_local( async { self.start_fut_inner_local( actor ).await; } )
+
+			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+	}
+
+
+	/// Spawn the mailbox on the current thread.
+	//
+	pub fn start_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
 
 		-> ThesRes< JoinHandle< Option<Self> > >
 

@@ -69,7 +69,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 		{
 			while let Some(mb) = mb_handle.await
 			{
-				mb_handle = mb.start( (actor.create)(), &AsyncStd ).unwrap();
+				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
 			}
 		};
 
@@ -94,7 +94,7 @@ async fn supervise() -> Result< (), DynError >
 	{
 		while let Some(mb) = mb_handle.await
 		{
-			mb_handle = mb.start( Counter, &AsyncStd ).unwrap();
+			mb_handle = mb.start_handle( Counter, &AsyncStd ).unwrap();
 		}
 	};
 

@@ -4,13 +4,10 @@ The reference implementation of the thespis actor model
 
 ## TODO
 
-- ActorBuilder has start and start_handle, but Inbox only has start.
-
 - !Send Messages.
 
 - test supervision + error message logged when actor panics (does it have actor name in it?).
   - look at other api's for supervision, akka, erlang.
-- document the fact that we use catch_unwind
 
 - supervisor type? take a closure that produces the actor?
 
@@ -33,6 +30,7 @@ The reference implementation of the thespis actor model
 - in thespis_remote we get one more DROP address log than CREATE. We should get to the bottom of this phantom address as it throws of debugging.
 - clean up benches
 - switch to tracing. for logging and metrics.
+- document the fact that we use catch_unwind
 
 ## Types of channels:
 
