@@ -76,13 +76,13 @@ async fn move_call() -> u64
 	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd ).expect( "spawn actor mailbox" );
 	let mut addr2 = addr.clone();
 	let (tx, rx)  = oneshot::channel::<()>();
-	let call_fut  = async move { addr2.call( Add( 10 ) ).await.expect( "Call failed" ) };
+	let call  = async move { addr2.call( Add( 10 ) ).await.expect( "Call failed" ) };
 
 	thread::spawn( move ||
 	{
 		let thread_program = async move
 		{
-			call_fut.await;
+			call.await;
 		};
 
 		block_on( thread_program );

@@ -92,12 +92,12 @@ fn main()
 	{
 		let sum_in = SumIn{ count: 0 };
 
-		async_std::task::block_on( sum_in_mb.start_fut( sum_in ) );
+		async_std::task::block_on( sum_in_mb.start( sum_in ) );
 	});
 
 	let sum_thread = thread::spawn( move ||
 	{
-		async_std::task::block_on( sum_mb.start_fut( sum ) );
+		async_std::task::block_on( sum_mb.start( sum ) );
 	});
 
 

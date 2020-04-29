@@ -22,14 +22,14 @@ async fn main()
 
 	let sumin_thread = thread::spawn( move ||
 	{
-		block_on( sum_in_mb.start_fut( sum_in ) );
+		block_on( sum_in_mb.start( sum_in ) );
 	});
 
 	let sum_thread = thread::spawn( move ||
 	{
 		let sum    = Sum  { total: 5, inner: sum_in_addr, _nosend: PhantomData } ;
 
-		block_on( sum_mb.start_fut_local( sum ) );
+		block_on( sum_mb.start_local( sum ) );
 	});
 
 

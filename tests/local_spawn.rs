@@ -97,7 +97,7 @@ fn test_manually_not_send_actor()
 		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
 		let mut addr = Addr ::new( id, name, tx )     ;
 
-		exec2.spawn_local( async { mb.start_fut_local( actor ).await; } ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -134,7 +134,7 @@ fn test_manually_send_actor()
 		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
 		let mut addr = Addr ::new( id, name, tx )     ;
 
-		exec2.spawn_local( async { mb.start_fut_local( actor ).await; } ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 

@@ -83,7 +83,7 @@ impl<A: Actor> ActorBuilder<A>
 
 
 	/// Build [`Addr`] and [`Inbox`]. This does not yet consume an actor and you have to
-	/// call [`start_fut`] or [`start_fut_local`] on [`Inbox`] and spawn the future to
+	/// call [`start`] or [`start_local`] on [`Inbox`] and spawn the future to
 	/// run your actor.
 	///
 	/// The advantage of this method is that you can pass the Addr to the constructor
@@ -162,7 +162,7 @@ impl<A: Actor> ActorBuilder<A>
 		where A: Send
 	{
 		let (addr, mb) = self.build();
-		let fut = mb.start_fut( actor );
+		let fut = mb.start( actor );
 
 		// Todo, include a source error.
 		//
@@ -184,7 +184,7 @@ impl<A: Actor> ActorBuilder<A>
 
 	{
 		let (addr, mb) = self.build();
-		let fut = mb.start_fut( actor );
+		let fut = mb.start( actor );
 
 		// Todo, include a source error.
 		//
@@ -202,7 +202,7 @@ impl<A: Actor> ActorBuilder<A>
 	pub fn start_local( self, actor: A, exec: & dyn LocalSpawn ) -> Result< Addr<A>, ThesErr >
 	{
 		let (addr, mb) = self.build();
-		let fut = mb.start_fut_local( actor );
+		let fut = mb.start_local( actor );
 
 		// Todo, include a source error.
 		//
@@ -222,7 +222,7 @@ impl<A: Actor> ActorBuilder<A>
 
 	{
 		let (addr, mb) = self.build();
-		let fut = mb.start_fut_local( actor );
+		let fut = mb.start_local( actor );
 
 		// Todo, include a source error.
 		//

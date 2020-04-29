@@ -42,9 +42,9 @@ impl Handler< Add > for Sum
 	{
 		let action = self.inner.send( Show );
 
-		let act_fut = wrap_future::<_, Self>(action);
+		let act = wrap_future::<_, Self>(action);
 
-		let update_self = act_fut.map( move |result, actor, _ctx|
+		let update_self = act.map( move |result, actor, _ctx|
 		{
 			actor.total += msg.0 + result.expect( "Call SumIn" );
 		});

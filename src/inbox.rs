@@ -46,8 +46,9 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-
-	async fn start_fut_inner( mut self, mut actor: A ) -> Option<Self>
+	/// Run the mailbox.
+	//
+	pub async fn start( mut self, mut actor: A ) -> Option<Self>
 
 		where A: Send
 	{
@@ -76,8 +77,9 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-
-	async fn start_fut_inner_local( mut self, mut actor: A ) -> Option<Self>
+	/// Run the mailbox with a non-Send Actor.
+	//
+	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
 	{
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
@@ -102,14 +104,14 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox.
 	//
-	pub fn start( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
+	pub fn spawn( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
 
 		where A: Send
 
 	{
 		let id = self.id;
 
-		Ok( exec.spawn( async { self.start_fut( actor ).await; } )
+		Ok( exec.spawn( async { self.start( actor ).await; } )
 
 			.map_err( |_e| ThesErr::Spawn{ /* TODO: source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -126,7 +128,7 @@ impl<A> Inbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_handle( self.start_fut( actor ) )
+		Ok( exec.spawn_handle( self.start( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -134,11 +136,11 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
+	pub fn spawn_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_local( async { self.start_fut_inner_local( actor ).await; } )
+		Ok( exec.spawn_local( async { self.start_local( actor ).await; } )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -146,36 +148,16 @@ impl<A> Inbox<A> where A: Actor
 
 	/// Spawn the mailbox on the current thread.
 	//
-	pub fn start_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
+	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
 
 		-> ThesRes< JoinHandle< Option<Self> > >
 
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_handle_local( self.start_fut_inner_local( actor ) )
+		Ok( exec.spawn_handle_local( self.start_local( actor ) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
-	}
-}
-
-
-
-impl<A: Actor + Send> Mailbox<A> for Inbox<A>
-{
-	fn start_fut( self, actor: A ) -> Return<'static, Option<Self>>
-	{
-		self.start_fut_inner( actor ).boxed()
-	}
-}
-
-
-
-impl<A: Actor> MailboxLocal<A> for Inbox<A>
-{
-	fn start_fut_local( self, actor: A ) -> ReturnNoSend<'static, Option<Self>>
-	{
-		self.start_fut_inner_local( actor ).boxed_local()
 	}
 }
 

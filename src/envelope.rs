@@ -47,7 +47,9 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 			 M: Message           ,
 
 {
-	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()> where <M as Message>::Return: Send,
+	// TODO: The Send bound here seems to make no sense.
+	//
+	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()>
 	{
 		< A as Handler<M> >::handle( actor, self.msg )
 

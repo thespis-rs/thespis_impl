@@ -46,7 +46,7 @@ async fn main() -> Result< (), DynError >
 
 		let sum_in = SumIn { count: 0 };
 
-		exec.block_on( sum_in_mb.start_fut_local(sum_in) )
+		exec.block_on( sum_in_mb.start_local(sum_in) )
 	})?;
 
 
@@ -60,7 +60,7 @@ async fn main() -> Result< (), DynError >
 
 		let sum = Sum { total: 5, inner: sum_in_addr, _nosend: PhantomData } ;
 
-		exec.block_on( sum_mb.start_fut_local(sum) );
+		exec.block_on( sum_mb.start_local(sum) );
 	})?;
 
 

@@ -42,15 +42,15 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// move the future to another thread or spawn it directly. We have to move Addr with it.
 	// This can be resolved by moving the Addr in an async block.
 	//
-	// let call_fut = addr.call( Ping( "ping".into() ) );
+	// let call = addr.call( Ping( "ping".into() ) );
 	//
-	let call_fut = async move { addr.call( Ping( "ping".into() ) ).await };
+	let call = async move { addr.call( Ping( "ping".into() ) ).await };
 
 	let handle = thread::spawn( move ||
 	{
 		block_on( async move
 		{
-			let result = call_fut.await.expect( "Call failed" );
+			let result = call.await.expect( "Call failed" );
 
 			assert_eq!( "pong".to_string(), result );
 			dbg!( result );

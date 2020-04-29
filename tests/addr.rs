@@ -43,7 +43,7 @@ async fn stop_when_adresses_dropped_before_start_mb()
 		drop( addr );
 	};
 
-	join( program, mb.start_fut( sum ) ).await;
+	join( program, mb.start( sum ) ).await;
 }
 
 
@@ -75,7 +75,7 @@ fn stop_when_adresses_dropped()
 
 	let mailbox = async move
 	{
-		mb.start_fut( sum ).await;
+		mb.start( sum ).await;
 	};
 
 	block_on( join( mailbox, dropper ) );

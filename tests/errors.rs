@@ -37,7 +37,7 @@ async fn test_mb_closed()
 
 	let mb_task = async move
 	{
-		mb.start_fut( Sum(5) ).await;
+		mb.start( Sum(5) ).await;
 
 		trigger_tx.send(()).expect( "send trigger" );
 	};
@@ -105,7 +105,7 @@ async fn test_mb_closed_before_response()
 
 	let mb_task = async move
 	{
-		let _ = AssertUnwindSafe( mb.start_fut( Panic ) ).catch_unwind().await;
+		let _ = AssertUnwindSafe( mb.start( Panic ) ).catch_unwind().await;
 	};
 
 	AsyncStd.spawn( mb_task ).expect( "spawn mailbox" );

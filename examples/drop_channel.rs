@@ -92,7 +92,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	{
 		let accu = Accu { count: 0 };
 
-		block_on( accu_mb.start_fut_local(accu) )
+		block_on( accu_mb.start_local(accu) )
 	})?;
 
 
