@@ -2,10 +2,10 @@ use wasm_bindgen::prelude::*;
 
 use
 {
-	thespis               :: { * } ,
-	thespis_impl          :: { * } ,
-	async_executors       :: { * } ,
-	std           :: { marker::PhantomData, rc::Rc } ,
+	thespis         :: { *                           } ,
+	thespis_impl    :: { *                           } ,
+	async_executors :: { *                           } ,
+	std             :: { marker::PhantomData, rc::Rc } ,
 };
 
 
