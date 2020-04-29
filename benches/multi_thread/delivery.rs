@@ -1,11 +1,12 @@
 use
 {
-	criterion         :: { Criterion, criterion_group, criterion_main, BatchSize } ,
-	futures           :: { executor::{ block_on }, channel::oneshot              } ,
-	thespis           :: { *                                                     } ,
-	thespis_impl      :: { *                                                     } ,
-	std               :: { thread, sync::{ Arc, Mutex }                          } ,
-	actix             :: { Actor as _, ActorFuture                               } ,
+	criterion    :: { Criterion, criterion_group, criterion_main, BatchSize } ,
+	futures      :: { executor::{ block_on }, channel::oneshot              } ,
+	thespis      :: { *                                                     } ,
+	thespis_impl :: { *                                                     } ,
+	std          :: { thread, sync::{ Arc, Mutex }                          } ,
+	actix        :: { Actor as _, ActorFuture                               } ,
+	async_chanx  :: { PiperSender                                           } ,
 };
 
 
@@ -221,6 +222,65 @@ fn spsc( c: &mut Criterion )
 
 		group.bench_function
 		(
+			format!( "send piper: {} msgs", &msgs ),
+
+			|b| b.iter_batched
+			(
+				move || // setup
+				{
+					let (tx, rx) = piper::chan( BOUNDED );
+					let tx = Box::new( PiperSender::new(tx).sink_map_err( |e| Box::new(e) as SinkError ));
+					let rx = Box::new(rx);
+
+					let (tx2, rx2) = piper::chan( BOUNDED );
+					let tx2 = Box::new( PiperSender::new(tx2).sink_map_err( |e| Box::new(e) as SinkError ));
+					let rx2 = Box::new(rx2);
+
+					let (sum_in_addr, sum_in_mb) = Addr::builder().channel( tx, rx ).build() ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                       ;
+					let (sum_addr, sum_mb) = Addr::builder().channel( tx2, rx2 ).build()     ;
+
+					let sumin_thread = thread::spawn( move ||
+					{
+						let sum_in = SumIn{ count: 0 };
+
+						async_std::task::block_on( sum_in_mb.start_fut( sum_in ) );
+					});
+
+					let sum_thread = thread::spawn( move ||
+					{
+						async_std::task::block_on( sum_mb.start_fut( sum ) );
+					});
+
+					(sum_addr, sumin_thread, sum_thread)
+				},
+
+
+				|(mut sum_addr, sumin_thread, sum_thread)| // measure
+				{
+					async_std::task::block_on( async move
+					{
+						for _ in 0..*msgs
+						{
+							sum_addr.send( Add(10) ).await.expect( "Send failed" );
+						}
+
+						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
+
+						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+					});
+
+					sumin_thread.join().expect( "join sum_in thread" );
+					sum_thread  .join().expect( "join sum    thread" );
+				},
+
+				BatchSize::SmallInput
+			)
+		);
+
+
+		group.bench_function
+		(
 			format!( "actix send: {} msgs", &msgs ),
 
 			|b| b.iter
@@ -271,6 +331,66 @@ fn spsc( c: &mut Criterion )
 					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
 					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
 					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
+
+
+					let sumin_thread = thread::spawn( move ||
+					{
+						let sum_in = SumIn{ count: 0 };
+
+						async_std::task::block_on( sum_in_mb.start_fut( sum_in ) );
+					});
+
+					let sum_thread = thread::spawn( move ||
+					{
+						async_std::task::block_on( sum_mb.start_fut( sum ) );
+					});
+
+					(sum_addr, sumin_thread, sum_thread)
+				},
+
+
+				|(mut sum_addr, sumin_thread, sum_thread)| // measure
+				{
+					async_std::task::block_on( async move
+					{
+						for _ in 0..*msgs
+						{
+							sum_addr.call( Add(10) ).await.expect( "Send failed" );
+						}
+
+						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
+
+						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+					});
+
+					sumin_thread.join().expect( "join sum_in thread" );
+					sum_thread  .join().expect( "join sum    thread" );
+				},
+
+				BatchSize::SmallInput
+			)
+		);
+
+
+		group.bench_function
+		(
+			format!( "call piper: {} msgs", &msgs ),
+
+			|b| b.iter_batched
+			(
+				move || // setup
+				{
+					let (tx, rx) = piper::chan( BOUNDED );
+					let tx = Box::new( PiperSender::new(tx).sink_map_err( |e| Box::new(e) as SinkError ));
+					let rx = Box::new(rx);
+
+					let (tx2, rx2) = piper::chan( BOUNDED );
+					let tx2 = Box::new( PiperSender::new(tx2).sink_map_err( |e| Box::new(e) as SinkError ));
+					let rx2 = Box::new(rx2);
+
+					let (sum_in_addr, sum_in_mb) = Addr::builder().channel( tx, rx ).build() ;
+					let sum      = Sum{ total: 5, inner: sum_in_addr }                       ;
+					let (sum_addr, sum_mb) = Addr::builder().channel( tx2, rx2 ).build()     ;
 
 
 					let sumin_thread = thread::spawn( move ||

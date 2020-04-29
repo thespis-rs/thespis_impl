@@ -92,7 +92,7 @@ dev-dependencies:
   actix             : ^0.10.0-alpha
   criterion         : { version: ^0.3, features: [] }
   tokio             : { version: ^0.2, features: [ sync, macros ] }
-
+  piper             : ^0.1
 
 bench:
 
