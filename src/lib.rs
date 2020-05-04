@@ -45,7 +45,7 @@ pub use
 
 /// Shorthand for a `Send` boxed envelope.
 //
-pub type BoxEnvelope <A> = Box< dyn envelope::Envelope<A>  + Send >;
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send >;
 
 
 /// A boxed error type for the sink

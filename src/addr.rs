@@ -19,7 +19,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE address for: {}", self );
+		trace!( "CREATE Addr for: {}", self );
 
 		Self { mb: self.mb.clone_sink(), id: self.id, name: self.name.clone() }
 	}
@@ -92,7 +92,7 @@ impl<A> Addr<A> where A: Actor
 	{
 		let new = Self{ id, name, mb: tx };
 
-		trace!( "CREATE address for: {}", &new );
+		trace!( "CREATE Addr for: {}", &new );
 
 		new
 	}
@@ -112,7 +112,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP address for: {}", self );
+		trace!( "DROP Addr for: {}", self );
 	}
 }
 

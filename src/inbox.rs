@@ -5,7 +5,7 @@ use crate::{ import::*, error::*, ChanReceiver };
 //
 // TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
 //       Do not hold anything in the mailbox struct. just PhantomData<A>.
-//       In method start, create the channel. give msgs to start_fut, and create rawaddress from handle.
+//       In method start, create the channel. give rx to start_fut, and create rawaddress from handle.
 //       return rawaddress to user.
 //
 //       Currently there is no way for the actor to decide to stop itself. Also, currently we give nothing
@@ -13,13 +13,13 @@ use crate::{ import::*, error::*, ChanReceiver };
 //
 pub struct Inbox<A> where A: Actor
 {
-	msgs  : ChanReceiver<A> ,
+	rx : ChanReceiver<A> ,
 
 	/// This creates a unique id for every mailbox in the program. This way recipients
 	/// can impl Eq to say whether they refer to the same actor.
 	//
-	id    : usize              ,
-	name  : Option< Arc<str> > ,
+	id   : usize              ,
+	name : Option< Arc<str> > ,
 }
 
 
@@ -28,7 +28,7 @@ impl<A> Inbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option< Arc<str> >, receiver: ChanReceiver<A> ) -> Self
+	pub fn new( name: Option< Arc<str> >, rx: ChanReceiver<A> ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -37,12 +37,7 @@ impl<A> Inbox<A> where A: Actor
 		//
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
-		Self
-		{
-			msgs: receiver   ,
-			id     ,
-			name   ,
-		}
+		Self { rx, id, name }
 	}
 
 
@@ -55,7 +50,7 @@ impl<A> Inbox<A> where A: Actor
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
 
-		while let Some( envl ) = self.msgs.next().await
+		while let Some( envl ) = self.rx.next().await
 		{
 			trace!( "actor {} will process a message.", &self );
 
@@ -84,7 +79,7 @@ impl<A> Inbox<A> where A: Actor
 		actor.started().await;
 		trace!( "mailbox: started for: {}", &self );
 
-		while let Some( envl ) = self.msgs.next().await
+		while let Some( envl ) = self.rx.next().await
 		{
 			if let Err( e ) = AssertUnwindSafe( envl.handle_local( &mut actor ) ).catch_unwind().await
 			{
@@ -157,7 +152,7 @@ impl<A> Inbox<A> where A: Actor
 
 		Ok( exec.spawn_handle_local( self.start_local( actor ) )
 
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )? )
 	}
 }
 
