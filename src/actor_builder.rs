@@ -149,8 +149,6 @@ impl<A: Actor> ActorBuilder<A>
 			}
 		}
 
-		debug_assert!( self.rx.is_some(), "You must either provide a channel or enable the convenience feature, then thespis will provide a default channel." );
-
 		let mb   = crate::Inbox::new( self.name, self.rx.unwrap() );
 		let addr = Addr::new( mb.id(), mb.name(), self.tx.unwrap() );
 
