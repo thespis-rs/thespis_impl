@@ -2,11 +2,11 @@
 //
 use
 {
-	thespis           :: { *                                    } ,
-	thespis_impl      :: { *                                    } ,
-	std               :: { error::Error                         } ,
-	futures           :: { task::{ Spawn, SpawnExt }, FutureExt } ,
-	async_executors   :: { AsyncStd                             } ,
+	thespis           :: { *                                     } ,
+	thespis_impl      :: { *                                     } ,
+	std               :: { error::Error                          } ,
+	futures           :: { FutureExt, task::{ SpawnError }       } ,
+	async_executors   :: { AsyncStd, SpawnHandle, SpawnHandleExt } ,
 };
 
 
@@ -16,22 +16,22 @@ type DynError = Box<dyn Error + Send + Sync>;
 //
 struct MyActor
 {
-	exec: Box< dyn Spawn + Send >
+	exec: Box< dyn SpawnHandle<usize> + Send >
 }
 
 struct Ping;
 
-impl Message for Ping {	type Return = Result<(), DynError >; }
+impl Message for Ping {	type Return = Result<usize, SpawnError>; }
 
 
 impl Handler<Ping> for MyActor
 {
 	fn handle( &mut self, _msg: Ping ) -> Return<'_, <Ping as Message>::Return >
 	{
-		// self had properties wrapped in Arc, we could clone them here to pass them
+		// If self had properties wrapped in Arc, we could clone them here to pass them
 		// into the future.
 		//
-		// However we can't actually pass the reference to self in here if we want it
+		// However we can't actually pass the reference to self in if we want it
 		// to run concurrently.
 		//
 		// In theory you can have something in an Arc<Mutex>> or atomic variables, but
@@ -45,6 +45,10 @@ impl Handler<Ping> for MyActor
 		let processing = async move
 		{
 			// do something useful.
+
+			// Return something if you want.
+			//
+			5
 		};
 
 		// Processing will now run concurrently.
@@ -55,13 +59,26 @@ impl Handler<Ping> for MyActor
 		// processing to your caller without blocking the current actor while it runs.
 		// The sky is the limit.
 		//
-		let result = self.exec.spawn( processing );
+		let result = self.exec.spawn_handle( processing );
 
 		// If spawning failed, we pass that back to caller.
 		// We are now immediately ready to process the next message even while processing is
 		// still running.
 		//
-		async move { result.map_err( |e| Box::new(e) as DynError ) }.boxed()
+		// We return the result of processing to the caller. If you want this actor to process
+		// the outcome of processing, or if you need to guarantee that no more processing tasks
+		// are running when this actor get's dropped, you can use a nursery. See: the async_nursery
+		// crate.
+		//
+		async move
+		{
+			match result
+			{
+				Ok(handle) => Ok( handle.await ) ,
+				Err(err)   => Err(err)           ,
+			}
+
+		}.boxed()
 	}
 }
 
@@ -72,9 +89,12 @@ async fn main() -> Result< (), DynError >
 {
 	let mut addr = Addr::builder().start( MyActor{ exec: Box::new(AsyncStd) }, &AsyncStd )?;
 
-	let result = addr.call( Ping ).await?;
+	// Admittedly, this looks a bit weird. Call is fallible, and it returns a result over
+	// the SpawnError, since the handler needs to spawn and spawning is fallible.
+	//
+	let result = addr.call( Ping ).await??;
 
-	dbg!( result )?;
+	dbg!( result );
 
 	Ok(())
 }

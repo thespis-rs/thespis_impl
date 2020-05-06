@@ -4,9 +4,7 @@ The reference implementation of the thespis actor model
 
 ## TODO
 
-- todo, ActorBuilder should probably take &mut self in the setters...
 - switch to tracing. for logging and metrics. What is the perf impact?
-- abstract channels (can pharos benefit as well)
 
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
