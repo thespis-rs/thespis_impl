@@ -37,11 +37,8 @@ impl Handler< Ping > for MyActor
 		trace!( "Ping handler called" );
 
 		self.seed.extend( msg.0.chars() );
-
 		self.seed = Self::bla( &mut self.seed ).await;
-
 		self.seed += " - after yield";
-
 		self.seed.clone()
 	}
 }
@@ -59,7 +56,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let mut addr2 = addr.clone();
 
 	trace!( "calling addr.call( Ping( 'ping' ) )" );
-	let result  = addr.call( Ping( "ping".into() ) ).await?;
+	let result = addr.call( Ping( "ping".into() ) ).await?;
 
 	trace!( "calling addr.call( Ping( 'pang' ) )" );
 	let result2 = addr2.call( Ping( "pang".into() ) ).await?;

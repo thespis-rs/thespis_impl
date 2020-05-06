@@ -34,6 +34,14 @@ impl<A: Actor> Default for ActorBuilder<A>
 
 impl<A: Actor> ActorBuilder<A>
 {
+	/// Create a new ActorBuilder with default settings.
+	//
+	pub fn new() -> Self
+	{
+		Self::default()
+	}
+
+
 	/// Configure a name for this actor. This will be helpful for interpreting
 	/// debug logs. You can also retrieve the name later on the Addr.
 	//

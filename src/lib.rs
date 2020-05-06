@@ -56,7 +56,7 @@ pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
 //
 pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
 
-/// Type of boxed channel sender for Addr.
+/// Type of boxed channel receiver for Inbox.
 //
 pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
