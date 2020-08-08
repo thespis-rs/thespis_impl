@@ -23,6 +23,7 @@ The reference implementation of the thespis actor model
 
 
 
+
 - let an actor decide to ignore certain messages
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - inbox, cooperative yielding every x messages?

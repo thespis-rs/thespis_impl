@@ -11,5 +11,6 @@ These examples demonstrate how to use thespis with the reference implementation 
 7. *move*: Use address on the same thread, but move the future from call to a different thread before polling it.
 8. *local_spawn*: Use an Actor which is `!Send` and spawn it on a thread local executor.
 9. *concurrent*: Let an actor process messages concurrently when no mutable state is needed.
+10. *concurrent_nursery*: Let an actor process messages concurrently when no mutable state is needed and process the results of the operation in the actor rather than returning them to the caller.
 
 TODO: Receiver as Box<Any>
