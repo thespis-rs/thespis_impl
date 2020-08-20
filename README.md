@@ -6,6 +6,8 @@ The reference implementation of the thespis actor model
 
 - switch to tracing. for logging and metrics. What is the perf impact?
 
+
+
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
 
@@ -22,8 +24,8 @@ The reference implementation of the thespis actor model
 - Another common approach is the transactor. For example, multiple actors may require to modify their internal state in a coordinated manner. A transactor, which is a dedicated actor for coordinating transactional operations of multiple actors, can help in this situation by providing abstract transaction logic. Some transactors also apply STM concepts for transactional behavior [Les09,Les11].
 
 
-
-
+- use ArcStr?
+- let nosend macro generate the hanlde method? and maybe rename it to async_fn_local
 - let an actor decide to ignore certain messages
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - inbox, cooperative yielding every x messages?
