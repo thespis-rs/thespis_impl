@@ -5,7 +5,7 @@ The reference implementation of the thespis actor model
 ## TODO
 
 - switch to tracing. for logging and metrics. What is the perf impact?
-
+- get rid of thiserror
 
 
 ### Tests

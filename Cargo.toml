@@ -22,7 +22,6 @@ name = "contention"
 path = "benches/multi_thread/contention.rs"
 
 [dependencies]
-anyhow = "^1"
 log = "^0.4"
 once_cell = "^1"
 thiserror = "^1"
