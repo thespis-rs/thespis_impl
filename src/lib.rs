@@ -40,13 +40,16 @@ pub use
 	error         :: * ,
 	inbox         :: * ,
 	receiver      :: * ,
+
+	// Addr::send requires SinkExt, so let's re-export that.
+	//
+	futures::{ SinkExt as _ },
 };
 
 
 /// Shorthand for a `Send` boxed envelope.
 //
 pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send >;
-
 
 /// A boxed error type for the sink
 //
@@ -70,8 +73,8 @@ mod import
 {
 	pub(crate) use
 	{
-		thespis         :: { *       } ,
-		log             :: { *       } ,
+		thespis         :: { * } ,
+		log             :: { * } ,
 		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 
 		std ::
@@ -87,7 +90,7 @@ mod import
 		futures ::
 		{
 			stream  :: { StreamExt                                  } ,
-			sink    :: { Sink                                       } ,
+			sink    :: { Sink, SinkExt                              } ,
 			channel :: { oneshot                                    } ,
 			future  :: { FutureExt                                  } ,
 			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
