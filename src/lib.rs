@@ -70,7 +70,6 @@ mod import
 {
 	pub(crate) use
 	{
-		thiserror       :: { Error   } ,
 		thespis         :: { *       } ,
 		log             :: { *       } ,
 		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
@@ -81,16 +80,17 @@ mod import
 			pin    :: { Pin                                    } ,
 			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
 			panic  :: { AssertUnwindSafe                       } ,
+			task   :: { Context as TaskContext, Poll           } ,
 		},
 
 
 		futures ::
 		{
-			stream  :: { StreamExt                                       } ,
-			sink    :: { Sink                                            } ,
-			channel :: { oneshot                                         } ,
-			future  :: { FutureExt                                       } ,
-			task    :: { Context as TaskContext, Poll, Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
+			stream  :: { StreamExt                                  } ,
+			sink    :: { Sink                                       } ,
+			channel :: { oneshot                                    } ,
+			future  :: { FutureExt                                  } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
 		},
 	};
 }

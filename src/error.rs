@@ -6,13 +6,22 @@ pub type ThesRes<T> = Result<T, ThesErr>;
 
 /// Errors that can happen in thespis_impl.
 //
-#[ derive( Debug, Clone, Error, PartialEq, Eq ) ]
+#[ derive( Debug, Clone, PartialEq, Eq ) ]
 //
 pub enum ThesErr
 {
-	/// You try to use a mailbox that is already closed.
+	/// Either the actor panicked during processing of the message or the mailbox was dropped.
+	/// Only returned when doing a `call`.
 	//
-	#[ error( "You try to use a mailbox that is already closed. For actor: {actor}" ) ]
+	ActorStoppedBeforeResponse
+	{
+		/// The actor concerned by the error.
+		//
+		actor: String
+	},
+
+
+	/// You try to use a mailbox that is already closed.
 	//
 	MailboxClosed
 	{
@@ -35,22 +44,7 @@ pub enum ThesErr
 	// },
 
 
-	/// Either the actor panicked during processing of the message or the mailbox was dropped.
-	/// Only returned when doing a `call`.
-	//
-	#[ error( "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {actor}" ) ]
-	//
-	ActorStoppedBeforeResponse
-	{
-		/// The actor concerned by the error.
-		//
-		actor: String
-	},
-
-
 	/// Failed to spawn the mailbox.
-	//
-	#[ error( "Failed to spawn the mailbox for actor: {actor}" ) ]
 	//
 	Spawn
 	{
@@ -60,5 +54,33 @@ pub enum ThesErr
 
 		// /// The underlying error.
 		// source: anyhow::Error ,
+	}
+}
+
+
+impl std::error::Error for ThesErr
+{
+
+}
+
+
+impl fmt::Display for ThesErr
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		match &self
+		{
+			ThesErr::ActorStoppedBeforeResponse{ actor } =>
+
+				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", actor ),
+
+			ThesErr::MailboxClosed{ actor } =>
+
+				write!( f, "You try to use a mailbox that is already closed. For actor: {}", actor ),
+
+			ThesErr::Spawn{ actor } =>
+
+				write!( f, "Failed to spawn the mailbox for actor: {}", actor ),
+		}
 	}
 }
