@@ -74,7 +74,8 @@ mod import
 	pub(crate) use
 	{
 		thespis         :: { * } ,
-		log             :: { * } ,
+		tracing         :: { * } ,
+		tracing_futures :: { Instrument } ,
 		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 
 		std ::

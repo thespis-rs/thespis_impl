@@ -4,8 +4,8 @@ The reference implementation of the thespis actor model
 
 ## TODO
 
-- switch to tracing. for logging and metrics. What is the perf impact?
-- get rid of thiserror
+- switch to tracing -> test what happens if one actor creates and spawns another actor.
+
 
 
 ### Tests

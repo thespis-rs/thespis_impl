@@ -41,34 +41,58 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
+	/// Obtain a `tracing::Span` identifying the actor with it's id and it's name if it has one.
+	//
+	pub fn span( &self ) -> Span
+	{
+		if let Some( name ) = &self.name
+		{
+			trace_span!( "actor", id = self.id, name = name.as_ref() )
+		}
+
+		else
+		{
+			trace_span!( "actor", id = self.id )
+		}
+	}
+
+
 	/// Run the mailbox.
 	//
 	pub async fn start( mut self, mut actor: A ) -> Option<Self>
 
 		where A: Send
 	{
-		actor.started().await;
-		trace!( "mailbox: started for: {}", &self );
+		let span = self.span();
 
-		while let Some( envl ) = self.rx.next().await
+		async
 		{
-			trace!( "actor {} will process a message.", &self );
+			trace!( "mailbox: started for: {}", &self );
 
-			if let Err( e ) = AssertUnwindSafe( envl.handle( &mut actor ) ).catch_unwind().await
+			while let Some( envl ) = self.rx.next().await
 			{
-				error!( "Actor panicked: {}, with error: {:?}", &self, e );
-				return Some(self);
+				trace!( "actor {} will process a message.", &self );
+
+				if let Err( e ) = AssertUnwindSafe( envl.handle( &mut actor ) ).catch_unwind().await
+				{
+					error!( "Actor panicked: {}, with error: {:?}", &self, e );
+					return Some(self);
+				}
+
+				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 			}
 
-			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
+			// TODO: this will not be executed when the future for the mailbox get's dropped
+			//
+			actor.stopped().await;
+			trace!( "Mailbox stopped actor for {}", &self );
+
+			None
 		}
 
-		// TODO: this will not be executed when the future for the mailbox get's dropped
-		//
-		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}", &self );
+		.instrument( span )
+		.await
 
-		None
 	}
 
 
@@ -76,24 +100,33 @@ impl<A> Inbox<A> where A: Actor
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
 	{
-		actor.started().await;
-		trace!( "mailbox: started for: {}", &self );
+		let span = self.span();
 
-		while let Some( envl ) = self.rx.next().await
+		async
 		{
-			if let Err( e ) = AssertUnwindSafe( envl.handle_local( &mut actor ) ).catch_unwind().await
+			actor.started().await;
+			trace!( "mailbox: started for: {}", &self );
+
+			while let Some( envl ) = self.rx.next().await
 			{
-				error!( "Actor panicked: {}, with error: {:?}", &self, e );
-				return Some(self);
+				if let Err( e ) = AssertUnwindSafe( envl.handle_local( &mut actor ) ).catch_unwind().await
+				{
+					error!( "Actor panicked: {}, with error: {:?}", &self, e );
+					return Some(self);
+				}
+
+				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 			}
 
-			trace!( "actor {} finished handling it's message. Waiting for next message", &self );
+			actor.stopped().await;
+			trace!( "Mailbox stopped actor for {}", &self );
+
+			None
+
 		}
 
-		actor.stopped().await;
-		trace!( "Mailbox stopped actor for {}", &self );
-
-		None
+		.instrument( span )
+		.await
 	}
 
 
@@ -106,7 +139,7 @@ impl<A> Inbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn( async { self.start( actor ).await; } )
+		Ok( exec.spawn( self.start( actor ).map(|_|()) )
 
 			.map_err( |_e| ThesErr::Spawn{ /* TODO: source: e.into(), */actor: format!("{:?}", id) } )? )
 	}
@@ -135,7 +168,7 @@ impl<A> Inbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_local( async { self.start_local( actor ).await; } )
+		Ok( exec.spawn_local( self.start_local( actor ).map(|_|()) )
 
 			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
 	}

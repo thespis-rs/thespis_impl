@@ -7,10 +7,10 @@ pub mod import
 {
 	pub use
 	{
-		futures       :: { future::{ FutureExt }, SinkExt, channel::mpsc } ,
-		thespis       :: { * } ,
-		log           :: { * } ,
-		std           :: { marker::PhantomData } ,
+		futures :: { future::{ FutureExt }, SinkExt, channel::mpsc } ,
+		thespis :: { * } ,
+		tracing :: { * } ,
+		std     :: { marker::PhantomData } ,
 	};
 }
 

@@ -22,10 +22,10 @@ impl<A: Actor> Default for ActorBuilder<A>
 	{
 		Self
 		{
-			tx     : None ,
-			rx     : None ,
-			bounded: Some( BOUNDED      ) ,
-			name   : Some( "N/A".into() ) ,
+			tx     : None            ,
+			rx     : None            ,
+			bounded: Some( BOUNDED ) ,
+			name   : None            ,
 		}
 	}
 }

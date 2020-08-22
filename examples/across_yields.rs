@@ -2,7 +2,7 @@
 
 use
 {
-	log               :: { *            } ,
+	tracing           :: { *            } ,
 	thespis           :: { *            } ,
 	thespis_impl      :: { *            } ,
 	futures::executor :: { ThreadPool   } ,
@@ -48,7 +48,12 @@ impl Handler< Ping > for MyActor
 //
 async fn main() -> Result< (), Box<dyn Error> >
 {
-	simple_logger::init()?;
+	tracing_subscriber::fmt::Subscriber::builder()
+
+	   .with_max_level(tracing::Level::TRACE)
+	   .init()
+	;
+
 
 	let     exec  = ThreadPool::new()?;
 	let     a     = MyActor{ seed: "seed".into() };

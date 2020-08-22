@@ -8,14 +8,13 @@ mod common;
 
 use
 {
-	futures         :: { channel::oneshot           } ,
-	thespis         :: { *                          } ,
-	log             :: { *                          } ,
-	thespis_impl    :: { *                          } ,
-	std             :: { thread                     } ,
-	common          :: { actors::{ Sum, Add, Show } } ,
-	async_executors :: { AsyncStd                   } ,
-	futures         :: { executor::block_on         } ,
+	futures         :: { channel::oneshot                      } ,
+	thespis         :: { *                                     } ,
+	thespis_impl    :: { *                                     } ,
+	std             :: { thread                                } ,
+	common          :: { actors::{ Sum, Add, Show }, import::* } ,
+	async_executors :: { AsyncStd                              } ,
+	futures         :: { executor::block_on                    } ,
 };
 
 
