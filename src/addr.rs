@@ -19,7 +19,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		self.span().in_scope( || trace!( "CREATE Addr" ) );
+		trace!( "CREATE Addr for: {}", self );
 
 		Self { mb: self.mb.clone_sink(), id: self.id, name: self.name.clone() }
 	}
@@ -92,7 +92,8 @@ impl<A> Addr<A> where A: Actor
 	{
 		let new = Self{ id, name, mb: tx };
 
-		new.span().in_scope( || trace!( "CREATE Addr" ) );
+		trace!( "CREATE Addr for: {}", &new );
+
 		new
 	}
 
@@ -103,22 +104,6 @@ impl<A> Addr<A> where A: Actor
 	{
 		Default::default()
 	}
-
-
-	/// Obtain a `tracing::Span` identifying the actor with it's id and it's name if it has one.
-	//
-	pub fn span( &self ) -> Span
-	{
-		if let Some( name ) = &self.name
-		{
-			trace_span!( "actor", id = self.id, name = name.as_ref() )
-		}
-
-		else
-		{
-			trace_span!( "actor", id = self.id )
-		}
-	}
 }
 
 // For debugging
@@ -127,7 +112,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		self.span().in_scope( || trace!( "DROP Addr" ) );
+		trace!( "DROP Addr for: {}", self );
 	}
 }
 

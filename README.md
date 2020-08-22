@@ -25,7 +25,7 @@ The reference implementation of the thespis actor model
 
 
 - use ArcStr?
-- let nosend macro generate the hanlde method? and maybe rename it to async_fn_local
+- let nosend macro generate the handle method? and maybe rename it to async_fn_local
 - let an actor decide to ignore certain messages
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - inbox, cooperative yielding every x messages?
