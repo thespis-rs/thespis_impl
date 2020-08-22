@@ -2,6 +2,7 @@ use crate::{import::*};
 
 
 /// Wrapper for a message that is generic over actor instead of over message type.
+/// This allows sending messages of different types over the same channel.
 ///
 /// It knows how to call handle on a given actor of the correct type.
 //

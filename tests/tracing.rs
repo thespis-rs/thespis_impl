@@ -9,7 +9,7 @@ use
 	thespis         :: { *            } ,
 	thespis_impl    :: { *,           } ,
 	tracing         :: { *            } ,
-	async_executors :: { AsyncStd, SpawnHandleExt, LocalPool, LocalSpawnHandleExt     } ,
+	async_executors :: { AsyncStd, SpawnHandleExt, LocalPool, LocalSpawnHandleExt } ,
 	futures :: { executor::LocalSpawner     } ,
 	std             :: { error::Error } ,
 };

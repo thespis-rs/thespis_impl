@@ -180,7 +180,9 @@ impl<A: Actor> ActorBuilder<A>
 
 	/// Spawn the mailbox on the provided executor. Returns [`Addr`] and a [`JoinHandle`] to the spawned
 	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
-	/// you call [`JoinHandle::detach`] on it.
+	/// you call [`JoinHandle::detach`] on it. If the actor panics during message processing, the JoinHandle
+	/// will return to you the mailbox so you can instantiate a new actor for the mailbox. The address
+	/// will remain valid and you can use this property to supervise the actor.
 	//
 	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Inbox<A>> > )
 

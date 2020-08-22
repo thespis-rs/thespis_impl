@@ -3,14 +3,6 @@ use crate::{ import::*, error::*, ChanReceiver };
 
 /// The mailbox implementation.
 //
-// TODO: Ideas for improvement. Create a struct RawAddress, which allows to create other addresses from.
-//       Do not hold anything in the mailbox struct. just PhantomData<A>.
-//       In method start, create the channel. give rx to start_fut, and create rawaddress from handle.
-//       return rawaddress to user.
-//
-//       Currently there is no way for the actor to decide to stop itself. Also, currently we give nothing
-//       to the actor in the started or stopped method (like a context, a RawAddress).
-//
 pub struct Inbox<A> where A: Actor
 {
 	rx : ChanReceiver<A> ,
@@ -57,7 +49,10 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Run the mailbox.
+	/// Run the mailbox. Returns a future that processes incoming messages. If the
+	/// actor panics during message processing, this will return the mailbox to you
+	/// so you can supervise actors by respawning your actor and then calling this method
+	/// on the mailbox again. All addresses will remain valid in this scenario.
 	//
 	pub async fn start( mut self, mut actor: A ) -> Option<Self>
 
@@ -71,6 +66,7 @@ impl<A> Inbox<A> where A: Actor
 
 			while let Some( envl ) = self.rx.next().await
 			{
+				actor.started().await;
 				trace!( "actor {} will process a message.", &self );
 
 				if let Err( e ) = AssertUnwindSafe( envl.handle( &mut actor ) ).catch_unwind().await
@@ -96,7 +92,10 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Run the mailbox with a non-Send Actor.
+	/// Run the mailbox with a non-Send Actor. Returns a future that processes incoming messages. If the
+	/// actor panics during message processing, this will return the mailbox to you
+	/// so you can supervise actors by respawning your actor and then calling this method
+	/// on the mailbox again. All addresses will remain valid in this scenario.
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
 	{
@@ -130,7 +129,8 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Spawn the mailbox.
+	/// Spawn the mailbox. Use this if you don't want to supervise the actor and don't want a
+	/// JoinHandle.
 	//
 	pub fn spawn( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
 
@@ -145,7 +145,12 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Spawn the mailbox.
+	/// Spawn the mailbox. You get a joinhandle you can await to detect when the mailbox
+	/// terminates and which will return you the mailbox if the actor panicked during
+	/// message processing. You can use this to supervise the actor.
+	///
+	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
+	/// potentially in the middle of processing a message.
 	//
 	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
 
@@ -162,7 +167,8 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Spawn the mailbox on the current thread.
+	/// Spawn the mailbox on the current thread. Use this if you don't want to supervise the actor and don't want a
+	/// JoinHandle.
 	//
 	pub fn spawn_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
 	{
@@ -174,7 +180,12 @@ impl<A> Inbox<A> where A: Actor
 	}
 
 
-	/// Spawn the mailbox on the current thread.
+	/// Spawn the mailbox on the current thread. You get a joinhandle you can await to detect when the mailbox
+	/// terminates and which will return you the mailbox if the actor panicked during
+	/// message processing. You can use this to supervise the actor.
+	///
+	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
+	/// potentially in the middle of processing a message.
 	//
 	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
 

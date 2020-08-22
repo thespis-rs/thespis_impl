@@ -3,7 +3,7 @@ use crate::{ import::*, ActorBuilder, ChanSender, BoxEnvelope, envelope::*, erro
 
 
 /// Reference implementation of thespis::Address<A, M>.
-/// It can receive all message types the actor implements thespis::Handler for.
+/// It can be used to send all message types the actor implements thespis::Handler for.
 /// An actor will be dropped when all addresses to it are dropped.
 //
 pub struct Addr< A: Actor >

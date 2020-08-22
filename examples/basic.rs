@@ -38,7 +38,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 
 	let result = addr.call( Ping( "ping".into() ) ).await?;
 
-	assert_eq!( "pong".to_string(), result );
+	assert_eq!( "pong", result );
 	dbg!( result );
 
 	Ok(())

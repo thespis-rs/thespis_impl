@@ -25,7 +25,6 @@
 
 mod actor_builder ;
 mod addr          ;
-mod clone_sink    ;
 mod envelope      ;
 mod error         ;
 mod inbox         ;
@@ -36,7 +35,6 @@ pub use
 {
 	actor_builder :: * ,
 	addr          :: * ,
-	clone_sink    :: * ,
 	error         :: * ,
 	inbox         :: * ,
 	receiver      :: * ,
@@ -45,6 +43,8 @@ pub use
 	//
 	futures::{ SinkExt as _ },
 };
+
+use futures::Sink;
 
 
 /// Shorthand for a `Send` boxed envelope.
@@ -62,6 +62,29 @@ pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError>
 /// Type of boxed channel receiver for Inbox.
 //
 pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
+
+
+
+/// Interface for T: Sink + Clone
+//
+pub trait CloneSink<'a, Item, E>: Sink<Item, Error=E> + Unpin + Send
+{
+	/// Clone this sink.
+	//
+	fn clone_sink( &self ) -> Box< dyn CloneSink<'a, Item, E> + 'a >;
+}
+
+
+impl<'a, T, Item, E> CloneSink<'a, Item, E> for T
+
+	where T: 'a + Sink<Item, Error=E> + Clone + Unpin + Send + ?Sized
+
+{
+	fn clone_sink( &self ) -> Box< dyn CloneSink<'a, Item, E> + 'a >
+	{
+		Box::new( self.clone() )
+	}
+}
 
 
 
