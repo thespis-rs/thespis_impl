@@ -6,11 +6,11 @@
 //
 use
 {
-	async_chanx       :: { *                      } ,
-	thespis           :: { *                      } ,
-	thespis_impl      :: { *                      } ,
-	std               :: { thread                 } ,
-	tokio             :: { sync::mpsc             } ,
+	async_chanx       :: { *          } ,
+	thespis           :: { *          } ,
+	thespis_impl      :: { *          } ,
+	std               :: { thread     } ,
+	tokio             :: { sync::mpsc } ,
 };
 
 
@@ -79,12 +79,12 @@ fn main()
 {
 	let (tx, rx)    = mpsc::unbounded_channel()                                                                ;
 	let tx          = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-	let sum_in_mb   = Inbox::new( None, Box::new( rx ) )                                                       ;
+	let sum_in_mb   = Mailbox::new( None, Box::new( rx ) )                                                     ;
 	let sum_in_addr = Addr::new( sum_in_mb.id(), sum_in_mb.name(), tx )                                        ;
 
 	let (tx, rx)     = mpsc::unbounded_channel()                                                                ;
 	let     tx       = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-	let     sum_mb   = Inbox::new( None, Box::new( rx ) )                                                       ;
+	let     sum_mb   = Mailbox::new( None, Box::new( rx ) )                                                     ;
 	let mut sum_addr = Addr::new( sum_mb.id(), sum_mb.name(), tx )                                              ;
 	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                                      ;
 

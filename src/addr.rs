@@ -98,7 +98,7 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Produces a builder for convenient creation of both [`Addr`] and [`Inbox`].
+	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`].
 	//
 	pub fn builder() -> ActorBuilder<A>
 	{

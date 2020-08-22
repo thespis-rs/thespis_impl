@@ -65,10 +65,10 @@ impl Handler<Create> for Created
 //
 async fn tracing_nested() -> Result<(), Box<dyn Error> >
 {
-	tracing_subscriber::fmt::Subscriber::builder()
+	let _ = tracing_subscriber::fmt::Subscriber::builder()
 
 	   .with_max_level(tracing::Level::TRACE)
-	   .init()
+	   .try_init()
 	;
 
 	let mut addr = Addr::builder().start( Creator, &AsyncStd )?;
@@ -142,10 +142,10 @@ impl Handler<Create> for CreatedLocal
 //
 fn tracing_nested_local()
 {
-	tracing_subscriber::fmt::Subscriber::builder()
+	let _ = tracing_subscriber::fmt::Subscriber::builder()
 
 	   .with_max_level(tracing::Level::TRACE)
-	   .init()
+	   .try_init()
 	;
 
 	let mut pool = LocalPool::new();

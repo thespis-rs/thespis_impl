@@ -3,7 +3,7 @@ use crate::{ import::*, error::*, ChanReceiver };
 
 /// The mailbox implementation.
 //
-pub struct Inbox<A> where A: Actor
+pub struct Mailbox<A> where A: Actor
 {
 	rx : ChanReceiver<A> ,
 
@@ -16,7 +16,7 @@ pub struct Inbox<A> where A: Actor
 
 
 
-impl<A> Inbox<A> where A: Actor
+impl<A> Mailbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
@@ -202,7 +202,7 @@ impl<A> Inbox<A> where A: Actor
 
 
 
-impl<A: Actor> Identify for Inbox<A>
+impl<A: Actor> Identify for Mailbox<A>
 {
 	fn id( &self ) -> usize
 	{
@@ -218,16 +218,16 @@ impl<A: Actor> Identify for Inbox<A>
 }
 
 
-impl<A: Actor> fmt::Debug for Inbox<A>
+impl<A: Actor> fmt::Debug for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Inbox<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.id )
 	}
 }
 
 
-impl<A: Actor> fmt::Display for Inbox<A>
+impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{

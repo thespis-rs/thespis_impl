@@ -9,10 +9,10 @@ mod common;
 
 use
 {
-	thespis         :: { *                                     } ,
-	thespis_impl    :: { *,                                    } ,
-	common          :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
-	futures         :: { task::LocalSpawnExt, executor::LocalPool } ,
+	thespis      :: { *                                                } ,
+	thespis_impl :: { *,                                               } ,
+	common       :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
+	futures      :: { task::LocalSpawnExt, executor::LocalPool         } ,
 };
 
 
@@ -90,12 +90,12 @@ fn test_manually_not_send_actor()
 	{
 		let actor = SumNoSend::new(5);
 
-		let (tx, rx) = mpsc::unbounded()                        ;
-		let name     = Some( "SumNoSend".into() )               ;
-		let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-		let id       = mb.id()                                  ;
-		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-		let mut addr = Addr ::new( id, name, tx )     ;
+		let (tx, rx) = mpsc::unbounded()                                         ;
+		let name     = Some( "SumNoSend".into() )                                ;
+		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+		let id       = mb.id()                                                   ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let mut addr = Addr ::new( id, name, tx )                                ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
@@ -126,13 +126,13 @@ fn test_manually_send_actor()
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let actor    = Sum(5)                                   ;
-		let (tx, rx) = mpsc::unbounded()                        ;
-		let name     = Some( "Sum".into() )                     ;
-		let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-		let id       = mb.id()                                  ;
-		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-		let mut addr = Addr ::new( id, name, tx )     ;
+		let actor    = Sum(5)                                                    ;
+		let (tx, rx) = mpsc::unbounded()                                         ;
+		let name     = Some( "Sum".into() )                                      ;
+		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+		let id       = mb.id()                                                   ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let mut addr = Addr ::new( id, name, tx )                                ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 

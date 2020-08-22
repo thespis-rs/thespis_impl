@@ -26,12 +26,12 @@ async fn test_mb_closed()
 {
 	// Create mailbox
 	//
-	let (tx, rx) = mpsc::unbounded()                        ;
-	let name     = Some( "Sum".into() )                     ;
-	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-	let id       = mb.id()                                  ;
-	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-	let mut addr = Addr ::new( id, name, tx )     ;
+	let (tx, rx) = mpsc::unbounded()                                         ;
+	let name     = Some( "Sum".into() )                                      ;
+	let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+	let id       = mb.id()                                                   ;
+	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+	let mut addr = Addr ::new( id, name, tx )                                ;
 
 	let (trigger_tx, trigger_rx) = oneshot::channel();
 
@@ -95,12 +95,12 @@ async fn test_mb_closed_before_response()
 
 	// Create mailbox
 	//
-	let (tx, rx) = mpsc::unbounded()                        ;
-	let name     = Some( "Sum".into() )                     ;
-	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-	let id       = mb.id()                                  ;
-	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-	let mut addr = Addr ::new( id, name, tx )     ;
+	let (tx, rx) = mpsc::unbounded()                                         ;
+	let name     = Some( "Sum".into() )                                      ;
+	let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+	let id       = mb.id()                                                   ;
+	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+	let mut addr = Addr ::new( id, name, tx )                                ;
 
 
 	let mb_task = async move

@@ -6,10 +6,10 @@ mod common;
 use
 {
 	futures         :: { task::{ Spawn, SpawnExt } } ,
-	thespis         :: { *                                                                      } ,
-	thespis_impl    :: { *                                                                      } ,
-	async_executors :: { *                                                               } ,
-	common          :: { *                                                                      } ,
+	thespis         :: { *                         } ,
+	thespis_impl    :: { *                         } ,
+	async_executors :: { *                         } ,
+	common          :: { *                         } ,
 };
 
 
@@ -40,7 +40,7 @@ impl Handler< Add > for Counter
 
 struct Supervise<A: Actor>
 {
-	inbox : Option< JoinHandle<Option<Inbox<A>>> > ,
+	inbox : Option< JoinHandle<Option<Mailbox<A>>> > ,
 	create: Box< dyn FnMut() ->A + Send > ,
 }
 

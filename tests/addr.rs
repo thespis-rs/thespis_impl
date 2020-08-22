@@ -30,17 +30,17 @@ async fn stop_when_adresses_dropped_before_start_mb()
 
 	// Create mailbox
 	//
-	let (tx, rx) = mpsc::unbounded()                        ;
-	let name     = Some( "Sum".into() )                     ;
-	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-	let id       = mb.id()                                  ;
-	let sum      = Sum(5)                                   ;
+	let (tx, rx) = mpsc::unbounded()                          ;
+	let name     = Some( "Sum".into() )                       ;
+	let mb       = Mailbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                    ;
+	let sum      = Sum(5)                                     ;
 
 	let program = async move
 	{
-		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-		let addr  = Addr ::new( id, name, tx ) ;
-		drop( addr );
+		let tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let addr  = Addr ::new( id, name, tx )                                ;
+		drop( addr )                                                          ;
 	};
 
 	join( program, mb.start( sum ) ).await;
@@ -58,17 +58,17 @@ fn stop_when_adresses_dropped()
 
 	// Create mailbox
 	//
-	let (tx, rx) = mpsc::unbounded()                        ;
-	let name     = Some( "Sum".into() )                     ;
-	let mb       = Inbox::new( name.clone(), Box::new(rx) ) ;
-	let id       = mb.id()                                  ;
-	let sum      = Sum(5)                                   ;
+	let (tx, rx) = mpsc::unbounded()                          ;
+	let name     = Some( "Sum".into() )                       ;
+	let mb       = Mailbox::new( name.clone(), Box::new(rx) ) ;
+	let id       = mb.id()                                    ;
+	let sum      = Sum(5)                                     ;
 
 	let dropper = async move
 	{
-		let      tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError ));
-		let  mut addr  = Addr ::new( id, name, tx ) ;
-		let     _addr2 = addr.clone()                         ;
+		let      tx    = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let  mut addr  = Addr ::new( id, name, tx )                                ;
+		let     _addr2 = addr.clone()                                              ;
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 	};

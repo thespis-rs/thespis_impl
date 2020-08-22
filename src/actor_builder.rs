@@ -1,10 +1,10 @@
-use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Inbox, SinkError };
+use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, SinkError };
 
-/// Default buffer size for bounded channel between Addr and Inbox.
+/// Default buffer size for bounded channel between Addr and Mailbox.
 //
 pub const BOUNDED: usize = 16;
 
-/// Builder for Addr and Inbox.
+/// Builder for Addr and Mailbox.
 //
 pub struct ActorBuilder<A: Actor>
 {
@@ -73,7 +73,7 @@ impl<A: Actor> ActorBuilder<A>
 	}
 
 
-	/// Set the channel to use for communication between `Addr` and `Inbox`.
+	/// Set the channel to use for communication between `Addr` and `Mailbox`.
 	///
 	/// This option is incompatible with bounded.
 	///
@@ -90,15 +90,15 @@ impl<A: Actor> ActorBuilder<A>
 	}
 
 
-	/// Build [`Addr`] and [`Inbox`]. This does not yet consume an actor and you have to
-	/// call [`start`] or [`start_local`] on [`Inbox`] and spawn the future to
+	/// Build [`Addr`] and [`Mailbox`]. This does not yet consume an actor and you have to
+	/// call [`start`] or [`start_local`] on [`Mailbox`] and spawn the future to
 	/// run your actor.
 	///
 	/// The advantage of this method is that you can pass the Addr to the constructor
 	/// of your actor if you need to. Otherwise it's advised to use [`spawn`] or [`spawn_local`]
 	/// for convenience.
 	//
-	pub fn build( mut self ) -> (Addr<A>, Inbox<A>)
+	pub fn build( mut self ) -> (Addr<A>, Mailbox<A>)
 	{
 		#[ cfg( feature = "tokio_channel" ) ]
 		//
@@ -149,7 +149,7 @@ impl<A: Actor> ActorBuilder<A>
 			}
 		}
 
-		let mb   = crate::Inbox::new( self.name, self.rx.unwrap() );
+		let mb   = crate::Mailbox::new( self.name, self.rx.unwrap() );
 		let addr = Addr::new( mb.id(), mb.name(), self.tx.unwrap() );
 
 		(addr, mb)
@@ -184,9 +184,9 @@ impl<A: Actor> ActorBuilder<A>
 	/// will return to you the mailbox so you can instantiate a new actor for the mailbox. The address
 	/// will remain valid and you can use this property to supervise the actor.
 	//
-	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Inbox<A>> > )
+	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Mailbox<A>> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Inbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
 
 		where A: Send
 
@@ -224,9 +224,9 @@ impl<A: Actor> ActorBuilder<A>
 	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
 	/// you call [`JoinHandle::detach`] on it.
 	//
-	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Inbox<A>> > )
+	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Mailbox<A>> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Inbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
 
 	{
 		let (addr, mb) = self.build();
