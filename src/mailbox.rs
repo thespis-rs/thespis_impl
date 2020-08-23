@@ -39,12 +39,12 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		if let Some( name ) = &self.name
 		{
-			trace_span!( "actor", id = self.id, name = name.as_ref() )
+			error_span!( "actor", id = self.id, name = name.as_ref() )
 		}
 
 		else
 		{
-			trace_span!( "actor", id = self.id )
+			error_span!( "actor", id = self.id )
 		}
 	}
 
