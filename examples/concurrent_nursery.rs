@@ -13,13 +13,24 @@ use
 
 type DynError = Box<dyn Error + Send + Sync>;
 
+
 #[ derive( Actor ) ]
 //
 struct MyActor
 {
-	nursery: Box< dyn Nurse<usize> + Send >,
+	// We store the nursery_handle on our actor. That way the lifetime of all
+	// tasks inside the nursery is tied to the lifetime of our actor. If we drop
+	// the actor, all subtasks that are still running will be dropped.
+	//
+	// Alternatively we could have a Handler for a Stop message, which would await
+	// the nursery_handle to wait for all subtasks to finish before dropping this actor.
+	// That last one can even be combined with a timeout to limit how long we wait for
+	// subtasks to finish naturally before dropping them.
+	//
+	nursery: Box< dyn Nurse<()> + Send >,
 	_nursery_handle: JoinHandle<()>,
 }
+
 
 struct Ping;
 
@@ -28,7 +39,7 @@ impl Message for Ping {	type Return = Result<(), NurseErr>; }
 
 impl MyActor
 {
-	pub fn new( exec: impl SpawnHandle<usize> + SpawnHandle<()> + Clone + Send + 'static ) -> Result<Self, SpawnError>
+	pub fn new( exec: impl SpawnHandle<()> + Clone + Send + 'static ) -> Result<Self, SpawnError>
 	{
 		let (nursery, output) = Nursery::new( Box::new( exec.clone() ) );
 
@@ -46,6 +57,9 @@ impl MyActor
 
 impl Handler<Ping> for MyActor
 {
+	// For this usecase we don't use the `async_fn` macro since we don't want our entire
+	// handler to be in the returned future. We want to set some thing up first.
+	//
 	fn handle( &mut self, _msg: Ping ) -> Return<'_, <Ping as Message>::Return >
 	{
 		// If self had properties wrapped in Arc, we could clone them here to pass them
@@ -65,19 +79,9 @@ impl Handler<Ping> for MyActor
 		let processing = async move
 		{
 			// do something useful.
-
-			// Return something if you want.
-			//
-			5
 		};
 
 		// Processing will now run concurrently.
-		// You can even imagine using spawn_handle and storing the JoinHandles somewhere
-		// (eg. FuturesUnordered). Every now and then you could poll the FuturesUnordered
-		// so it verifies how many tasks are still running, or return the JoinHandle to the
-		// caller By awaiting it in the async block we return, you can return the result of
-		// processing to your caller without blocking the current actor while it runs.
-		// The sky is the limit.
 		//
 		let result = self.nursery.nurse( processing );
 
@@ -85,20 +89,9 @@ impl Handler<Ping> for MyActor
 		// We are now immediately ready to process the next message even while processing is
 		// still running.
 		//
-		// We return the result of processing to the caller. If you want this actor to process
-		// the outcome of processing, or if you need to guarantee that no more processing tasks
-		// are running when this actor get's dropped, you can use a nursery. See: the async_nursery
-		// crate.
+		// We return the result of processing to the caller.
 		//
-		async move
-		{
-			match result
-			{
-				Ok(handle) => Ok( handle ) ,
-				Err(err)   => Err(err)           ,
-			}
-
-		}.boxed()
+		async move { result }.boxed()
 	}
 }
 
@@ -107,15 +100,13 @@ impl Handler<Ping> for MyActor
 //
 async fn main() -> Result< (), DynError >
 {
-	let actor = MyActor::new( Box::new(AsyncStd) )?;
-	let mut addr = Addr::builder().start( actor, &AsyncStd )?;
+	let     actor = MyActor::new( Box::new(AsyncStd) )?;
+	let mut addr  = Addr::builder().start( actor, &AsyncStd )?;
 
 	// Admittedly, this looks a bit weird. Call is fallible, and it returns a result over
-	// the SpawnError, since the handler needs to spawn and spawning is fallible.
+	// the NurseErr, since the handler needs to spawn and spawning is fallible.
 	//
-	let result = addr.call( Ping ).await??;
-
-	dbg!( result );
+	addr.call( Ping ).await??;
 
 	Ok(())
 }

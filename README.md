@@ -101,9 +101,6 @@ Any of the behaviors described in [point 4 "Unacceptable Behavior" of the Citize
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
 
-- test supervision + error message logged when actor panics (does it have actor name in it?).
-  - look at other api's for supervision, akka, erlang.
-
 - flesh out tests and comment what's being tested. Consistency, expect or return result.
 
 - test ringchannel
@@ -116,10 +113,7 @@ Any of the behaviors described in [point 4 "Unacceptable Behavior" of the Citize
 - Another common approach is the transactor. For example, multiple actors may require to modify their internal state in a coordinated manner. A transactor, which is a dedicated actor for coordinating transactional operations of multiple actors, can help in this situation by providing abstract transaction logic. Some transactors also apply STM concepts for transactional behavior [Les09,Les11].
 
 
-- use ArcStr?
 - https://berb.github.io/diploma-thesis/original/054_actors.html
-- inbox, cooperative yielding every x messages?
-- move clonesink to chanx
 - contention benchmark, actix is faster...
 - in thespis_remote we get one more DROP address log than CREATE. We should get to the bottom of this phantom address as it throws of debugging.
 - document the fact that we use catch_unwind

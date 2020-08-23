@@ -85,9 +85,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 //
 async fn supervise() -> Result< (), DynError >
 {
-	let counter = Counter;
-
-	let (mut addr, mut mb_handle) = Addr::builder().start_handle( counter, &AsyncStd )?;
+	let (mut addr, mut mb_handle) = Addr::builder().start_handle( Counter, &AsyncStd )?;
 
 
 	let supervisor = async move
