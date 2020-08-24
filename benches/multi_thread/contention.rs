@@ -221,8 +221,8 @@ fn mpsc( c: &mut Criterion )
 						}));
 					}
 
-					let sum_in_thread = thread::spawn( move || block_on( sum_in_mb.start_fut( sum_in ) ) );
-					let sum_thread    = thread::spawn( move || block_on( sum_mb   .start_fut( sum    ) ) );
+					let sum_in_thread = thread::spawn( move || block_on( sum_in_mb.start( sum_in ) ) );
+					let sum_thread    = thread::spawn( move || block_on( sum_mb   .start( sum    ) ) );
 
 					for sender in senders.into_iter()
 					{
@@ -340,8 +340,8 @@ fn mpsc( c: &mut Criterion )
 						}));
 					}
 
-					let sum_in_thread = thread::spawn( move || block_on( sum_in_mb.start_fut( sum_in ) ) );
-					let sum_thread    = thread::spawn( move || block_on( sum_mb   .start_fut( sum    ) ) );
+					let sum_in_thread = thread::spawn( move || block_on( sum_in_mb.start( sum_in ) ) );
+					let sum_thread    = thread::spawn( move || block_on( sum_mb   .start( sum    ) ) );
 
 					for sender in senders.into_iter()
 					{

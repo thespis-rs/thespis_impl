@@ -185,8 +185,8 @@ fn seq( c: &mut Criterion )
 					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
 
-					let sumin_handle = exec.spawn_handle( sum_in_mb.start_fut( sumin ) ).expect( "spawn" );
-					let sum_handle   = exec.spawn_handle( sum_mb   .start_fut( sum   ) ).expect( "spawn" );
+					let sumin_handle = exec.spawn_handle( sum_in_mb.start( sumin ) ).expect( "spawn" );
+					let sum_handle   = exec.spawn_handle( sum_mb   .start( sum   ) ).expect( "spawn" );
 
 					(sum_addr, sumin_handle, sum_handle, exec)
 				},
@@ -267,8 +267,8 @@ fn seq( c: &mut Criterion )
 					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
 
-					let sumin_handle = exec.spawn_handle( sum_in_mb.start_fut( sumin ) ).expect( "spawn" );
-					let sum_handle   = exec.spawn_handle( sum_mb   .start_fut( sum   ) ).expect( "spawn" );
+					let sumin_handle = exec.spawn_handle( sum_in_mb.start( sumin ) ).expect( "spawn" );
+					let sum_handle   = exec.spawn_handle( sum_mb   .start( sum   ) ).expect( "spawn" );
 
 					(sum_addr, sumin_handle, sum_handle, exec)
 				},
