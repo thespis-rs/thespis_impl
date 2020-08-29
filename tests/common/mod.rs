@@ -7,10 +7,12 @@ pub mod import
 {
 	pub use
 	{
-		futures :: { future::{ FutureExt }, SinkExt, channel::mpsc } ,
+		futures :: { future::{ FutureExt }, stream, SinkExt, StreamExt, task::{ Spawn, SpawnExt }, channel::* } ,
 		thespis :: { * } ,
+		thespis_impl :: { * } ,
 		tracing :: { * } ,
-		std     :: { marker::PhantomData } ,
+		std     :: { marker::PhantomData, error::Error } ,
+		async_executors :: { * } ,
 	};
 }
 

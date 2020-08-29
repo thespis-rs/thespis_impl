@@ -1,18 +1,14 @@
 // Tested:
 //
-// - ✔ let thread of mailbox crash and verify mailbox closed error
-// - ✔ let thread of mailbox crash and verify mailbox closed before response error
+// ✔ let thread of mailbox crash and verify mailbox closed error
+// ✔ let thread of mailbox crash and verify mailbox closed before response error
 //
 mod common;
 
 use
 {
-	async_executors :: { *                                } ,
-	thespis         :: { *                                } ,
-	thespis_impl    :: { *                                } ,
-	common          :: { actors::{ Sum, Add }, import::*  } ,
-	futures         :: { channel::oneshot, task::SpawnExt } ,
-	std             :: { panic::AssertUnwindSafe          } ,
+	common :: { *, actors::*, import::* } ,
+	std    :: { panic::AssertUnwindSafe } ,
 };
 
 
@@ -22,18 +18,12 @@ use
 //
 #[async_std::test]
 //
-async fn test_mb_closed()
+async fn test_mb_closed() -> Result<(), DynError >
 {
-	// Create mailbox
-	//
-	let (tx, rx) = mpsc::unbounded()                                         ;
-	let name     = Some( "Sum".into() )                                      ;
-	let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
-	let id       = mb.id()                                                   ;
-	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
-	let mut addr = Addr ::new( id, name, tx )                                ;
+	let (mut addr, mb) = Addr::builder().build();
 
 	let (trigger_tx, trigger_rx) = oneshot::channel();
+
 
 	let mb_task = async move
 	{
@@ -42,16 +32,20 @@ async fn test_mb_closed()
 		trigger_tx.send(()).expect( "send trigger" );
 	};
 
-	let mb_handle = AsyncStd.spawn_handle( mb_task ).expect( "spawn mailbox" );
+	let mb_handle = AsyncStd.spawn_handle( mb_task )?;
 
-	addr.call( Add(10) ).await.expect( "call" );
+
+	// Make sure the mailbox is actually up and running before moving on.
+	//
+	addr.call( Add(10) ).await?;
 
 	drop( mb_handle );
 
 	// since we drop the handle, it's gonna fire not because of the send, but
 	// because it get's dropped, so we don't care for success here.
 	//
-	let _ = trigger_rx.await;
+	assert!( trigger_rx.await.is_err() );
+
 
 	match addr.send( Add(10) ).await
 	{
@@ -67,6 +61,8 @@ async fn test_mb_closed()
 			assert!( false, "Wrong error returned: {:?}", e )
 		},
 	}
+
+	Ok(())
 }
 
 
@@ -93,14 +89,7 @@ async fn test_mb_closed_before_response()
 {
 	// flexi_logger::Logger::with_str( "warn, thespis_impl=trace" ).start().expect( "flexi_logger");
 
-	// Create mailbox
-	//
-	let (tx, rx) = mpsc::unbounded()                                         ;
-	let name     = Some( "Sum".into() )                                      ;
-	let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
-	let id       = mb.id()                                                   ;
-	let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
-	let mut addr = Addr ::new( id, name, tx )                                ;
+	let (mut addr, mb) = Addr::builder().build();
 
 
 	let mb_task = async move

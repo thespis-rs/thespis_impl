@@ -9,12 +9,9 @@ mod common;
 
 use
 {
-	thespis      :: { *                                                } ,
-	thespis_impl :: { *,                                               } ,
-	common       :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
-	futures      :: { task::LocalSpawnExt, executor::LocalPool         } ,
+	common  :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
+	futures :: { task::LocalSpawnExt, executor::LocalPool         } ,
 };
-
 
 
 

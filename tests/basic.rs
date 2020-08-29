@@ -1,19 +1,23 @@
+// Tested:
+//
+// ✔ Use send and verify the actor has processed the message.
+// ✔ Use call and verify the actor has processed the message.
+// ✔ Use send from several addresses and verify the actor has processed the message.
+// ✔ Use call from several addresses and verify the actor has processed the message.
+//
 mod common;
 
 use
 {
-	thespis         :: { *                          } ,
-	thespis_impl    :: { *,                         } ,
-	common          :: { actors::{ Sum, Add, Show } } ,
-	async_executors :: { AsyncStd                   } ,
-	std             :: { error::Error               } ,
+	common          :: { import::*, *, actors::* } ,
+	async_executors :: { AsyncStd                } ,
 };
 
 
 
 #[async_std::test]
 //
-async fn test_basic_send() -> Result<(), Box<dyn Error> >
+async fn test_basic_send() -> Result<(), DynError >
 {
 	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 
@@ -28,7 +32,7 @@ async fn test_basic_send() -> Result<(), Box<dyn Error> >
 
 #[async_std::test]
 //
-async fn test_basic_call() -> Result<(), Box<dyn Error> >
+async fn test_basic_call() -> Result<(), DynError >
 {
 	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 
@@ -43,7 +47,7 @@ async fn test_basic_call() -> Result<(), Box<dyn Error> >
 
 #[async_std::test]
 //
-async fn send_from_multiple_addrs() -> Result<(), Box<dyn Error> >
+async fn send_from_multiple_addrs() -> Result<(), DynError >
 {
 	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();
@@ -60,7 +64,7 @@ async fn send_from_multiple_addrs() -> Result<(), Box<dyn Error> >
 
 #[async_std::test]
 //
-async fn call_from_multiple_addrs() -> Result<(), Box<dyn Error> >
+async fn call_from_multiple_addrs() -> Result<(), DynError >
 {
 	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();

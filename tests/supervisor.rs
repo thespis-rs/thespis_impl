@@ -1,15 +1,13 @@
 // Tested:
-// - ✔
+//
+// ✔ Manually supervise
+// ✔ Use an actor as a supervisor
 //
 mod common;
 
 use
 {
-	futures         :: { task::{ Spawn, SpawnExt } } ,
-	thespis         :: { *                         } ,
-	thespis_impl    :: { *                         } ,
-	async_executors :: { *                         } ,
-	common          :: { *                         } ,
+	common :: { *, import::* } ,
 };
 
 
@@ -81,6 +79,8 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 
 
 
+// Manually supervise
+//
 #[async_std::test]
 //
 async fn supervise() -> Result< (), DynError >
@@ -109,6 +109,8 @@ async fn supervise() -> Result< (), DynError >
 
 
 
+// Use an actor as supervisor
+//
 #[async_std::test]
 //
 async fn supervisor() -> Result< (), DynError >

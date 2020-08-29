@@ -6,12 +6,9 @@ mod common;
 
 use
 {
-	thespis         :: { *            } ,
-	thespis_impl    :: { *,           } ,
-	tracing         :: { *            } ,
+	common          :: { import::*                                                } ,
 	async_executors :: { AsyncStd, SpawnHandleExt, LocalPool, LocalSpawnHandleExt } ,
-	futures :: { executor::LocalSpawner     } ,
-	std             :: { error::Error } ,
+	futures         :: { executor::LocalSpawner                                   } ,
 };
 
 
