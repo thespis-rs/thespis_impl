@@ -39,8 +39,13 @@ impl Handler< Add > for Counter
 struct Supervise<A: Actor>
 {
 	inbox : Option< JoinHandle<Option<Mailbox<A>>> > ,
-	create: Box< dyn FnMut() ->A + Send > ,
+	create: Box< dyn FnMut() ->A + Send >            ,
 }
+
+
+// https://github.com/rust-lang/futures-rs/issues/2211
+//
+impl<A: Actor + Send> std::panic::UnwindSafe for Supervise<A> {}
 
 impl<A: Actor + Send> Message for Supervise<A> { type Return = Option< Addr<A> >; }
 

@@ -63,6 +63,10 @@ struct Supervise<A: Actor>
 	create: Box< dyn FnMut() ->A + Send > ,
 }
 
+// https://github.com/rust-lang/futures-rs/issues/2211
+//
+impl<A: Actor + Send> std::panic::UnwindSafe for Supervise<A> {}
+
 impl<A: Actor + Send> Message for Supervise<A>
 {
 	type Return = Option< Addr<A> >;
