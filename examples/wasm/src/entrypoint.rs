@@ -24,7 +24,7 @@ struct MyActor { count: usize, phantom: PhantomData< Rc<()> > }
 //
 impl Handler<Ping> for MyActor
 {
-	#[async_fn_nosend] fn handle_local( &mut self, msg: Ping ) -> <Ping as Message>::Return
+	#[async_fn_local] fn handle_local( &mut self, msg: Ping ) -> <Ping as Message>::Return
 	{
 		self.count += msg.0;
 		self.count

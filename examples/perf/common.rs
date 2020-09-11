@@ -53,7 +53,7 @@ impl Message for Show { type Return = u64; }
 
 impl Handler< Add > for Sum
 {
-	#[async_fn_nosend] fn handle_local( &mut self, msg: Add )
+	#[async_fn_local] fn handle_local( &mut self, msg: Add )
 	{
 		let inner = self.inner.call( Show ).await.expect( "call inner" );
 
@@ -69,7 +69,7 @@ impl Handler< Add > for Sum
 
 impl Handler< Show > for Sum
 {
-	#[async_fn_nosend] fn handle_local( &mut self, _msg: Show ) -> u64
+	#[async_fn_local] fn handle_local( &mut self, _msg: Show ) -> u64
 	{
 		self.total
 	}

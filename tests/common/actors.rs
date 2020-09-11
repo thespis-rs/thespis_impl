@@ -57,7 +57,7 @@ impl Handler< Add > for SumNoSend
 		unreachable!( "Can't spawn !Send actor on threadpool" );
 	}
 
-	#[async_fn_nosend] fn handle_local( &mut self, msg: Add )
+	#[async_fn_local] fn handle_local( &mut self, msg: Add )
 	{
 		trace!( "called sum with: {:?}", msg );
 
@@ -74,7 +74,7 @@ impl Handler< Show > for SumNoSend
 		unreachable!( "Can't spawn !Send actor on threadpool" );
 	}
 
-	#[async_fn_nosend] fn handle_local( &mut self, _msg: Show ) -> u64
+	#[async_fn_local] fn handle_local( &mut self, _msg: Show ) -> u64
 	{
 		trace!( "called sum with: Show" );
 

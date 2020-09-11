@@ -33,7 +33,7 @@ impl Handler<Ping> for MyActor
 {
 	// Implement handle_local to enable !Send actor an mailbox.
 	//
-	#[async_fn_nosend] fn handle_local( &mut self, _msg: Ping ) -> String
+	#[async_fn_local] fn handle_local( &mut self, _msg: Ping ) -> String
 	{
 		// We can still access self across await points and mutably.
 		//

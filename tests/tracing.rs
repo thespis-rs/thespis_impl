@@ -94,7 +94,7 @@ impl Handler<Create> for CreatorLocal
 	}
 
 
-	#[async_fn_nosend] fn handle_local( &mut self, _: Create )
+	#[async_fn_local] fn handle_local( &mut self, _: Create )
 	{
 		trace!( "creating new actor" );
 
@@ -116,7 +116,7 @@ impl Handler<Create> for CreatedLocal
 		unreachable!();
 	}
 
-	#[async_fn_nosend] fn handle_local( &mut self, _: Create )
+	#[async_fn_local] fn handle_local( &mut self, _: Create )
 	{
 		trace!( "in created handler" );
 
