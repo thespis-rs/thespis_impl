@@ -9,15 +9,15 @@ mod common;
 
 use
 {
-	common  :: { actors::{ Sum, SumNoSend, Add, Show }, import::* } ,
-	futures :: { task::LocalSpawnExt, executor::LocalPool         } ,
+	common  :: { *, actors::*, import::*                  } ,
+	futures :: { task::LocalSpawnExt, executor::LocalPool } ,
 };
 
 
 
 #[test]
 //
-fn test_not_send_actor()
+fn test_not_send_actor() -> Result<(), DynError >
 {
 	let mut pool  = LocalPool::new();
 	let     exec  = pool.spawner();
@@ -29,9 +29,9 @@ fn test_not_send_actor()
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let mut addr = Addr::builder().start_local( SumNoSend::new(5), &exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::builder().start_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
 
-		addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		addr.send( Add( 10 ) ).await.expect( "Send" );
 
 		let result = addr.call( Show{} ).await.expect( "Call failed" );
 
@@ -39,8 +39,10 @@ fn test_not_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
+	exec.spawn_local( program )?;
 	pool.run();
+
+	Ok(())
 }
 
 
@@ -48,7 +50,7 @@ fn test_not_send_actor()
 
 #[test]
 //
-fn test_send_actor()
+fn test_send_actor() -> Result<(), DynError >
 {
 	let mut pool  = LocalPool::new();
 	let     exec  = pool.spawner();
@@ -68,8 +70,10 @@ fn test_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
+	exec.spawn_local( program )?;
 	pool.run();
+
+	Ok(())
 }
 
 
@@ -77,7 +81,7 @@ fn test_send_actor()
 
 #[test]
 //
-fn test_manually_not_send_actor()
+fn test_manually_not_send_actor() -> Result<(), DynError >
 {
 	let mut pool  = LocalPool::new();
 	let     exec  = pool.spawner();
@@ -103,8 +107,10 @@ fn test_manually_not_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
+	exec.spawn_local( program )?;
 	pool.run();
+
+	Ok(())
 }
 
 
@@ -112,7 +118,7 @@ fn test_manually_not_send_actor()
 
 #[test]
 //
-fn test_manually_send_actor()
+fn test_manually_send_actor() -> Result<(), DynError >
 {
 	let mut pool  = LocalPool::new();
 	let     exec  = pool.spawner();
@@ -140,8 +146,10 @@ fn test_manually_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
+	exec.spawn_local( program )?;
 	pool.run();
+
+	Ok(())
 }
 
 

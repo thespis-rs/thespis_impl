@@ -4,6 +4,7 @@
 
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
+- wasm tests
 
 - flesh out tests and comment what's being tested. Consistency, expect or return result.
 
@@ -19,8 +20,6 @@
 
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - contention benchmark, actix is faster...
-- in thespis_remote we get one more DROP address log than CREATE. We should get to the bottom of this phantom address as it throws of debugging.
-- document the fact that we use catch_unwind
 
 ## Types of channels:
 

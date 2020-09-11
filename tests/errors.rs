@@ -85,7 +85,7 @@ impl Handler<Void> for Panic
 
 #[async_std::test]
 //
-async fn test_mb_closed_before_response()
+async fn test_mb_closed_before_response() -> Result<(), DynError >
 {
 	// flexi_logger::Logger::with_str( "warn, thespis_impl=trace" ).start().expect( "flexi_logger");
 
@@ -97,7 +97,7 @@ async fn test_mb_closed_before_response()
 		let _ = AssertUnwindSafe( mb.start( Panic ) ).catch_unwind().await;
 	};
 
-	AsyncStd.spawn( mb_task ).expect( "spawn mailbox" );
+	AsyncStd.spawn( mb_task )?;
 
 
 	match addr.call( Void ).await
@@ -114,6 +114,8 @@ async fn test_mb_closed_before_response()
 			}
 		}
 	}
+
+	Ok(())
 }
 
 

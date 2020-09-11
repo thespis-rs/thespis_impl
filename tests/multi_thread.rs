@@ -8,17 +8,17 @@ mod common;
 
 use
 {
-	std             :: { thread                                } ,
-	common          :: { actors::{ Sum, Add, Show }, import::* } ,
-	async_executors :: { AsyncStd                              } ,
-	futures         :: { executor::block_on                    } ,
+	std             :: { thread                  } ,
+	common          :: { *, actors::*, import::* } ,
+	async_executors :: { AsyncStd                } ,
+	futures         :: { executor::block_on      } ,
 };
 
 
 
-async fn move_addr_send() -> u64
+async fn move_addr_send() -> Result<u64, DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd ).expect( "spawn actor mailbox" );
+	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut addr2            = addr.clone();
 
 	thread::spawn( move ||
@@ -32,14 +32,14 @@ async fn move_addr_send() -> u64
 
 	}).join().expect( "join thread" );
 
-	addr.call( Show{} ).await.expect( "Call failed" )
+	Ok(addr.call( Show{} ).await?)
 }
 
 
 
-async fn move_addr() -> u64
+async fn move_addr() -> Result<u64, DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd ).expect( "spawn actor mailbox" );
+	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut addr2            = addr.clone();
 
 	let (tx, rx) = oneshot::channel::<()>();
@@ -60,19 +60,19 @@ async fn move_addr() -> u64
 
 	// TODO: create a way to join threads asynchronously...
 	//
-	rx.await.expect( "receive Signal end of thread" );
+	rx.await?;
 
-	addr.call( Show{} ).await.expect( "Call failed" )
+	Ok( addr.call( Show{} ).await? )
 }
 
 
 
-async fn move_call() -> u64
+async fn move_call() -> Result<u64, DynError >
 {
-	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd ).expect( "spawn actor mailbox" );
+	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();
 	let (tx, rx)  = oneshot::channel::<()>();
-	let call  = async move { addr2.call( Add( 10 ) ).await.expect( "Call failed" ) };
+	let call  = async move { addr2.call( Add( 10 ) ).await.expect( "call addr2" ) };
 
 	thread::spawn( move ||
 	{
@@ -89,9 +89,9 @@ async fn move_call() -> u64
 
 	// TODO: create a way to join threads asynchronously...
 	//
-	rx.await.expect( "receive Signal end of thread" );
+	rx.await?;
 
-	addr.call( Show{} ).await.expect( "Call failed" )
+	Ok( addr.call( Show{} ).await? )
 }
 
 
@@ -99,16 +99,18 @@ async fn move_call() -> u64
 //
 #[async_std::test]
 //
-async fn test_basic_send()
+async fn test_basic_send() -> Result<(), DynError >
 {
 	// let _ = simple_logger::init();
 
 	trace!( "start program" );
 
-	let result = move_addr_send().await;
+	let result = move_addr_send().await?;
 
 	trace!( "result is: {}", result );
 	assert_eq!( 15, result );
+
+	Ok(())
 }
 
 
@@ -116,16 +118,18 @@ async fn test_basic_send()
 //
 #[async_std::test]
 //
-async fn test_basic_call()
+async fn test_basic_call() -> Result<(), DynError >
 {
 	// let _ = simple_logger::init();
 
 	trace!( "start program" );
 
-	let result = move_addr().await;
+	let result = move_addr().await?;
 
 	trace!( "result is: {}", result );
 	assert_eq!( 15, result );
+
+	Ok(())
 }
 
 
@@ -134,15 +138,17 @@ async fn test_basic_call()
 //
 #[async_std::test]
 //
-async fn test_move_call()
+async fn test_move_call() -> Result<(), DynError >
 {
 	// let _ = simple_logger::init();
 
 	trace!( "start program" );
 
-	let result = move_call().await;
+	let result = move_call().await?;
 
 	trace!( "result is: {}", result );
 	assert_eq!( 15, result );
+
+	Ok(())
 }
 

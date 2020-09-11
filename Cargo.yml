@@ -53,10 +53,6 @@ features:
 
   default: []
 
-  # only used internally, don't use
-  #
-  external_doc: []
-
   # Add convenience methods that allow creating Addr and starting actors with less boilerplate.
   #
   tokio_channel: [ tokio/sync, tokio/stream, async_chanx ]

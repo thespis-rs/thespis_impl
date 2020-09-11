@@ -53,6 +53,11 @@ impl<A> Mailbox<A> where A: Actor
 	/// actor panics during message processing, this will return the mailbox to you
 	/// so you can supervise actors by respawning your actor and then calling this method
 	/// on the mailbox again. All addresses will remain valid in this scenario.
+	///
+	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// and the thread will not unwind. This means that your actor should implement
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// the future.
 	//
 	pub async fn start( mut self, mut actor: A ) -> Option<Self>
 
@@ -96,6 +101,11 @@ impl<A> Mailbox<A> where A: Actor
 	/// actor panics during message processing, this will return the mailbox to you
 	/// so you can supervise actors by respawning your actor and then calling this method
 	/// on the mailbox again. All addresses will remain valid in this scenario.
+	///
+	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// and the thread will not unwind. This means that your actor should implement
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// the future.
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
 	{
@@ -149,6 +159,11 @@ impl<A> Mailbox<A> where A: Actor
 	/// terminates and which will return you the mailbox if the actor panicked during
 	/// message processing. You can use this to supervise the actor.
 	///
+	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// and the thread will not unwind. This means that your actor should implement
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// the future.
+	///
 	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
 	/// potentially in the middle of processing a message.
 	//
@@ -183,6 +198,11 @@ impl<A> Mailbox<A> where A: Actor
 	/// Spawn the mailbox on the current thread. You get a joinhandle you can await to detect when the mailbox
 	/// terminates and which will return you the mailbox if the actor panicked during
 	/// message processing. You can use this to supervise the actor.
+	///
+	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// and the thread will not unwind. This means that your actor should implement
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// the future.
 	///
 	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
 	/// potentially in the middle of processing a message.
