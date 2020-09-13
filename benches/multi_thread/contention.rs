@@ -167,7 +167,8 @@ impl AccuIn
 }
 
 
-
+#[allow(clippy::same_item_push)]
+//
 fn mpsc( c: &mut Criterion )
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();

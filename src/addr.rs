@@ -2,7 +2,7 @@ use crate::{ import::*, ActorBuilder, ChanSender, BoxEnvelope, envelope::*, erro
 
 
 
-/// Reference implementation of thespis::Address<A, M>.
+/// Reference implementation of `thespis::Address<M>`.
 /// It can be used to send all message types the actor implements thespis::Handler for.
 /// An actor will be dropped when all addresses to it are dropped.
 //
@@ -67,9 +67,12 @@ impl<A: Actor> fmt::Display for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		// TODO: check expect.
-		//
-		let t = std::any::type_name::<A>().split( "::" ).last().expect( "there to be no types on the root namespace" );
+		let name = std::any::type_name::<A>();
+		let t = match name.split( "::" ).last()
+		{
+			Some(t) => t,
+			None    => name,
+		};
 
 		match &self.name
 		{
@@ -98,7 +101,7 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`].
+	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`](crate::Mailbox).
 	//
 	pub fn builder() -> ActorBuilder<A>
 	{
@@ -139,7 +142,7 @@ impl<A, M> Address<M> for Addr<A>
 
 			ret_rx.await
 
-				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: format!( "{:?}", self ) }.into() )
+				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: format!( "{:?}", self ) } )
 
 		}.boxed()
 	}

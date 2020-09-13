@@ -21,6 +21,9 @@ harness = false
 name = "contention"
 path = "benches/multi_thread/contention.rs"
 
+[build-dependencies]
+rustc_version = "^0.2"
+
 [dependencies]
 once_cell = "^1"
 tracing = "^0.1"
@@ -52,11 +55,7 @@ version = "^0.2"
 actix = "^0.10.0-alpha"
 actix-rt = "^1"
 async_nursery = "^0.2"
-flexi_logger = "^0.15"
-piper = "^0.1"
-pretty_assertions = "^0.6"
 ring-channel = "^0.8"
-simple_logger = "^1"
 
 [dev-dependencies.async-std]
 features = ["attributes"]
@@ -139,7 +138,7 @@ license = "Unlicense"
 name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 
 [package.metadata]
 [package.metadata.docs]

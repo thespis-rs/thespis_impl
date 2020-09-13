@@ -214,7 +214,7 @@ async fn stream_to_sink_addr() -> Result<(), DynError>
 	let exec = AsyncStd{};
 
 	let mut addr    = Addr::builder().start( a, &exec )?;
-	let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
+	let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
 
 	addr.send_all( &mut stream ).await?;
 
@@ -226,7 +226,7 @@ async fn stream_to_sink_addr() -> Result<(), DynError>
 	// let mut stream2 = stream::iter( vec![ Count, Count, Count ].into_iter() );
 	//  stream.forward( &mut addr ).await.expect( "forward to sink" );
 
-	assert_eq!( 4,  addr.call( Count ).await? );
+	assert_eq!( 4, addr.call( Count ).await? );
 
 	Ok(())
 }
@@ -243,7 +243,7 @@ async fn stream_to_sink_receiver() -> Result<(), DynError>
 
 	let addr        = Addr::builder().start( a, &AsyncStd )?;
 	let mut clone   = Receiver::new( Address::clone_box(&addr) );
-	let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
+	let mut stream  = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
 
 	clone.send_all( &mut stream ).await?;
 

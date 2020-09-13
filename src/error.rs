@@ -31,7 +31,7 @@ pub enum ThesErr
 	},
 
 
-	// /// The mailbox cannot take more messages right now. TODO: this only happens on
+	// /// The mailbox cannot take more messages right now. This only happens on
 	// /// try_send on a future channel. For the moment there is no try_send in thespis.
 	// //
 	// #[ error( "The mailbox cannot take more messages right now. For actor: {actor}" ) ]
@@ -51,9 +51,6 @@ pub enum ThesErr
 		/// The actor concerned by the error.
 		//
 		actor: String
-
-		// /// The underlying error.
-		// source: anyhow::Error ,
 	}
 }
 

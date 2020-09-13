@@ -10,6 +10,7 @@
 
 This crate implements the traits from the `thespis` crate. It provides what you need to use actors.
 
+Please check out the [guide level documentation](https://thespis-rs.github.io/thespis_guide/).
 
 
 ## Table of Contents
@@ -19,7 +20,6 @@ This crate implements the traits from the `thespis` crate. It provides what you 
    - [Dependencies](#dependencies)
    - [Security](#security)
 - [Usage](#usage)
-   - [Basic Example](#basic-example)
    - [API](#api)
 - [Contributing](#contributing)
    - [Code of Conduct](#code-of-conduct)
@@ -34,14 +34,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  thespis_impl: ^0.1
+  thespis_impl: ^0.1-alpha
 ```
 
 In Cargo.toml:
 ```toml
 [dependencies]
 
-  thespis_impl = "0.1"
+  thespis_impl = "0.1-alpha"
 ```
 
 ### Upgrade
@@ -53,23 +53,17 @@ Please check out the [changelog](https://github.com/thespis-rs/thespis_impl/blob
 
 This crate has few dependencies. Cargo will automatically handle it's dependencies for you.
 
-There are no optional features.
+There is one optional feature: `tokio_channel`. This causes the `ActorBuilder` to use tokio channels by default instead of futures channels.
 
 
 ### Security
 
-
+This crate has `#![forbid(unsafe_code)]`, but our dependencies do use unsafe.
 
 
 ## Usage
 
-
-
-### Basic example
-
-```rust
-
-```
+Please check out the [guide level documentation](https://thespis-rs.github.io/thespis_guide/) and the [examples in the repository](https://github.com/thespis-rs/thespis_impl/blob/master/examples).
 
 ## API
 
@@ -82,6 +76,8 @@ Please check out the [contribution guidelines](https://github.com/thespis-rs/the
 
 
 ### Testing
+
+`cargo test --all-features`.
 
 
 ### Code of conduct

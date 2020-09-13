@@ -18,7 +18,7 @@ impl MyActor
 {
 	async fn bla( x: &mut String ) -> String
 	{
-		x.extend( "bla".chars() );
+		x.push_str( "bla" );
 		x.clone()
 	}
 }
@@ -36,7 +36,7 @@ impl Handler< Ping > for MyActor
 	{
 		trace!( "Ping handler called" );
 
-		self.seed.extend( msg.0.chars() );
+		self.seed.push_str( &msg.0 );
 		self.seed = Self::bla( &mut self.seed ).await;
 		self.seed += " - after yield";
 		self.seed.clone()

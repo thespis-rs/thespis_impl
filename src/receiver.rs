@@ -2,8 +2,8 @@ use crate::{ import::*, error::* };
 
 
 
-/// This type can be used when you need a concrete type as Address<M>. Eg,
-/// you can store this as Box<dyn Any> and then use `down_cast` from `std::any::Any`.
+/// This type can be used when you need a concrete type as `Address<M>`. Eg,
+/// you can store this as `Box<dyn Any>` and then use [`Box::downcast`].
 /// This allows abstracting over both `Actor` and `Message` types.
 //
 pub struct Receiver<M: Message>

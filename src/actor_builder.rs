@@ -4,7 +4,12 @@ use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, SinkEr
 //
 pub const BOUNDED: usize = 16;
 
-/// Builder for Addr and Mailbox.
+
+/// Builder for Addr and Mailbox. This is a convenience API so you don't have to call their constructors
+/// manually. Mainly lets you set the channel and name for your mailbox.
+///
+/// This provides the same methods as [`Mailbox`] for spawning the mailbox immediately as well as a
+/// [`build`](ActorBuilder::build) method which let's you manually spawn the mailbox.
 //
 pub struct ActorBuilder<A: Actor>
 {
@@ -68,7 +73,7 @@ impl<A: Actor> ActorBuilder<A>
 		debug_assert!( self.tx.is_none() );
 		debug_assert!( self.rx.is_none() );
 
-		self.bounded = bounded.into();
+		self.bounded = bounded;
 		self
 	}
 
@@ -91,11 +96,11 @@ impl<A: Actor> ActorBuilder<A>
 
 
 	/// Build [`Addr`] and [`Mailbox`]. This does not yet consume an actor and you have to
-	/// call [`start`] or [`start_local`] on [`Mailbox`] and spawn the future to
+	/// call [`start`](Mailbox::start) or [`start_local`](Mailbox::start_local) on [`Mailbox`] and spawn the future to
 	/// run your actor.
 	///
 	/// The advantage of this method is that you can pass the Addr to the constructor
-	/// of your actor if you need to. Otherwise it's advised to use [`spawn`] or [`spawn_local`]
+	/// of your actor if you need to. Otherwise it's advised to use [`ActorBuilder::start_handle`] or [`ActorBuilder::start_handle_local`]
 	/// for convenience.
 	//
 	pub fn build( mut self ) -> (Addr<A>, Mailbox<A>)
@@ -179,10 +184,14 @@ impl<A: Actor> ActorBuilder<A>
 
 
 	/// Spawn the mailbox on the provided executor. Returns [`Addr`] and a [`JoinHandle`] to the spawned
-	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
+	/// mailbox.
+	///
+	/// Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
 	/// you call [`JoinHandle::detach`] on it. If the actor panics during message processing, the JoinHandle
 	/// will return to you the mailbox so you can instantiate a new actor for the mailbox. The address
 	/// will remain valid and you can use this property to supervise the actor.
+	//
+	#[allow(clippy::type_complexity)] // for return type
 	//
 	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Mailbox<A>> > )
 
@@ -221,8 +230,12 @@ impl<A: Actor> ActorBuilder<A>
 
 
 	/// For `Actor: !Send`. Spawn the mailbox on the provided executor. Returns [`Addr`] and a [`JoinHandle`] to the spawned
-	/// mailbox. Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
+	/// mailbox.
+	///
+	/// Note that if you drop the [`JoinHandle`] it will stop the actor and drop it unless
 	/// you call [`JoinHandle::detach`] on it.
+	//
+	#[allow(clippy::type_complexity)] // for return type
 	//
 	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Mailbox<A>> > )
 

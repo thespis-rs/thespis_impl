@@ -49,17 +49,13 @@ async fn test_mb_closed() -> Result<(), DynError >
 
 	match addr.send( Add(10) ).await
 	{
-		Ok (_) => assert!( false, "Addr::send should fail" ),
+		Ok (_) => panic!( "Addr::send should fail" ),
 
-		Err(e) => if let ThesErr::MailboxClosed{..} = e
+		Err(e) => match e
 		{
-			assert!( true )
+			ThesErr::MailboxClosed{..} => {}
+			_                          => assert!( false, "Wrong error returned: {:?}", e ),
 		}
-
-		else
-		{
-			assert!( false, "Wrong error returned: {:?}", e )
-		},
 	}
 
 	Ok(())
@@ -102,16 +98,12 @@ async fn test_mb_closed_before_response() -> Result<(), DynError >
 
 	match addr.call( Void ).await
 	{
-		Ok (_) => assert!( false, "Call should fail" ),
+		Ok (_) => panic!( "Call should fail" ),
 
-		Err(e) =>
+		Err(e) => match e
 		{
-			if let ThesErr::ActorStoppedBeforeResponse{..} = e {}
-
-			else
-			{
-				assert!( false, "Wrong error returned: {:?}", e )
-			}
+			ThesErr::ActorStoppedBeforeResponse{..} => {}
+			_ => assert!( false, "Wrong error returned: {:?}", e ),
 		}
 	}
 

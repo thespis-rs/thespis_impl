@@ -48,8 +48,6 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 			 M: Message           ,
 
 {
-	// TODO: The Send bound here seems to make no sense.
-	//
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()>
 	{
 		< A as Handler<M> >::handle( actor, self.msg )

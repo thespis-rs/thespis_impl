@@ -33,7 +33,7 @@ impl<A> Mailbox<A> where A: Actor
 	}
 
 
-	/// Obtain a `tracing::Span` identifying the actor with it's id and it's name if it has one.
+	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
 	//
 	pub fn span( &self ) -> Span
 	{
@@ -51,13 +51,17 @@ impl<A> Mailbox<A> where A: Actor
 
 	/// Run the mailbox. Returns a future that processes incoming messages. If the
 	/// actor panics during message processing, this will return the mailbox to you
-	/// so you can supervise actors by respawning your actor and then calling this method
+	/// so you can supervise actors by re-initiating your actor and then calling this method
 	/// on the mailbox again. All addresses will remain valid in this scenario.
 	///
-	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
+	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
 	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
+	///
+	/// Warning: if you drop the future returned by this function in order to stop an actor,
+	/// [`Actor::stopped`] will not be called.
 	//
 	pub async fn start( mut self, mut actor: A ) -> Option<Self>
 
@@ -83,8 +87,6 @@ impl<A> Mailbox<A> where A: Actor
 				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
 			}
 
-			// TODO: this will not be executed when the future for the mailbox get's dropped
-			//
 			actor.stopped().await;
 			trace!( "Mailbox stopped actor for {}", &self );
 
@@ -99,13 +101,17 @@ impl<A> Mailbox<A> where A: Actor
 
 	/// Run the mailbox with a non-Send Actor. Returns a future that processes incoming messages. If the
 	/// actor panics during message processing, this will return the mailbox to you
-	/// so you can supervise actors by respawning your actor and then calling this method
+	/// so you can supervise actors by re-initiating your actor and then calling this method
 	/// on the mailbox again. All addresses will remain valid in this scenario.
 	///
-	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
+	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
 	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
+	///
+	/// Warning: if you drop the future returned by this function in order to stop an actor,
+	/// [`Actor::stopped`] will not be called.
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
 	{
@@ -151,7 +157,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		Ok( exec.spawn( self.start( actor ).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn{ /* TODO: source: e.into(), */actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )? )
 	}
 
 
@@ -159,13 +165,14 @@ impl<A> Mailbox<A> where A: Actor
 	/// terminates and which will return you the mailbox if the actor panicked during
 	/// message processing. You can use this to supervise the actor.
 	///
-	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
+	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
 	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
 	///
-	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
-	/// potentially in the middle of processing a message.
+	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped
+	/// and [`Actor::stopped`] will not be called.
 	//
 	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
 
@@ -199,13 +206,14 @@ impl<A> Mailbox<A> where A: Actor
 	/// terminates and which will return you the mailbox if the actor panicked during
 	/// message processing. You can use this to supervise the actor.
 	///
-	/// This means that we use AssertUnwindSafe and catch_unwind when calling your actor
+	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
+	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
 	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for `Actor` in
+	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
 	///
-	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped,
-	/// potentially in the middle of processing a message.
+	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped
+	/// and [`Actor::stopped`] will not be called.
 	//
 	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
 
@@ -251,9 +259,12 @@ impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		// TODO: check expect.
-		//
-		let t = std::any::type_name::<A>().split( "::" ).last().expect( "there to be no types on the root namespace" );
+		let name = std::any::type_name::<A>();
+		let t = match name.split( "::" ).last()
+		{
+			Some(t) => t,
+			None    => name,
+		};
 
 		match &self.name
 		{

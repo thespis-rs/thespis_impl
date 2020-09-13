@@ -1,7 +1,6 @@
-// See: https://github.com/rust-lang/rust/issues/44732#issuecomment-488766871
-//!
-#![ cfg_attr( feature = "external_doc", feature(external_doc)         ) ]
-#![ cfg_attr( feature = "external_doc", doc(include = "../README.md") ) ]
+#![ cfg_attr( nightly, feature( external_doc             ) ) ]
+#![ cfg_attr( nightly, doc    ( include = "../README.md" ) ) ]
+#![ doc = "" ] // empty doc line to handle missing doc warning when the feature is missing.
 //
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
 #![ deny   ( missing_docs                                   ) ]
@@ -41,7 +40,7 @@ pub use
 
 	// Addr::send requires SinkExt, so let's re-export that.
 	//
-	futures::{ SinkExt as _ },
+	futures::{ SinkExt },
 };
 
 use futures::Sink;
