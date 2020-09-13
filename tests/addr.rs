@@ -1,72 +1,64 @@
-#![ feature( optin_builtin_traits ) ]
-
 // Tested:
 //
-// - verify actor stops when all adresses are dropped.
-
+// ✔ verify actor stops when all adresses are dropped.
+// ✔ verify actor stops when all adresses are dropped before the mailbox was even started.
+//
 mod common;
 
 use
 {
-	thespis         :: { *                                } ,
-	thespis_impl    :: { *,                               } ,
-	common          :: { actors::{ Sum, Add }             } ,
-	futures         :: { executor::block_on, future::join } ,
+	common          :: { import::*, *, actors::* } ,
+	async_executors :: { AsyncStd                } ,
 };
 
 
 
-
-#[test]
+#[async_std::test]
 //
-fn stop_when_adresses_dropped_before_start_mb()
+async fn stop_when_adresses_dropped_before_start_mb() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-	// Create mailbox
+	let (addr, mb) = Addr::builder().build();
+
+	let addr2 = addr.clone();
+
+	drop( addr  );
+	drop( addr2 );
+
+	let mb_handle = AsyncStd.spawn_handle( mb.start( Sum(5) ) )?;
+
+	// the handle will resolve when the mailbox has ended. If not this test will hang.
 	//
-	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-	let sender             = mb.sender()                        ;
-	let sum                = Sum(5)                             ;
+	mb_handle.await;
 
-	let program = async move
-	{
-		let  addr  = Addr ::new( sender ) ;
-		let _addr2 = addr.clone()         ;
-	};
-
-	block_on( join( program, mb.start_fut( sum ) ) );
+	Ok(())
 }
 
 
-// TODO: Maybe need a more realistic test. Here we await the mailbox while usually it will be
-// spawned, and we use join which has it's own polling strategy.
+#[async_std::test]
 //
-#[test]
-//
-fn stop_when_adresses_dropped()
+async fn stop_when_adresses_dropped() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-	// Create mailbox
+	let (mut addr, mb) = Addr::builder().build();
+
+	let mb_handle = AsyncStd.spawn_handle( mb.start( Sum(5) ) )?;
+
+	let addr2 = addr.clone();
+
+	// call guarantees that the message has been processed
 	//
-	let mb    : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-	let sender             = mb.sender()                        ;
-	let sum                = Sum(5)                             ;
+	addr.call( Add( 10 ) ).await?;
 
-	let dropper = async move
-	{
-		let  mut addr  = Addr ::new( sender ) ;
-		let     _addr2 = addr.clone()         ;
+	drop( addr  );
+	drop( addr2 );
 
-		addr.send( Add( 10 ) ).await.expect( "Send failed" );
-	};
+	// the handle will resolve when the mailbox has ended. If not this test will hang.
+	//
+	mb_handle.await;
 
-	let mailbox = async move
-	{
-		mb.start_fut( sum ).await;
-	};
-
-	block_on( join( mailbox, dropper ) );
+	Ok(())
 }
 

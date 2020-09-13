@@ -1,112 +1,78 @@
-#![ feature( optin_builtin_traits ) ]
-
+// Tested:
+//
+// ✔ Use send and verify the actor has processed the message.
+// ✔ Use call and verify the actor has processed the message.
+// ✔ Use send from several addresses and verify the actor has processed the message.
+// ✔ Use call from several addresses and verify the actor has processed the message.
+//
 mod common;
 
 use
 {
-	thespis         :: { *                          } ,
-	thespis_impl    :: { *,                         } ,
-	common          :: { actors::{ Sum, Add, Show } } ,
-	async_executors :: { AsyncStd                   } ,
-	futures         :: { executor::block_on         } ,
+	common          :: { import::*, *, actors::* } ,
+	async_executors :: { AsyncStd                } ,
 };
 
 
 
-
-#[test]
+#[async_std::test]
 //
-fn test_basic_send()
+async fn test_basic_send() -> Result<(), DynError >
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 
-		let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
+	addr.send( Add( 10 ) ).await?;
 
-		addr.send( Add( 10 ) ).await.expect( "Send failed" );
+	assert_eq!( 15, addr.call( Show ).await? );
 
-		let result = addr.call( Show{} ).await.expect( "Call failed" );
-
-		assert_eq!( 15, result );
-	};
-
-	block_on( program );
+	Ok(())
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn test_basic_call()
+async fn test_basic_call() -> Result<(), DynError >
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 
-		let mut addr = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
+	addr.call( Add(10) ).await?;
 
-		addr.call( Add(10) ).await.expect( "Send failed" );
+	assert_eq!( 15, addr.call( Show ).await? );
 
-		let result = addr.call( Show{} ).await.expect( "Call failed" );
-
-		assert_eq!( 15, result );
-	};
-
-	block_on( program );
+	Ok(())
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn send_from_multiple_addrs()
+async fn send_from_multiple_addrs() -> Result<(), DynError >
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr2 = addr.clone();
 
-		let mut addr  = Addr::try_from( Sum(5), &mut exec ).expect( "spawn actor mailbox" );
-		let mut addr2 = addr.clone();
+	addr .send( Add( 10 ) ).await?;
+	addr2.send( Add( 10 ) ).await?;
 
-		addr .send( Add( 10 ) ).await.expect( "Send failed" );
-		addr2.send( Add( 10 ) ).await.expect( "Send failed" );
+	assert_eq!( 25, addr.call( Show{} ).await? );
 
-		let resp = addr.call( Show{} ).await.expect( "Call failed" );
-
-		assert_eq!( 25, resp );
-	};
-
-	block_on( program );
+	Ok(())
 }
 
 
 
-#[test]
+#[async_std::test]
 //
-fn call_from_multiple_addrs()
+async fn call_from_multiple_addrs() -> Result<(), DynError >
 {
-	let program = async move
-	{
-		let mut exec = AsyncStd{};
+	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr2 = addr.clone();
 
-		let sum = Sum(5);
+	addr .call( Add( 10 ) ).await?;
+	addr2.call( Add( 10 ) ).await?;
 
-		// Create mailbox
-		//
-		let     mb  : Inbox<Sum> = Inbox::new( Some( "Sum".into() ) ) ;
-		let mut addr             = Addr ::new( mb.sender() )          ;
-		let mut addr2            = addr.clone()                       ;
+	assert_eq!( 25, addr.call ( Show{} ).await? );
 
-		mb.start( sum, &mut exec ).expect( "Failed to start mailbox" );
-
-		addr .call( Add( 10 ) ).await.expect( "Send failed" );
-		addr2.call( Add( 10 ) ).await.expect( "Send failed" );
-
-		let resp = addr.call ( Show{} ).await.expect( "Call failed" );
-
-		assert_eq!( 25, resp );
-	};
-
-	block_on( program );
+	Ok(())
 }

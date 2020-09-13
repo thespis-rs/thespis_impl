@@ -3,8 +3,9 @@ use
 	futures           :: { stream, StreamExt } ,
 	thespis           :: { *                 } ,
 	thespis_impl      :: { *                 } ,
-	async_executors   :: { *                 } ,
-	futures::executor :: { block_on          } ,
+	futures::executor :: { ThreadPool        } ,
+	std               :: { error::Error      } ,
+	// async_executors   :: { ThreadPool        } ,
 };
 
 
@@ -17,31 +18,29 @@ impl Message for Count { type Return = u8; }
 
 impl Handler< Count > for MyActor
 {
-	fn handle( &mut self, _msg: Count ) -> Return<u8> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Count ) -> u8
 	{
 		self.count += 1;
 		self.count
-
-	})}
+	}
 }
 
 
-fn main()
+#[async_std::main]
+//
+async fn main() -> Result< (), Box<dyn Error> >
 {
-	let program = async move
-	{
-		let     a      = MyActor { count: 0 };
-		let     exec   = ThreadPool::new().expect( "create threadpool" );
-		let mut addr   = Addr::try_from( a, &exec ).expect( "Failed to create address" );
-		let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( |i| Ok(i) );
+	let     a      = MyActor { count: 0 };
+	let     exec   = ThreadPool::new()?;
+	let mut addr   = Addr::builder().start( a, &exec )?;
+	let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
 
-		stream.forward( &mut addr ).await.expect( "forward to sink" );
+	stream.forward( &mut addr ).await?;
 
-		let total = addr.call( Count ).await.expect( "Call failed" );
+	let total = addr.call( Count ).await?;
 
-		assert_eq!( 4, total );
-		dbg!( total );
-	};
+	assert_eq!( 4, total );
+	dbg!( total );
 
-	block_on( program );
+	Ok(())
 }

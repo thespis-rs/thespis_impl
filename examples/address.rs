@@ -1,9 +1,9 @@
 use
 {
-	thespis           :: { *        } ,
-	thespis_impl      :: { *        } ,
-	async_executors   :: { *        } ,
-	futures::executor :: { block_on } ,
+	thespis           :: { *            } ,
+	thespis_impl      :: { *            } ,
+	futures::executor :: { ThreadPool   } ,
+	std               :: { error::Error } ,
 };
 
 
@@ -21,52 +21,37 @@ impl Message for Ping
 
 impl Handler< Ping > for MyActor
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Ping ) -> String
 	{
 		"MyActor".into()
-
-	})}
+	}
 }
 
 
 impl Handler< Ping > for Other
 {
-	fn handle( &mut self, _msg: Ping ) -> Return<String> { Box::pin( async move
+	#[async_fn] fn handle( &mut self, _msg: Ping ) -> String
 	{
 		"Other".into()
-
-	})}
+	}
 }
 
 
-
-fn main()
+#[async_std::main]
+//
+async fn main() -> Result< (), Box<dyn Error> >
 {
-	let program = async move
+	let exec  = ThreadPool::new()?;
+	let addr  = Addr::builder().start( MyActor, &exec )?;
+	let addro = Addr::builder().start( Other  , &exec )?;
+
+
+	let recs: Vec< BoxAddress<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];
+
+	for mut actor in recs
 	{
-		let mut exec = ThreadPool::new().expect( "create threadpool" );
+		println!( "Pinged: {}", actor.call( Ping( "ping".into() ) ).await? );
+	}
 
-		let a = MyActor;
-		let b = Other;
-
-		let addr  = Addr::try_from( a, &mut exec ).expect( "Failed to create address" );
-		let addro = Addr::try_from( b, &mut exec ).expect( "Failed to create address" );
-
-
-		let recs: Vec< BoxAddress<Ping, ThesErr> > = vec![ Box::new( addr ), Box::new( addro ) ];
-
-		// or like this, but it clones internally. Note that the compiler is capable here of detecting
-		// that we want a Address to the message type Ping.
-		//
-		// let recs = vec![ addr.recipient(), addro.recipient() ];
-		//
-		// In a more complex situation, it might be necessary to annotate the type.
-
-		for mut actor in recs
-		{
-			println!( "Pinged: {}", actor.call( Ping( "ping".into() ) ).await.expect( "Call failed" ) );
-		}
-	};
-
-	block_on( program );
+	Ok(())
 }

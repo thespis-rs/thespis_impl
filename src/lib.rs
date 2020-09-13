@@ -1,7 +1,6 @@
-// See: https://github.com/rust-lang/rust/issues/44732#issuecomment-488766871
-//!
-#![ cfg_attr( feature = "external_doc", feature(external_doc)         ) ]
-#![ cfg_attr( feature = "external_doc", doc(include = "../README.md") ) ]
+#![ cfg_attr( nightly, feature( external_doc             ) ) ]
+#![ cfg_attr( nightly, doc    ( include = "../README.md" ) ) ]
+#![ doc = "" ] // empty doc line to handle missing doc warning when the feature is missing.
 //
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
 #![ deny   ( missing_docs                                   ) ]
@@ -23,20 +22,68 @@
 	variant_size_differences      ,
 )]
 
-mod addr     ;
-mod envelope ;
-mod error    ;
-mod inbox    ;
-mod receiver ;
+mod actor_builder ;
+mod addr          ;
+mod envelope      ;
+mod error         ;
+mod mailbox       ;
+mod receiver      ;
 
 
 pub use
 {
-	addr     :: * ,
-	error    :: * ,
-	inbox    :: * ,
-	receiver :: * ,
+	actor_builder :: * ,
+	addr          :: * ,
+	error         :: * ,
+	mailbox       :: * ,
+	receiver      :: * ,
+
+	// Addr::send requires SinkExt, so let's re-export that.
+	//
+	futures::{ SinkExt },
 };
+
+use futures::Sink;
+
+
+/// Shorthand for a `Send` boxed envelope.
+//
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send >;
+
+/// A boxed error type for the sink
+//
+pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
+
+/// Type of boxed channel sender for Addr.
+//
+pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
+
+/// Type of boxed channel receiver for Mailbox.
+//
+pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
+
+
+
+/// Interface for T: Sink + Clone
+//
+pub trait CloneSink<'a, Item, E>: Sink<Item, Error=E> + Unpin + Send
+{
+	/// Clone this sink.
+	//
+	fn clone_sink( &self ) -> Box< dyn CloneSink<'a, Item, E> + 'a >;
+}
+
+
+impl<'a, T, Item, E> CloneSink<'a, Item, E> for T
+
+	where T: 'a + Sink<Item, Error=E> + Clone + Unpin + Send + ?Sized
+
+{
+	fn clone_sink( &self ) -> Box< dyn CloneSink<'a, Item, E> + 'a >
+	{
+		Box::new( self.clone() )
+	}
+}
 
 
 
@@ -48,25 +95,28 @@ mod import
 {
 	pub(crate) use
 	{
-		thiserror     :: { Error } ,
-		thespis       :: { *     } ,
-		log           :: { *     } ,
+		thespis         :: { * } ,
+		tracing         :: { * } ,
+		tracing_futures :: { Instrument } ,
+		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 
 		std ::
 		{
-			fmt         :: { self                                   } ,
-			pin         :: { Pin                                    } ,
-			sync        :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
+			fmt                                                  ,
+			pin    :: { Pin                                    } ,
+			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
+			panic  :: { AssertUnwindSafe                       } ,
+			task   :: { Context as TaskContext, Poll           } ,
 		},
 
 
 		futures ::
 		{
-			stream  :: { StreamExt                                       } ,
-			sink    :: { Sink, SinkExt                                   } ,
-			channel :: { oneshot, mpsc                                   } ,
-			future  :: { FutureExt                                       } ,
-			task    :: { Context as TaskContext, Poll, Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
+			stream  :: { StreamExt                                  } ,
+			sink    :: { Sink, SinkExt                              } ,
+			channel :: { oneshot                                    } ,
+			future  :: { FutureExt                                  } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
 		},
 	};
 }

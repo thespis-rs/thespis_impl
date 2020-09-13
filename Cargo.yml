@@ -2,15 +2,30 @@ package:
 
   # When releasing to crates.io:
   #
+  # - last check for all TODO, FIXME, expect, unwrap.
+  # - recheck log statements (informative, none left that were just for development, ...)
+  # - `cargo +nightly doc --all-features --no-deps --open` and re-read and final polish of documentation.
+  #
   # - Update CHANGELOG.md.
   # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
-  # - verify CI result
-  # - test dependent crates
-  # - cargo publish
-  # - merge dev branch into master
-  # - create git tag
   #
-  version       : 0.1.0
+  # - `touch **.rs && cargo clippy --tests --examples --benches --all-features`
+  # - `cargo update`
+  # - `cargo outdated --root-deps-only`
+  # - `cargo udeps --all-targets --all-features`
+  # - `cargo audit`
+  # - `cargo crev crate verify --show-all --recursive` and review.
+  # - 'cargo test --all-targets --all-features'
+  #
+  # - push dev and verify CI result
+  # - `cargo test` on dependent crates
+  #
+  # - cargo publish
+  # - `git checkout master && git merge dev --no-ff`
+  # - `git tag x.x.x` with version number.
+  # - `git push && git push --tags`
+  #
+  version       : 0.1.0-alpha.1
   name          : thespis_impl
   edition       : '2018'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -21,7 +36,7 @@ package:
   documentation : https://docs.rs/thespis_impl
   readme        : README.md
   keywords      : [ async, futures, actor, thespis ]
-  categories    : [ Asynchronous, Concurrency ]
+  categories    : [ asynchronous, concurrency ]
 
   metadata:
     docs:
@@ -39,9 +54,9 @@ features:
 
   default: []
 
-  # only used internally, don't use
+  # Add convenience methods that allow creating Addr and starting actors with less boilerplate.
   #
-  external_doc: []
+  tokio_channel: [ tokio/sync, tokio/stream, async_chanx ]
 
 
 lib:
@@ -51,13 +66,15 @@ lib:
 
 dependencies:
 
-  thespis     : { path: ../thespis }
-  futures     : { version: ^0.3, features: [ std, compat ], default-features: false }
-  log         : ^0.4
-  regex       : { version: ^1, features: [ pattern ] }
-  once_cell   : ^1
-  thiserror   : ^1
-  anyhow      : ^1
+  thespis            : { version: 0.1.0-alpha }
+  futures            : { version: ^0.3, features: [ std, compat ], default-features: false }
+  tracing            : ^0.1
+  tracing-futures    : { version: ^0.2, features: [ futures-03 ] }
+  once_cell          : ^1
+  tokio              : { version: ^0.2, optional: true }
+  async_chanx        : { version: ^0.1.0-alpha, optional: true }
+  async_executors    : { version: ^0.3 }
+
 
 target:
 
@@ -70,15 +87,27 @@ target:
 
 dev-dependencies:
 
-  pretty_assertions : ^0.6
-  flexi_logger      : ^0.14
-  async_executors   : { path: ../../async_executors, features: [localpool, threadpool, juliex, async_std] }
-  simple_logger     : ^1
+  tracing-subscriber : { version: ^0.2, default-features: false, features: [ fmt, json, tracing-log, chrono ] }
+  ring-channel      : ^0.8
+  # pretty_assertions : ^0.6
+  # flexi_logger      : ^0.15
+  async_executors   : { version: ^0.3, features: [localpool, threadpool, async_std, tokio_ct] }
+  async-std         : { version: ^1, features: [ attributes ] }
+  # simple_logger     : ^1
+  futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
+  async_nursery     : ^0.2
 
   # for benchmarks
   #
-  actix             : ^0.9
-  criterion         : { version: ^0.3 , features: [ real_blackbox ]                    }
+  actix-rt          : ^1
+  actix             : ^0.10.0-alpha
+  criterion         : { version: ^0.3, features: [] }
+  tokio             : { version: ^0.2, features: [ sync, macros ] }
+
+
+build-dependencies:
+
+  rustc_version: ^0.2
 
 
 bench:
@@ -91,20 +120,36 @@ bench:
     path   : benches/multi_thread/delivery.rs
     harness: false
 
-
-profile:
-
-  release:
-
-    opt-level    : 3
-    codegen-units: 1
-
-    lto          : false
-    debug        : true
+  - name   : contention
+    path   : benches/multi_thread/contention.rs
+    harness: false
 
 
-patch:
+example:
 
-  crates-io:
+  - name: actix_perf
+    path: examples/perf/actix.rs
 
-    juliex: { git: "https://github.com/najamelan/juliex" }
+  - name: thespis_perf
+    path: examples/perf/thespis.rs
+
+  - name: method_perf
+    path: examples/perf/method.rs
+
+  - name: thespis_local_perf
+    path: examples/perf/thespis_local.rs
+
+  - name: actix_local_perf
+    path: examples/perf/actix_local.rs
+
+  - name: actix_mpsc_perf
+    path: examples/perf/actix_mpsc.rs
+
+  - name: thespis_mpsc_perf
+    path: examples/perf/thespis_mpsc.rs
+
+  - name: thespis_unbounded_perf
+    path: examples/perf/thespis_unbounded.rs
+
+  - name: actix_unbounded_perf
+    path: examples/perf/actix_unbounded.rs

@@ -6,7 +6,10 @@ Just showing that thespis works in WASM. This is without remote functionality. T
 
 ```shell
 rustup target add wasm32-unknown-unknown
-cargo install wasm-pack
+
+# See: https://rustwasm.github.io/wasm-pack
+#
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 ```
 
 ## Usage

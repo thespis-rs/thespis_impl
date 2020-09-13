@@ -1,5 +1,3 @@
-#![ feature( optin_builtin_traits ) ]
-//
 // Tested:
 //
 // - ✔ Spawn mailbox for actor that is !Send and !Sync
@@ -11,22 +9,19 @@ mod common;
 
 use
 {
-	thespis         :: { *                                     } ,
-	thespis_impl    :: { *,                                    } ,
-	common          :: { actors::{ Sum, SumNoSend, Add, Show } } ,
-	async_executors :: { LocalPool                             } ,
-	futures         :: { task::LocalSpawnExt                   } ,
+	common  :: { *, actors::*, import::*                  } ,
+	futures :: { task::LocalSpawnExt, executor::LocalPool } ,
 };
 
 
 
-
 #[test]
 //
-fn test_not_send_actor()
+fn test_not_send_actor() -> Result<(), DynError >
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
@@ -34,10 +29,9 @@ fn test_not_send_actor()
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let actor = SumNoSend(5);
-		let mut addr = Addr::try_from_local( actor, &exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::builder().start_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
 
-		addr.send( Add( 10 ) ).await.expect( "Send failed" );
+		addr.send( Add( 10 ) ).await.expect( "Send" );
 
 		let result = addr.call( Show{} ).await.expect( "Call failed" );
 
@@ -45,8 +39,10 @@ fn test_not_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	exec.spawn_local( program )?;
+	pool.run();
+
+	Ok(())
 }
 
 
@@ -54,18 +50,18 @@ fn test_not_send_actor()
 
 #[test]
 //
-fn test_send_actor()
+fn test_send_actor() -> Result<(), DynError >
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let actor = Sum(5);
-		let mut addr = Addr::try_from_local( actor, &exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::builder().start_local( Sum(5), &exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -74,8 +70,10 @@ fn test_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	exec.spawn_local( program )?;
+	pool.run();
+
+	Ok(())
 }
 
 
@@ -83,22 +81,24 @@ fn test_send_actor()
 
 #[test]
 //
-fn test_manually_not_send_actor()
+fn test_manually_not_send_actor() -> Result<(), DynError >
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
-		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
-		// of spawn_local.
-		//
-		let actor = SumNoSend(5);
-		let mb    = Inbox::new( Some( "SumNoSend".into() ) );
+		let actor = SumNoSend::new(5);
 
-		let mut addr = Addr::new( mb.sender() );
+		let (tx, rx) = mpsc::unbounded()                                         ;
+		let name     = Some( "SumNoSend".into() )                                ;
+		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+		let id       = mb.id()                                                   ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let mut addr = Addr ::new( id, name, tx )                                ;
 
-		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -107,8 +107,10 @@ fn test_manually_not_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	exec.spawn_local( program )?;
+	pool.run();
+
+	Ok(())
 }
 
 
@@ -116,22 +118,26 @@ fn test_manually_not_send_actor()
 
 #[test]
 //
-fn test_manually_send_actor()
+fn test_manually_send_actor() -> Result<(), DynError >
 {
-	let mut exec  = LocalPool::default();
-	let exec2 = exec.clone();
+	let mut pool  = LocalPool::new();
+	let     exec  = pool.spawner();
+	let     exec2 = exec.clone();
 
 	let program = async move
 	{
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let actor = Sum(5);
-		let mb    = Inbox::new( Some( "Sum".into() ) );
+		let actor    = Sum(5)                                                    ;
+		let (tx, rx) = mpsc::unbounded()                                         ;
+		let name     = Some( "Sum".into() )                                      ;
+		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
+		let id       = mb.id()                                                   ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let mut addr = Addr ::new( id, name, tx )                                ;
 
-		let mut addr = Addr::new( mb.sender() );
-
-		exec2.spawn_local( mb.start_fut_local( actor ) ).expect( "spawn actor mailbox" );
+		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -140,8 +146,10 @@ fn test_manually_send_actor()
 		assert_eq!( 15, result );
 	};
 
-	exec.spawn_local( program ).expect( "spawn program" );
-	exec.run();
+	exec.spawn_local( program )?;
+	pool.run();
+
+	Ok(())
 }
 
 
