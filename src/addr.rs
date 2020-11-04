@@ -13,6 +13,13 @@ pub struct Addr< A: Actor >
 	name: Option< Arc<str> > ,
 }
 
+// We should not have to do this if channel Senders implement this. For now not having
+// this is a major inconvenience, so..
+//
+// see: https://github.com/rust-lang/futures-rs/issues/2211
+//
+impl<A: Actor> std::panic::UnwindSafe for Addr<A> {}
+
 
 
 impl< A: Actor > Clone for Addr<A>

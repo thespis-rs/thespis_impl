@@ -1,6 +1,6 @@
 ## TODO
-- enable CI testing
 
+- verify log spans. In wasm-logger the spawns show up as error and it spams opening and closing of spans.
 
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
@@ -20,6 +20,7 @@
 
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - contention benchmark, actix is faster...
+
 
 ## Types of channels:
 

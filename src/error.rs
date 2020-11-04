@@ -55,10 +55,7 @@ pub enum ThesErr
 }
 
 
-impl std::error::Error for ThesErr
-{
-
-}
+impl std::error::Error for ThesErr {}
 
 
 impl fmt::Display for ThesErr
