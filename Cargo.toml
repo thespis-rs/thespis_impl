@@ -138,7 +138,7 @@ license = "Unlicense"
 name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 
 [package.metadata]
 [package.metadata.docs]
