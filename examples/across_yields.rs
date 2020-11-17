@@ -16,10 +16,9 @@ struct MyActor { seed: String }
 
 impl MyActor
 {
-	async fn bla( x: &mut String ) -> String
+	async fn bla( x: &mut String )
 	{
-		x.push_str( "bla" );
-		x.clone()
+		x.push_str( " - bla" )
 	}
 }
 
@@ -36,9 +35,18 @@ impl Handler< Ping > for MyActor
 	{
 		trace!( "Ping handler called" );
 
+		// mutate in handler.
+		//
 		self.seed.push_str( &msg.0 );
-		self.seed = Self::bla( &mut self.seed ).await;
+
+		// async operation can mutate our state.
+		//
+		Self::bla( &mut self.seed ).await;
+
+		// mutate again after yielding.
+		//
 		self.seed += " - after yield";
+
 		self.seed.clone()
 	}
 }
@@ -56,7 +64,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 
 
 	let     exec  = ThreadPool::new()?;
-	let     a     = MyActor{ seed: "seed".into() };
+	let     a     = MyActor{ seed: "seed - ".into() };
 	let mut addr  = Addr::builder().start( a, &exec )?;
 	let mut addr2 = addr.clone();
 
@@ -64,13 +72,13 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let result = addr.call( Ping( "ping".into() ) ).await?;
 
 	trace!( "calling addr.call( Ping( 'pang' ) )" );
-	let result2 = addr2.call( Ping( "pang".into() ) ).await?;
+	let result2 = addr2.call( Ping( " - pang".into() ) ).await?;
 
 	info!( "We got a result: {}", result );
-	assert_eq!( "seedpingbla - after yield".to_string(), result );
+	assert_eq!( "seed - ping - bla - after yield".to_string(), result );
 
 	info!( "We got a result: {}", result2 );
-	assert_eq!( "seedpingbla - after yieldpangbla - after yield".to_string(), result2 );
+	assert_eq!( "seed - ping - bla - after yield - pang - bla - after yield".to_string(), result2 );
 
 	Ok(())
 }

@@ -33,7 +33,7 @@ optional = true
 version = "^0.1.0-alpha"
 
 [dependencies.async_executors]
-version = "^0.3"
+version = "^0.4.0-beta"
 
 [dependencies.futures]
 default-features = false
@@ -54,7 +54,7 @@ version = "^0.2"
 [dev-dependencies]
 actix = "^0.10.0-alpha"
 actix-rt = "^1"
-async_nursery = "^0.2"
+async_nursery = "^0.3.0-beta"
 ring-channel = "^0.8"
 
 [dev-dependencies.async-std]
@@ -63,7 +63,7 @@ version = "^1"
 
 [dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std", "tokio_ct"]
-version = "^0.3"
+version = "^0.4.0-alpha"
 
 [dev-dependencies.criterion]
 features = []
@@ -138,12 +138,13 @@ license = "Unlicense"
 name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 
 [package.metadata]
 [package.metadata.docs]
 [package.metadata.docs.rs]
-features = ["external_doc"]
+all-features = true
+targets = []
 
 [target]
 [target."cfg(target_arch = \"wasm32\")"]

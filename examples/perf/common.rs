@@ -11,7 +11,6 @@ pub use
 	actix             :: { Actor as _, ActorFuture, Arbiter, System         } ,
 	futures           :: { executor::block_on                               } ,
 	async_executors   :: { *                                                } ,
-	tokio             :: { runtime::Builder as TokBuilder                   } ,
 };
 
 pub type DynError = Box< dyn std::error::Error + Send + Sync + 'static >;

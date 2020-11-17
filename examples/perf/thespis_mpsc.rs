@@ -22,7 +22,7 @@ async fn main() -> Result< (), DynError >
 
 		senders.push( builder.spawn( move ||
 		{
-			let exec = TokioCt::try_from( &mut TokBuilder::new() ).unwrap();
+			let exec = TokioCtBuilder::new().build().unwrap();
 
 			exec.block_on( async move
 			{
@@ -42,7 +42,7 @@ async fn main() -> Result< (), DynError >
 
 	let sum_in_thread = builder.spawn( move ||
 	{
-		let exec = TokioCt::try_from( &mut TokBuilder::new() ).unwrap();
+		let exec = TokioCtBuilder::new().build().unwrap();
 
 		let sum_in = SumIn { count: 0 };
 
@@ -56,7 +56,7 @@ async fn main() -> Result< (), DynError >
 
 	let sum_thread = builder.spawn( move ||
 	{
-		let exec = TokioCt::try_from( &mut TokBuilder::new() ).unwrap();
+		let exec = TokioCtBuilder::new().build().unwrap();
 
 		let sum = Sum { total: 5, inner: sum_in_addr, _nosend: PhantomData } ;
 

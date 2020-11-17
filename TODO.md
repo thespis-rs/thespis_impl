@@ -1,6 +1,9 @@
 ## TODO
-- enable CI testing
 
+- verify the need for receiver. You can actually downcast Box<dyn Any> to Box<dyn Address<M>>. So we might not have to wrap it in a struct.
+- verify log spans.
+   - see tests/tracing.rs
+   - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
 
 ### Tests
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
@@ -20,6 +23,7 @@
 
 - https://berb.github.io/diploma-thesis/original/054_actors.html
 - contention benchmark, actix is faster...
+
 
 ## Types of channels:
 
