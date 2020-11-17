@@ -41,7 +41,8 @@ package:
   metadata:
     docs:
       rs:
-        features: [ external_doc ]
+        all-features: true
+        targets     : []
 
 
 badges:
