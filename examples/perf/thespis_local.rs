@@ -7,7 +7,7 @@ use common::*;
 
 fn main() -> Result< (), DynError >
 {
-	let exec = TokioCt::try_from( &mut TokBuilder::new() ).expect( "create tokio runtime" );
+	let exec = TokioCtBuilder::new().build().unwrap();
 
 	let sum_in = SumIn{ count: 0 };
 	let sum_in_addr = Addr::builder().bounded( Some(BOUNDED) ).start_local( sum_in, &exec )?;
