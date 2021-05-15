@@ -171,8 +171,7 @@ impl<A> Mailbox<A> where A: Actor
 	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
 	///
-	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped
-	/// and [`Actor::stopped`] will not be called.
+	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
 	//
 	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
 
@@ -212,8 +211,7 @@ impl<A> Mailbox<A> where A: Actor
 	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
 	/// the future.
 	///
-	/// If you drop the handle, the mailbox will be dropped and the actor will be stopped
-	/// and [`Actor::stopped`] will not be called.
+	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
 	//
 	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
 
