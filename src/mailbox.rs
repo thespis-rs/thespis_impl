@@ -1,17 +1,17 @@
-use crate::{ import::*, error::*, ChanReceiver };
+use crate::{ import::*, error::*, Addr, ChanReceiver, ChanSender };
 
 
 /// The mailbox implementation.
 //
 pub struct Mailbox<A> where A: Actor
 {
-	rx : ChanReceiver<A> ,
+	pub(crate) rx : ChanReceiver<A> ,
 
 	/// This creates a unique id for every mailbox in the program. This way recipients
 	/// can impl Eq to say whether they refer to the same actor.
 	//
-	id   : usize              ,
-	name : Option< Arc<str> > ,
+	pub(crate) id   : usize              ,
+	pub(crate) name : Option< Arc<str> > ,
 }
 
 
@@ -49,6 +49,14 @@ impl<A> Mailbox<A> where A: Actor
 	}
 
 
+	/// Create an `Addr` to send messages to this mailbox.
+	//
+	pub fn addr( &self, tx: ChanSender<A> ) -> Addr<A>
+	{
+		Addr::new( self.id, self.name.clone(), tx, self.rx.count().clone() )
+	}
+
+
 	/// Run the mailbox. Returns a future that processes incoming messages. If the
 	/// actor panics during message processing, this will return the mailbox to you
 	/// so you can supervise actors by re-initiating your actor and then calling this method
@@ -71,14 +79,16 @@ impl<A> Mailbox<A> where A: Actor
 
 		async
 		{
+			actor.started().await;
 			trace!( "mailbox: started for: {}", &self );
 
 			while let Some( envl ) = self.rx.next().await
 			{
-				actor.started().await;
+				// Make sure there are still strong addresses around, otherwise we close the mailbox.
+				//
 				trace!( "actor {} will process a message.", &self );
 
-				if let Err( e ) = AssertUnwindSafe( envl.handle( &mut actor ) ).catch_unwind().await
+				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle( &mut actor ) ) ).await
 				{
 					error!( "Actor panicked: {}, with error: {:?}", &self, e );
 					return Some(self);
@@ -124,7 +134,7 @@ impl<A> Mailbox<A> where A: Actor
 
 			while let Some( envl ) = self.rx.next().await
 			{
-				if let Err( e ) = AssertUnwindSafe( envl.handle_local( &mut actor ) ).catch_unwind().await
+				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle_local( &mut actor ) ) ).await
 				{
 					error!( "Actor panicked: {}, with error: {:?}", &self, e );
 					return Some(self);

@@ -1,10 +1,10 @@
 use
 {
-	thespis           :: { *            } ,
-	thespis_impl      :: { *            } ,
-	futures::executor :: { block_on     } ,
+	thespis           :: { *                                       } ,
+	thespis_impl      :: { *                                       } ,
+	futures::executor :: { block_on                                } ,
 	std               :: { error::Error, num::NonZeroUsize, thread } ,
-	ring_channel      :: { *            } ,
+	ring_channel      :: { *                                       } ,
 };
 
 

@@ -24,23 +24,34 @@
 
 mod actor_builder ;
 mod addr          ;
+mod addr_inner    ;
+mod chan_receiver ;
 mod envelope      ;
 mod error         ;
 mod mailbox       ;
 mod receiver      ;
+mod strong_count  ;
+mod weak_addr     ;
 
 
 pub use
 {
 	actor_builder :: * ,
 	addr          :: * ,
+	chan_receiver :: * ,
 	error         :: * ,
 	mailbox       :: * ,
 	receiver      :: * ,
+ 	weak_addr     :: * ,
 
 	// Addr::send requires SinkExt, so let's re-export that.
 	//
 	futures::{ SinkExt },
+};
+
+pub(crate) use
+{
+	strong_count::* ,
 };
 
 use futures::Sink;
@@ -57,10 +68,6 @@ pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
 /// Type of boxed channel sender for Addr.
 //
 pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
-
-/// Type of boxed channel receiver for Mailbox.
-//
-pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 
 
@@ -102,17 +109,18 @@ mod import
 
 		std ::
 		{
-			fmt                                                  ,
-			pin    :: { Pin                                    } ,
-			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
-			panic  :: { AssertUnwindSafe                       } ,
-			task   :: { Context as TaskContext, Poll           } ,
+			fmt                                                          ,
+			convert :: { TryFrom                                       } ,
+			pin     :: { Pin                                           } ,
+			sync    :: { Arc, Mutex, atomic::{ AtomicUsize, Ordering } } ,
+			panic   :: { AssertUnwindSafe                              } ,
+			task    :: { Context as TaskContext, Poll                  } ,
 		},
 
 
 		futures ::
 		{
-			stream  :: { StreamExt                                  } ,
+			stream  :: { Stream, StreamExt                          } ,
 			sink    :: { Sink, SinkExt                              } ,
 			channel :: { oneshot                                    } ,
 			future  :: { FutureExt                                  } ,

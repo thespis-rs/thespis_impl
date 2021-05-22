@@ -21,7 +21,11 @@ pub enum ThesErr
 	},
 
 
-	/// You try to use a mailbox that is already closed.
+	/// You try to use a mailbox that is already closed. The mailbox can be closed by dropping all
+	/// strong addresses to it or by dropping the future that is running it.
+	///
+	/// When you get this error, the mailbox is gone and the address should be dropped. It will never
+	/// accept messages again.
 	//
 	MailboxClosed
 	{
