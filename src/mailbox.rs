@@ -1,6 +1,27 @@
 use crate::{ import::*, error::*, Addr, ChanReceiver, ChanSender };
 
 
+/// Type returned to you by the mailbox when it ends. Await the JoinHandle returned
+/// by the executor to retrieve this.
+//
+#[ derive(Debug) ]
+//
+pub enum MailboxEnd<A: Actor>
+{
+	/// When you get the Actor variant, you actor stopped because all addresses to it were dropped.
+	//
+	Actor( A ) ,
+
+	/// When you get the Mailbox variant, your actor panicked. You can use this to supervise your actor.
+	/// This allows you to instantiate a new actor and spawn it on the same mailbox. The message that
+	/// caused the panic will be gone, but other message in the queue will be delivered and all the addresses
+	/// to this mailbox remain valid.
+	//
+	Mailbox( Mailbox<A> ) ,
+}
+
+
+
 /// The mailbox implementation.
 //
 pub struct Mailbox<A> where A: Actor
@@ -71,7 +92,7 @@ impl<A> Mailbox<A> where A: Actor
 	/// Warning: if you drop the future returned by this function in order to stop an actor,
 	/// [`Actor::stopped`] will not be called.
 	//
-	pub async fn start( mut self, mut actor: A ) -> Option<Self>
+	pub async fn start( mut self, mut actor: A ) -> MailboxEnd<A>
 
 		where A: Send
 	{
@@ -91,7 +112,7 @@ impl<A> Mailbox<A> where A: Actor
 				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle( &mut actor ) ) ).await
 				{
 					error!( "Actor panicked: {}, with error: {:?}", &self, e );
-					return Some(self);
+					return MailboxEnd::Mailbox(self);
 				}
 
 				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
@@ -100,7 +121,7 @@ impl<A> Mailbox<A> where A: Actor
 			actor.stopped().await;
 			trace!( "Mailbox stopped actor for {}", &self );
 
-			None
+			MailboxEnd::Actor( actor )
 		}
 
 		.instrument( span )
@@ -123,7 +144,7 @@ impl<A> Mailbox<A> where A: Actor
 	/// Warning: if you drop the future returned by this function in order to stop an actor,
 	/// [`Actor::stopped`] will not be called.
 	//
-	pub async fn start_local( mut self, mut actor: A ) -> Option<Self>
+	pub async fn start_local( mut self, mut actor: A ) -> MailboxEnd<A>
 	{
 		let span = self.span();
 
@@ -137,7 +158,7 @@ impl<A> Mailbox<A> where A: Actor
 				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle_local( &mut actor ) ) ).await
 				{
 					error!( "Actor panicked: {}, with error: {:?}", &self, e );
-					return Some(self);
+					return MailboxEnd::Mailbox( self );
 				}
 
 				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
@@ -146,8 +167,7 @@ impl<A> Mailbox<A> where A: Actor
 			actor.stopped().await;
 			trace!( "Mailbox stopped actor for {}", &self );
 
-			None
-
+			MailboxEnd::Actor( actor )
 		}
 
 		.instrument( span )
@@ -183,9 +203,9 @@ impl<A> Mailbox<A> where A: Actor
 	///
 	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
 	//
-	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< Option<Self> > ) ->
+	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< MailboxEnd<A> > ) ->
 
-		ThesRes< JoinHandle< Option<Self> > >
+		ThesRes< JoinHandle< MailboxEnd<A> > >
 
 		where A: Send
 
@@ -223,9 +243,9 @@ impl<A> Mailbox<A> where A: Actor
 	///
 	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
 	//
-	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< Option<Self> > )
+	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< MailboxEnd<A> > )
 
-		-> ThesRes< JoinHandle< Option<Self> > >
+		-> ThesRes< JoinHandle< MailboxEnd<A> > >
 
 	{
 		let id = self.id;

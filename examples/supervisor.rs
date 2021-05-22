@@ -56,7 +56,7 @@ struct Supervisor
 //
 struct Supervise<A: Actor>
 {
-	mailbox : Option< JoinHandle<Option<Mailbox<A>>> > ,
+	mailbox : Option< JoinHandle<MailboxEnd<A>> > ,
 
 	// A closure that knows how to instantiate the supervised actor.
 	//
@@ -101,7 +101,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 			//
 			// When this returns None, it means the actor has stopped naturally and we don't respawn it.
 			//
-			while let Some(mb) = mb_handle.await
+			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{
 				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
 			}

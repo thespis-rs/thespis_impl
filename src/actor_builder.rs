@@ -1,4 +1,4 @@
-use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, SinkError };
+use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, SinkError };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -195,9 +195,9 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Mailbox<A>> > )
+	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< MailboxEnd<A> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 
 		where A: Send
 
@@ -239,9 +239,9 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Mailbox<A>> > )
+	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< MailboxEnd<A> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 
 	{
 		let (addr, mb) = self.build();
