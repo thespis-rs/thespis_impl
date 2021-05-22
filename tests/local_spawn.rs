@@ -78,7 +78,6 @@ fn test_send_actor() -> Result<(), DynError >
 
 
 
-
 #[test]
 //
 fn test_manually_not_send_actor() -> Result<(), DynError >

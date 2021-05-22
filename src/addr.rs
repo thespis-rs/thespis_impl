@@ -93,7 +93,7 @@ impl<A> Addr<A> where A: Actor
 	//
 	// If we allowed users to call this directly, they could in principle re-create strong
 	// addresses after the mailbox has closed. Now the only way to make your first Addr is
-	// through Mailbox::addr.
+	// through [`Mailbox::addr`](crate::Mailbox::addr).
 	//
 	pub(crate) fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A>, strong: Arc<Mutex<StrongCount>> ) -> Self
 	{

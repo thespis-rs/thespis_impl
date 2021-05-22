@@ -11,7 +11,7 @@ pub mod import
 		thespis :: { * } ,
 		thespis_impl :: { * } ,
 		tracing :: { * } ,
-		std     :: { marker::PhantomData, error::Error } ,
+		std     :: { marker::PhantomData, error::Error, sync::{ Arc, Mutex, atomic::Ordering::SeqCst } } ,
 		async_executors :: { * } ,
 	};
 }

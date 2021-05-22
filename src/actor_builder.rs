@@ -59,7 +59,7 @@ impl<A: Actor> ActorBuilder<A>
 
 
 	/// Choose the bounded size of the default channel. If unset, will default
-	/// to a bounded channel with a buffer size of
+	/// to a bounded channel with a buffer size of 16.
 	///
 	/// If you set this to `None`, you will get an unbounded channel.
 	///
