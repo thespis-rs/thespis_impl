@@ -1,10 +1,9 @@
-use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, SinkError };
+use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, SinkError };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
 pub const BOUNDED: usize = 16;
 
-type Rx<A> = Box< dyn Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 /// Builder for Addr and Mailbox. This is a convenience API so you don't have to call their constructors
 /// manually. Mainly lets you set the channel and name for your mailbox.
@@ -15,7 +14,7 @@ type Rx<A> = Box< dyn Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 pub struct ActorBuilder<A: Actor>
 {
 	tx     : Option< ChanSender  <A> > ,
-	rx     : Option< Rx<A>           > ,
+	rx     : Option< ChanReceiver<A>           > ,
 	bounded: Option< usize           > ,
 	name   : Option< Arc<str>        > ,
 }
@@ -86,7 +85,7 @@ impl<A: Actor> ActorBuilder<A>
 	/// ## Panics
 	/// In debug mode this will panic if you have already called [`ActorBuilder::bounded`].
 	//
-	pub fn channel( mut self, tx: ChanSender<A>, rx: Rx<A> ) -> Self
+	pub fn channel( mut self, tx: ChanSender<A>, rx: ChanReceiver<A> ) -> Self
 	{
 		debug_assert!( self.bounded == Some( BOUNDED ) );
 
@@ -155,7 +154,7 @@ impl<A: Actor> ActorBuilder<A>
 			}
 		}
 
-		let rx    = ChanReceiver::new( self.rx.unwrap() );
+		let rx    = self.rx.unwrap();
 		let mb    = crate::Mailbox::new( self.name, rx );
 		let addr  = mb.addr( self.tx.unwrap() );
 

@@ -99,7 +99,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 			// This is where the magic happens. Every time the handle resolves, we spawn again
 			// and replace it with a new handle.
 			//
-			// When this returns None, it means the actor has stopped naturally and we don't respawn it.
+			// When this returns MailboxEnd::Actor, it means the actor has stopped naturally and we don't respawn it.
 			//
 			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{

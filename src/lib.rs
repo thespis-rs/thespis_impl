@@ -25,11 +25,11 @@
 mod actor_builder ;
 mod addr          ;
 mod addr_inner    ;
-mod chan_receiver ;
 mod envelope      ;
 mod error         ;
 mod mailbox       ;
 mod receiver      ;
+mod rx_strong     ;
 mod strong_count  ;
 mod weak_addr     ;
 
@@ -38,10 +38,10 @@ pub use
 {
 	actor_builder :: * ,
 	addr          :: * ,
-	chan_receiver :: * ,
 	error         :: * ,
 	mailbox       :: * ,
 	receiver      :: * ,
+	rx_strong     :: * ,
  	weak_addr     :: * ,
 
 	// Addr::send requires SinkExt, so let's re-export that.
@@ -69,6 +69,9 @@ pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
 //
 pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
 
+/// Type of boxed channel receiver for Mailbox.
+//
+pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 
 /// Interface for T: Sink + Clone

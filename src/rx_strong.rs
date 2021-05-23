@@ -1,6 +1,5 @@
-use crate::{ import::*, BoxEnvelope, StrongCount };
+use crate::{ import::*, BoxEnvelope, ChanReceiver, StrongCount };
 
-type Rx<A> = Box< dyn Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 /// This wraps a channel receiver in order to do an extra check when the channel returns pending.
 /// We want strong and weak addresses. When there are no strong addresses left, we shall return
@@ -8,19 +7,19 @@ type Rx<A> = Box< dyn Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 ///
 /// A waker is stored in case the strong count goes to zero while we are already pending.
 //
-pub struct ChanReceiver<A>
+pub struct RxStrong<A>
 {
-	rx   : Rx<A>,
+	rx   : ChanReceiver<A>,
 	count: Arc<Mutex< StrongCount >>,
 }
 
 
-impl<A> ChanReceiver<A> where A: Actor
+impl<A> RxStrong<A> where A: Actor
 {
 	/// Create a new receiver for a mailbox. The `StrongCount` must be a clone from the
 	/// one provided to any Addr that are to communicate with this mailbox.
 	//
-	pub fn new( rx: Rx<A> ) -> Self
+	pub fn new( rx: ChanReceiver<A> ) -> Self
 	{
 		let count = Arc::new( Mutex::new( StrongCount::new() ) );
 		Self{ rx, count }
@@ -36,7 +35,7 @@ impl<A> ChanReceiver<A> where A: Actor
 }
 
 
-impl<A> Stream for ChanReceiver<A> where A: Actor
+impl<A> Stream for RxStrong<A> where A: Actor
 {
 	type Item = BoxEnvelope<A>;
 
@@ -76,11 +75,11 @@ impl<A> Stream for ChanReceiver<A> where A: Actor
 }
 
 
-impl<A> fmt::Debug for ChanReceiver<A>
+impl<A> fmt::Debug for RxStrong<A>
 {
 	fn fmt( &self, fmt: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		fmt.debug_struct( "ChanReceiver<A>" )
+		fmt.debug_struct( "RxStrong<A>" )
 		   .field( "count", &self.count )
 		   .finish()
 	}

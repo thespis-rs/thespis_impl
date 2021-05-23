@@ -91,8 +91,7 @@ fn test_manually_not_send_actor() -> Result<(), DynError >
 		let actor = SumNoSend::new(5);
 
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let rx       = ChanReceiver::new( Box::new(rx) )                         ;
-		let mb       = Mailbox::new( Some("SumNoSend".into()), rx )              ;
+		let mb       = Mailbox::new( Some("SumNoSend".into()), Box::new(rx) )    ;
 		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
 		let mut addr = mb.addr( tx )                                             ;
 
@@ -129,8 +128,7 @@ fn test_manually_send_actor() -> Result<(), DynError >
 		//
 		let actor    = Sum(5)                                                    ;
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let rx       = ChanReceiver::new( Box::new(rx) )                         ;
-		let mb       = Mailbox::new( Some("Sum".into()), rx )                    ;
+		let mb       = Mailbox::new( Some("Sum".into()), Box::new(rx) )          ;
 		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
 		let mut addr = mb.addr( tx )                                             ;
 

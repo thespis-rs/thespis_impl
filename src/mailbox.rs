@@ -1,4 +1,4 @@
-use crate::{ import::*, error::*, Addr, ChanReceiver, ChanSender };
+use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender };
 
 
 /// Type returned to you by the mailbox when it ends. Await the JoinHandle returned
@@ -26,7 +26,7 @@ pub enum MailboxEnd<A: Actor>
 //
 pub struct Mailbox<A> where A: Actor
 {
-	pub(crate) rx : ChanReceiver<A> ,
+	pub(crate) rx : RxStrong<A> ,
 
 	/// This creates a unique id for every mailbox in the program. This way recipients
 	/// can impl Eq to say whether they refer to the same actor.
@@ -49,6 +49,8 @@ impl<A> Mailbox<A> where A: Actor
 		// can have the same id.
 		//
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
+
+		let rx = RxStrong::new(rx);
 
 		Self { rx, id, name }
 	}

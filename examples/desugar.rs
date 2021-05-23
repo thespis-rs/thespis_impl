@@ -35,9 +35,8 @@ impl Handler< Hello > for MyActor
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let (tx, rx)  = mpsc::channel( 5 )                                          ;
-	let rx        = ChanReceiver::new( Box::new(rx) )                           ;
 	let tx        = Box::new( tx.sink_map_err( |e| Box::new(e) as SinkError ) ) ;
-	let mb        = Mailbox::new( Some("HelloWorld".into()), rx )               ;
+	let mb        = Mailbox::new( Some("HelloWorld".into()), Box::new(rx) )     ;
 	let mut addr  = mb.addr( tx )                                               ;
 	let actor     = MyActor                                                     ;
 
