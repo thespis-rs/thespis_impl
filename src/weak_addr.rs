@@ -15,7 +15,8 @@ impl< A: Actor > Clone for WeakAddr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE WeakAddr for: {}", self );
+		let _s = self.span().entered();
+		trace!( "CREATE WeakAddr" );
 
 		Self
 		{
@@ -94,6 +95,14 @@ impl<A> WeakAddr<A> where A: Actor
 	{
 		Addr::try_from( self.inner.clone() )
 	}
+
+
+	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	//
+	pub fn span( &self ) -> Span
+	{
+		self.inner.span()
+	}
 }
 
 // For debugging
@@ -102,7 +111,8 @@ impl<A: Actor> Drop for WeakAddr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP WeakAddr for: {}", self );
+		let _s = self.span().entered();
+		trace!( "DROP WeakAddr" );
 	}
 }
 

@@ -10,7 +10,8 @@ pub mod import
 		futures :: { future::{ FutureExt }, stream, SinkExt, StreamExt, task::{ Spawn, SpawnExt }, channel::* } ,
 		thespis :: { * } ,
 		thespis_impl :: { * } ,
-		tracing :: { * } ,
+		tracing :: { trace, error_span } ,
+		tracing_futures::Instrument,
 		std     :: { marker::PhantomData, error::Error, sync::{ Arc, Mutex, atomic::Ordering::SeqCst } } ,
 		async_executors :: { * } ,
 	};

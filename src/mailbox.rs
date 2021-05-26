@@ -103,25 +103,25 @@ impl<A> Mailbox<A> where A: Actor
 		async
 		{
 			actor.started().await;
-			trace!( "mailbox: started for: {}", &self );
+			trace!( "Mailbox started" );
 
 			while let Some( envl ) = self.rx.next().await
 			{
 				// Make sure there are still strong addresses around, otherwise we close the mailbox.
 				//
-				trace!( "actor {} will process a message.", &self );
+				trace!( "Will process a message." );
 
 				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle( &mut actor ) ) ).await
 				{
-					error!( "Actor panicked: {}, with error: {:?}", &self, e );
+					error!( "Actor panicked, with error: {:?}", e );
 					return MailboxEnd::Mailbox(self);
 				}
 
-				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
+				trace!( "Finished handling message. Waiting for next message" );
 			}
 
 			actor.stopped().await;
-			trace!( "Mailbox stopped actor for {}", &self );
+			trace!( "Mailbox stopped" );
 
 			MailboxEnd::Actor( actor )
 		}
@@ -153,7 +153,7 @@ impl<A> Mailbox<A> where A: Actor
 		async
 		{
 			actor.started().await;
-			trace!( "mailbox: started for: {}", &self );
+			trace!( "mailbox started for: {}", &self );
 
 			while let Some( envl ) = self.rx.next().await
 			{

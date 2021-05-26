@@ -106,7 +106,7 @@ mod import
 	pub(crate) use
 	{
 		thespis         :: { * } ,
-		tracing         :: { * } ,
+		tracing         :: { trace, debug, error, error_span, Span } ,
 		tracing_futures :: { Instrument } ,
 		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 

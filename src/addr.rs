@@ -15,7 +15,8 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		trace!( "CREATE (clone) Addr for: {}", self );
+		let _s = self.span().entered();
+		trace!( "CREATE (clone) Addr" );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
 
@@ -100,11 +101,11 @@ impl<A> Addr<A> where A: Actor
 		strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
 
 		let inner = AddrInner::new( id, name, tx, strong );
-		let this  = Self{ inner };
 
-		trace!( "CREATE Addr for: {}", &this );
+		let _s = inner.span().entered();
+		trace!( "CREATE Addr" );
 
-		this
+		Self{ inner }
 	}
 
 
@@ -122,6 +123,14 @@ impl<A> Addr<A> where A: Actor
 	{
 		WeakAddr::from( self.inner.clone() )
 	}
+
+
+	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	//
+	pub fn span( &self ) -> Span
+	{
+		self.inner.span()
+	}
 }
 
 
@@ -130,7 +139,8 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		trace!( "DROP Addr for: {}", self );
+		let _s = self.span().entered();
+		trace!( "DROP Addr" );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).decrement();
 	}

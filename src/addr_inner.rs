@@ -83,6 +83,23 @@ impl<A> AddrInner<A> where A: Actor
 	{
 		Self{ id, name, mb: tx, strong }
 	}
+
+
+
+	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	//
+	pub(crate) fn span( &self ) -> Span
+	{
+		if let Some( name ) = &self.name
+		{
+			error_span!( "actor", id = self.id, name = name.as_ref() )
+		}
+
+		else
+		{
+			error_span!( "actor", id = self.id )
+		}
+	}
 }
 
 
