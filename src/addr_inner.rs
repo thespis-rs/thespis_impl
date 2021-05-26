@@ -92,12 +92,26 @@ impl<A> AddrInner<A> where A: Actor
 	{
 		if let Some( name ) = &self.name
 		{
-			error_span!( "actor", id = self.id, name = name.as_ref() )
+			error_span!( "actor", id = self.id, r#type = self.type_name(), name = name.as_ref() )
 		}
 
 		else
 		{
-			error_span!( "actor", id = self.id )
+			error_span!( "actor", id = self.id, r#type = self.type_name() )
+		}
+	}
+
+
+	/// The type of the actor.
+	//
+	pub(crate) fn type_name( &self ) -> &str
+	{
+		let name = std::any::type_name::<A>();
+
+		match name.split( "::" ).last()
+		{
+			Some(t) => t,
+			None    => name,
 		}
 	}
 }

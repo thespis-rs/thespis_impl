@@ -69,17 +69,10 @@ impl<A: Actor> fmt::Display for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = std::any::type_name::<A>();
-		let t = match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		};
-
 		match &self.name()
 		{
-			Some(n) => write!( f, "{} ({}, {})", t, self.id(), n ) ,
-			None    => write!( f, "{} ({})"    , t, self.id()    ) ,
+			Some(n) => write!( f, "{} ({}, {})", self.inner.type_name(), self.id(), n ) ,
+			None    => write!( f, "{} ({})"    , self.inner.type_name(), self.id()    ) ,
 		}
 	}
 }

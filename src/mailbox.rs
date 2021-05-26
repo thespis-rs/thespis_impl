@@ -62,12 +62,26 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		if let Some( name ) = &self.name
 		{
-			error_span!( "actor", id = self.id, name = name.as_ref() )
+			error_span!( "actor", id = self.id, r#type = self.type_name(), name = name.as_ref() )
 		}
 
 		else
 		{
-			error_span!( "actor", id = self.id )
+			error_span!( "actor", id = self.id, r#type = self.type_name() )
+		}
+	}
+
+
+	/// The type of the actor.
+	//
+	pub fn type_name( &self ) -> &str
+	{
+		let name = std::any::type_name::<A>();
+
+		match name.split( "::" ).last()
+		{
+			Some(t) => t,
+			None    => name,
 		}
 	}
 
@@ -107,8 +121,6 @@ impl<A> Mailbox<A> where A: Actor
 
 			while let Some( envl ) = self.rx.next().await
 			{
-				// Make sure there are still strong addresses around, otherwise we close the mailbox.
-				//
 				trace!( "Will process a message." );
 
 				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle( &mut actor ) ) ).await
@@ -153,21 +165,23 @@ impl<A> Mailbox<A> where A: Actor
 		async
 		{
 			actor.started().await;
-			trace!( "mailbox started for: {}", &self );
+			trace!( "Mailbox started" );
 
 			while let Some( envl ) = self.rx.next().await
 			{
+				trace!( "Actor will process a message." );
+
 				if let Err( e ) = FutureExt::catch_unwind( AssertUnwindSafe( envl.handle_local( &mut actor ) ) ).await
 				{
-					error!( "Actor panicked: {}, with error: {:?}", &self, e );
+					error!( "Actor panicked with error: {:?}", e );
 					return MailboxEnd::Mailbox( self );
 				}
 
-				trace!( "actor {} finished handling it's message. Waiting for next message", &self );
+				trace!( "Actor finished handling it's message. Waiting for next message" );
 			}
 
 			actor.stopped().await;
-			trace!( "Mailbox stopped actor for {}", &self );
+			trace!( "Mailbox stopped" );
 
 			MailboxEnd::Actor( actor )
 		}
@@ -289,17 +303,10 @@ impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = std::any::type_name::<A>();
-		let t = match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		};
-
 		match &self.name
 		{
-			Some(n) => write!( f, "{} ({}, {})", t, self.id, n ) ,
-			None    => write!( f, "{} ({})"    , t, self.id    ) ,
+			Some(n) => write!( f, "{} ({}, {})", self.type_name(), self.id, n ) ,
+			None    => write!( f, "{} ({})"    , self.type_name(), self.id    ) ,
 		}
 	}
 }

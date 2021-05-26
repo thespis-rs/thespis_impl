@@ -68,10 +68,10 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let mut addr  = Addr::builder().start( a, &exec )?;
 	let mut addr2 = addr.clone();
 
-	trace!( "calling addr.call( Ping( 'ping' ) )" );
+	trace!( "calling addr.call( Ping('ping') )" );
 	let result = addr.call( Ping( "ping".into() ) ).await?;
 
-	trace!( "calling addr.call( Ping( 'pang' ) )" );
+	trace!( "calling addr.call( Ping('pang') )" );
 	let result2 = addr2.call( Ping( " - pang".into() ) ).await?;
 
 	info!( "We got a result: {}", result );
