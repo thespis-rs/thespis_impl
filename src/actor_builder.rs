@@ -14,7 +14,7 @@ pub const BOUNDED: usize = 16;
 pub struct ActorBuilder<A: Actor>
 {
 	tx     : Option< ChanSender  <A> > ,
-	rx     : Option< ChanReceiver<A>           > ,
+	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
 	name   : Option< Arc<str>        > ,
 }
@@ -105,34 +105,6 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	pub fn build( mut self ) -> (Addr<A>, Mailbox<A>)
 	{
-		#[ cfg( feature = "tokio_channel" ) ]
-		//
-		if self.rx.is_none() || self.tx.is_none()
-		{
-			use async_chanx::{ TokioSender, TokioUnboundedSender };
-
-			if let Some( bounded ) = self.bounded
-			{
-				let (tx, rx) = tokio::sync::mpsc::channel( bounded );
-				let tx = Box::new( TokioSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-
-				self.tx = Some( Box::new(tx) );
-				self.rx = Some( Box::new(rx) );
-			}
-
-			else
-			{
-				let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-				let tx = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-
-				self.tx = Some( Box::new(tx) );
-				self.rx = Some( Box::new(rx) );
-			}
-		}
-
-
-		#[ cfg(not( feature = "tokio_channel" )) ]
-		//
 		if self.rx.is_none() || self.tx.is_none()
 		{
 			if let Some( bounded ) = self.bounded
@@ -153,6 +125,7 @@ impl<A: Actor> ActorBuilder<A>
 				self.rx = Some( Box::new(rx) );
 			}
 		}
+
 
 		let rx    = self.rx.unwrap();
 		let mb    = crate::Mailbox::new( self.name, rx );
