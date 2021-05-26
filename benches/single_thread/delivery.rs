@@ -5,8 +5,6 @@ use
 	futures           :: { executor::{ block_on }                                } ,
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { *                                                     } ,
-	std               :: { convert::TryFrom                                      } ,
-	tokio             :: { runtime::Builder                                      } ,
 	actix             :: { Actor as _, ActorFuture                               } ,
 };
 
@@ -182,7 +180,7 @@ fn seq( c: &mut Criterion )
 					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
 					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
 
-					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
+					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
 
 					let sumin_handle = exec.spawn_handle( sum_in_mb.start( sumin ) ).expect( "spawn" );
@@ -264,7 +262,7 @@ fn seq( c: &mut Criterion )
 					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
 					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
 
-					let exec = TokioCt::try_from( &mut Builder::new() ).expect( "build runtime" );
+					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
 
 					let sumin_handle = exec.spawn_handle( sum_in_mb.start( sumin ) ).expect( "spawn" );
