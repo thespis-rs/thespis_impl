@@ -16,7 +16,7 @@ pub struct ActorBuilder<A: Actor>
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< Arc<str>        > ,
+	name   : Option< String          > ,
 }
 
 
@@ -50,9 +50,9 @@ impl<A: Actor> ActorBuilder<A>
 	/// Configure a name for this actor. This will be helpful for interpreting
 	/// debug logs. You can also retrieve the name later on the Addr.
 	//
-	pub fn name( mut self, name: Arc<str> ) -> Self
+	pub fn name( mut self, name: &str ) -> Self
 	{
-		self.name = name.into();
+		self.name = Some( name.into() );
 		self
 	}
 
@@ -128,7 +128,7 @@ impl<A: Actor> ActorBuilder<A>
 
 
 		let rx    = self.rx.unwrap();
-		let mb    = crate::Mailbox::new( self.name, rx );
+		let mb    = Mailbox::new( self.name.as_ref().map(|n| n.as_str() ), rx );
 		let addr  = mb.addr( self.tx.unwrap() );
 
 		(addr, mb)

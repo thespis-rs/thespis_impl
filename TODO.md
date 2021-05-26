@@ -3,6 +3,7 @@
 - verify log spans.
    - see tests/tracing.rs
    - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
+   - guide level docs about debugging.
 
 - verify the need for receiver. You can actually downcast Box<dyn Any> to Box<dyn Address<M>>. So we might not have to wrap it in a struct.
 - can we rate limit actor messages with stream_throttle?
@@ -26,7 +27,6 @@
 
 ## API
 
-- Should we make name obligatory? We could get rid of the annoying Option around it, and take it as AsRef<str>. We can clone it ourselves to store it, but that also frees users of having to create the Arc.
 - Can we let the user recover their message from the error if sending fails? Is more relevant now since we
   have the WeakAddr.
 

@@ -41,7 +41,7 @@ impl<A> Mailbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option< Arc<str> >, rx: ChanReceiver<A> ) -> Self
+	pub fn new( name: Option<&str>, rx: ChanReceiver<A> ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -52,7 +52,12 @@ impl<A> Mailbox<A> where A: Actor
 
 		let rx = RxStrong::new(rx);
 
-		Self { rx, id, name }
+		Self
+		{
+			rx,
+			id,
+			name: name.map( |n| n.into() ),
+		}
 	}
 
 
