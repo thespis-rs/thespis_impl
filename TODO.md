@@ -4,8 +4,8 @@
    - see tests/tracing.rs
    - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
    - guide level docs about debugging.
+   - improve format in tracing_prism
 
-- verify the need for receiver. You can actually downcast Box<dyn Any> to Box<dyn Address<M>>. So we might not have to wrap it in a struct.
 - can we rate limit actor messages with stream_throttle?
 
 ### Tests

@@ -28,7 +28,6 @@ mod addr_inner    ;
 mod envelope      ;
 mod error         ;
 mod mailbox       ;
-mod receiver      ;
 mod rx_strong     ;
 mod strong_count  ;
 mod weak_addr     ;
@@ -40,7 +39,6 @@ pub use
 	addr          :: * ,
 	error         :: * ,
 	mailbox       :: * ,
-	receiver      :: * ,
 	rx_strong     :: * ,
  	weak_addr     :: * ,
 
