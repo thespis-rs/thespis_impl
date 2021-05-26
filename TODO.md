@@ -1,15 +1,15 @@
 ## TODO
 
-- Finish WeakAddr, docs (guide docs).
-
-- verify the need for receiver. You can actually downcast Box<dyn Any> to Box<dyn Address<M>>. So we might not have to wrap it in a struct.
 - verify log spans.
    - see tests/tracing.rs
    - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
 
+- verify the need for receiver. You can actually downcast Box<dyn Any> to Box<dyn Address<M>>. So we might not have to wrap it in a struct.
 - can we rate limit actor messages with stream_throttle?
 
 ### Tests
+- switch to github actions and disable travis.
+
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
 - wasm tests
 
@@ -20,11 +20,13 @@
 # Perf
 
 - async-oneshot claims to be very fast
+- rerun and analyze benchmarks
+- comparison to actix, how do they spread the load better across threads?
 
 
 ## API
 
-- Should we make name obligatory? We could get rid of the annoying Option around it.
+- Should we make name obligatory? We could get rid of the annoying Option around it, and take it as AsRef<str>. We can clone it ourselves to store it, but that also frees users of having to create the Arc.
 - Can we let the user recover their message from the error if sending fails? Is more relevant now since we
   have the WeakAddr.
 
