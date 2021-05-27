@@ -178,18 +178,35 @@ impl Handler<Hi> for Blocked
 
 
 
+// TODO: sometimes hangs.
+//
 #[async_std::test]
 //
 async fn drop_strong_while_mb_pending() -> Result<(), DynError >
 {
-	let     shared = Arc::new(Mutex::new( () ));
-	let     addr   = Addr::builder().bounded( Some(1) ).start( Blocked(shared.clone()), &AsyncStd )?;
+	let shared  = Arc::new(Mutex::new( () ));
+	let shared2 = shared.clone();
+
+	let     (addr, mb) = Addr::builder().bounded( Some(1) ).build();
 	let mut weak   = addr.weak();
+
+
+	// We need to make sure that the mailbox doesn't run on the same thread as this
+	// function, otherwise the mutex will deadlock.
+	//
+	let _handle = std::thread::spawn( move ||
+	{
+		let exec = TokioCtBuilder::new().build().unwrap();
+
+		exec.block_on( mb.start( Blocked(shared2) ) );
+	});
+
 
 	// First one gets pulled out of the channel and blocks in the handler.
 	// Second one fills the one slot in the channel.
 	//
 	let lock = shared.lock();
+
 	weak.send( Hi ).await?;
 	weak.send( Hi ).await?;
 
@@ -199,6 +216,8 @@ async fn drop_strong_while_mb_pending() -> Result<(), DynError >
 	drop(lock);
 
 	let res = weak.send( Hi ).await;
+
+
 	assert!(matches!( res, Err( ThesErr::MailboxClosed{..} ) ));
 
 	Ok(())

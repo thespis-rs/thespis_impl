@@ -18,3 +18,13 @@ pub mod import
 }
 
 pub type DynError = Box< dyn std::error::Error + Send + Sync >;
+
+
+pub fn init_tracing()
+{
+	let _ = tracing_subscriber::fmt::Subscriber::builder()
+
+	   .with_max_level(tracing::Level::TRACE)
+	   .try_init()
+	;
+}

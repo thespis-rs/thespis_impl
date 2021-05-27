@@ -10,7 +10,6 @@
 - can we rate limit actor messages with stream_throttle?
 
 ### Tests
-- switch to github actions and disable travis.
 - test ringchannel
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
 
