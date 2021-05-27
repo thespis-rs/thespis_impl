@@ -3,6 +3,9 @@
 // ✔ let thread of mailbox crash and verify mailbox closed error
 // ✔ let thread of mailbox crash and verify mailbox closed before response error
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

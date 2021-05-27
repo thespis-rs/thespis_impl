@@ -3,6 +3,9 @@
 // ✔ Manually supervise
 // ✔ Use an actor as a supervisor
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

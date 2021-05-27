@@ -5,18 +5,17 @@
    - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
    - guide level docs about debugging.
    - improve format in tracing_prism
+   - maybe the spans should be trace level?
 
 - can we rate limit actor messages with stream_throttle?
 
 ### Tests
 - switch to github actions and disable travis.
-
+- test ringchannel
 - tests for processing messages concurrently when the future of handle doesn't need to access state.
-- wasm tests
 
 - flesh out tests and comment what's being tested. Consistency, expect or return result.
 
-- test ringchannel
 
 # Perf
 

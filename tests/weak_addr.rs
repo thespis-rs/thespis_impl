@@ -8,6 +8,9 @@
 //   ✔ when address dropped while channel is pending
 //   ✔ when address dropped while stuff in queue
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

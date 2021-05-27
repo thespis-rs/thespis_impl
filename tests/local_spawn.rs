@@ -5,6 +5,9 @@
 // - ✔ Manually spawn mailbox for actor that is !Send and !Sync
 // - ✔ Manually spawn mailbox for actor that is Send and Sync but using the local methods
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

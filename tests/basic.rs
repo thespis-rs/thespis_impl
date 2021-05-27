@@ -5,6 +5,9 @@
 // ✔ Use send from several addresses and verify the actor has processed the message.
 // ✔ Use call from several addresses and verify the actor has processed the message.
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

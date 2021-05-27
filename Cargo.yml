@@ -28,6 +28,7 @@ package:
   version       : 0.1.0-alpha.2
   name          : thespis_impl
   edition       : '2018'
+  resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Reference implementation for the thespis actor model
   license       : Unlicense
@@ -53,7 +54,11 @@ badges:
 
 features:
 
-  default: []
+  default: [not_wasm]
+
+  # This is only there so `wasm-pack test` wouldn't try to compile the examples.
+  #
+  not_wasm: []
 
 
 lib:
@@ -71,36 +76,48 @@ dependencies:
   async_executors    : { version: ^0.4 }
 
 
-target:
-
-  'cfg(target_arch = "wasm32")':
-
-    dependencies:
-
-      wasm-bindgen-futures: { version: ^0.4 }
-
-
 dev-dependencies:
 
-  async_chanx        : { path: ../../async_chanx, version: ^0.1.0-alpha }
   tracing-subscriber : { version: ^0.2, default-features: false, features: [ ansi, fmt, json, tracing-log, chrono ] }
   ring-channel      : ^0.8
   # pretty_assertions : ^0.6
   # flexi_logger      : ^0.15
-  async_executors   : { version: ^0.4, features: [localpool, threadpool, async_std, tokio_ct, tokio_tp, tracing] }
-  async-std         : { version: ^1, features: [ attributes ] }
   # simple_logger     : ^1
   futures           : { version: ^0.3, features: [ thread-pool ], default-features: false }
   async_nursery     : ^0.3
-
-  # for benchmarks
-  #
-  actix-rt          : ^2
-  actix             : ^0.11
-  criterion         : { version: ^0.3, features: [] }
-  tokio             : { version: ^1, features: [ sync, macros ] }
-  tokio-stream      : { version: ^0.1 }
+  async-std         : { version: ^1, features: [ attributes ] }
   # tracing-test      : { version: ^0.1, path: ../../RUST/tracing-test/tracing-test }
+
+
+target:
+
+  'cfg(target_arch = "wasm32")':
+
+    dev-dependencies:
+
+      async_executors  : { version: ^0.4, features: [ bindgen, async_std ] }
+
+      wasm-bindgen-futures: { version: ^0.4 }
+      wasm-bindgen-test : ^0.3
+      wasm-bindgen      : ^0.2
+
+
+  'cfg(not(target_arch = "wasm32"))':
+
+    dev-dependencies:
+
+      async_executors   : { version: ^0.4, features: [localpool, threadpool, async_std, tokio_ct, tokio_tp, tracing] }
+      async_chanx       : { path: ../../async_chanx, version: ^0.1.0-alpha }
+
+      # for benchmarks
+      #
+      actix-rt          : ^2
+      actix             : ^0.11
+      criterion         : { version: ^0.3, features: [] }
+      tokio             : { version: ^1, features: [ sync, macros ] }
+      tokio-stream      : { version: ^0.1 }
+
+
 
 build-dependencies:
 
@@ -136,17 +153,70 @@ example:
   # - name: actix_unbounded_perf
   #   path: examples/perf/actix_unbounded.rs
 
-  - name: thespis_perf
-    path: examples/perf/thespis.rs
+  - name              : thespis_perf
+    path              : examples/perf/thespis.rs
+    required-features : [ not_wasm ]
 
-  - name: method_perf
-    path: examples/perf/method.rs
+  - name              : method_perf
+    path              : examples/perf/method.rs
+    required-features : [ not_wasm ]
 
-  - name: thespis_local_perf
-    path: examples/perf/thespis_local.rs
+  - name              : thespis_local_perf
+    path              : examples/perf/thespis_local.rs
+    required-features : [ not_wasm ]
 
-  - name: thespis_mpsc_perf
-    path: examples/perf/thespis_mpsc.rs
+  - name              : thespis_mpsc_perf
+    path              : examples/perf/thespis_mpsc.rs
+    required-features : [ not_wasm ]
 
-  - name: thespis_unbounded_perf
-    path: examples/perf/thespis_unbounded.rs
+  - name              : thespis_unbounded_perf
+    path              : examples/perf/thespis_unbounded.rs
+    required-features : [ not_wasm ]
+
+  - name              : across_yields
+    path              : examples/across_yields.rs
+    required-features : [ not_wasm ]
+
+  - name              : address
+    path              : examples/address.rs
+    required-features : [ not_wasm ]
+
+  - name              : basic
+    path              : examples/basic.rs
+    required-features : [ not_wasm ]
+
+  - name              : concurrent
+    path              : examples/concurrent.rs
+    required-features : [ not_wasm ]
+
+  - name              : concurrent_nursery
+    path              : examples/concurrent_nursery.rs
+    required-features : [ not_wasm ]
+
+  - name              : desugar
+    path              : examples/desugar.rs
+    required-features : [ not_wasm ]
+
+  - name              : drop_channel
+    path              : examples/drop_channel.rs
+    required-features : [ not_wasm ]
+
+  - name              : local_spawn
+    path              : examples/local_spawn.rs
+    required-features : [ not_wasm ]
+
+  - name              : move_fut
+    path              : examples/move_fut.rs
+    required-features : [ not_wasm ]
+
+  - name              : multi_thread
+    path              : examples/multi_thread.rs
+    required-features : [ not_wasm ]
+
+  - name              : recipient_is_sink
+    path              : examples/recipient_is_sink.rs
+    required-features : [ not_wasm ]
+
+  - name              : supervisor
+    path              : examples/supervisor.rs
+    required-features : [ not_wasm ]

@@ -44,8 +44,6 @@ features = ["futures-03"]
 version = "^0.2"
 
 [dev-dependencies]
-actix = "^0.11"
-actix-rt = "^2"
 async_nursery = "^0.3"
 ring-channel = "^0.8"
 
@@ -53,29 +51,10 @@ ring-channel = "^0.8"
 features = ["attributes"]
 version = "^1"
 
-[dev-dependencies.async_chanx]
-path = "../../async_chanx"
-version = "^0.1.0-alpha"
-
-[dev-dependencies.async_executors]
-features = ["localpool", "threadpool", "async_std", "tokio_ct", "tokio_tp", "tracing"]
-version = "^0.4"
-
-[dev-dependencies.criterion]
-features = []
-version = "^0.3"
-
 [dev-dependencies.futures]
 default-features = false
 features = ["thread-pool"]
 version = "^0.3"
-
-[dev-dependencies.tokio]
-features = ["sync", "macros"]
-version = "^1"
-
-[dev-dependencies.tokio-stream]
-version = "^0.1"
 
 [dev-dependencies.tracing-subscriber]
 default-features = false
@@ -85,25 +64,91 @@ version = "^0.2"
 [[example]]
 name = "thespis_perf"
 path = "examples/perf/thespis.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "method_perf"
 path = "examples/perf/method.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "thespis_local_perf"
 path = "examples/perf/thespis_local.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "thespis_mpsc_perf"
 path = "examples/perf/thespis_mpsc.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "thespis_unbounded_perf"
 path = "examples/perf/thespis_unbounded.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "across_yields"
+path = "examples/across_yields.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "address"
+path = "examples/address.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "concurrent"
+path = "examples/concurrent.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "concurrent_nursery"
+path = "examples/concurrent_nursery.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "desugar"
+path = "examples/desugar.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "drop_channel"
+path = "examples/drop_channel.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "local_spawn"
+path = "examples/local_spawn.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "move_fut"
+path = "examples/move_fut.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "multi_thread"
+path = "examples/multi_thread.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "recipient_is_sink"
+path = "examples/recipient_is_sink.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "supervisor"
+path = "examples/supervisor.rs"
+required-features = ["not_wasm"]
 
 [features]
-default = []
+default = ["not_wasm"]
+not_wasm = []
 
 [lib]
 bench = false
@@ -120,6 +165,7 @@ license = "Unlicense"
 name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
+resolver = "2"
 version = "0.1.0-alpha.2"
 
 [package.metadata]
@@ -129,7 +175,38 @@ all-features = true
 targets = []
 
 [target]
+[target."cfg(not(target_arch = \"wasm32\"))"]
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies]
+actix = "^0.11"
+actix-rt = "^2"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]
+path = "../../async_chanx"
+version = "^0.1.0-alpha"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_executors]
+features = ["localpool", "threadpool", "async_std", "tokio_ct", "tokio_tp", "tracing"]
+version = "^0.4"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.criterion]
+features = []
+version = "^0.3"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.tokio]
+features = ["sync", "macros"]
+version = "^1"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.tokio-stream]
+version = "^0.1"
+
 [target."cfg(target_arch = \"wasm32\")"]
-[target."cfg(target_arch = \"wasm32\")".dependencies]
-[target."cfg(target_arch = \"wasm32\")".dependencies.wasm-bindgen-futures]
+[target."cfg(target_arch = \"wasm32\")".dev-dependencies]
+wasm-bindgen = "^0.2"
+wasm-bindgen-test = "^0.3"
+
+[target."cfg(target_arch = \"wasm32\")".dev-dependencies.async_executors]
+features = ["bindgen", "async_std"]
+version = "^0.4"
+
+[target."cfg(target_arch = \"wasm32\")".dev-dependencies.wasm-bindgen-futures]
 version = "^0.4"
