@@ -128,7 +128,7 @@ impl<A: Actor> ActorBuilder<A>
 
 
 		let rx    = self.rx.unwrap();
-		let mb    = Mailbox::new( self.name.as_ref().map(|n| n.as_str() ), rx );
+		let mb    = Mailbox::new( self.name.as_deref(), rx );
 		let addr  = mb.addr( self.tx.unwrap() );
 
 		(addr, mb)

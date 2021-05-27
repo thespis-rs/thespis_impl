@@ -95,7 +95,7 @@ impl<A> Mailbox<A> where A: Actor
 	//
 	pub fn addr( &self, tx: ChanSender<A> ) -> Addr<A>
 	{
-		Addr::new( self.id, self.name.clone(), tx, self.rx.count().clone() )
+		Addr::new( self.id, self.name.clone(), tx, self.rx.count() )
 	}
 
 
@@ -206,9 +206,9 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn( self.start( actor ).map(|_|()) )
+		exec.spawn( self.start(actor).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
 	}
 
 
@@ -233,9 +233,9 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_handle( self.start( actor ) )
+		exec.spawn_handle( self.start(actor) )
 
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
 	}
 
 
@@ -246,9 +246,9 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_local( self.start_local( actor ).map(|_|()) )
+		exec.spawn_local( self.start_local( actor ).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
 	}
 
 
@@ -271,9 +271,9 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		let id = self.id;
 
-		Ok( exec.spawn_handle_local( self.start_local( actor ) )
+		exec.spawn_handle_local( self.start_local( actor ) )
 
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )? )
+			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
 	}
 }
 

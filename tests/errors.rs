@@ -57,7 +57,7 @@ async fn test_mb_closed() -> Result<(), DynError >
 		Err(e) => match e
 		{
 			ThesErr::MailboxClosed{..} => {}
-			_                          => assert!( false, "Wrong error returned: {:?}", e ),
+			_                          => panic!( "Wrong error returned: {:?}", e ),
 		}
 	}
 
@@ -106,7 +106,7 @@ async fn test_mb_closed_before_response() -> Result<(), DynError >
 		Err(e) => match e
 		{
 			ThesErr::ActorStoppedBeforeResponse{..} => {}
-			_ => assert!( false, "Wrong error returned: {:?}", e ),
+			_ => panic!( "Wrong error returned: {:?}", e ),
 		}
 	}
 

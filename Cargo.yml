@@ -124,19 +124,19 @@ build-dependencies:
   rustc_version: ^0.3
 
 
-bench:
+# bench:
 
-  - name   : single_thread_delivery
-    path   : benches/single_thread/delivery.rs
-    harness: false
+#   - name   : single_thread_delivery
+#     path   : benches/single_thread/delivery.rs
+#     harness: false
 
-  - name   : multi_thread_delivery
-    path   : benches/multi_thread/delivery.rs
-    harness: false
+#   - name   : multi_thread_delivery
+#     path   : benches/multi_thread/delivery.rs
+#     harness: false
 
-  - name   : contention
-    path   : benches/multi_thread/contention.rs
-    harness: false
+#   - name   : contention
+#     path   : benches/multi_thread/contention.rs
+#     harness: false
 
 
 example:
