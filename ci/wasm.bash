@@ -8,5 +8,5 @@ set -e
 #
 set -x
 
-wasm-pack test --headless --firefox --release
-wasm-pack test --headless --firefox -- --all-features
+wasm-pack test --headless --firefox --release -- --no-default-features
+wasm-pack test --headless --firefox           -- --no-default-features
