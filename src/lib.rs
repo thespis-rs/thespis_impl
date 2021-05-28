@@ -24,10 +24,13 @@
 
 mod actor_builder ;
 mod addr          ;
+mod addr_inner    ;
 mod envelope      ;
 mod error         ;
 mod mailbox       ;
-mod receiver      ;
+mod rx_strong     ;
+mod strong_count  ;
+mod weak_addr     ;
 
 
 pub use
@@ -36,11 +39,17 @@ pub use
 	addr          :: * ,
 	error         :: * ,
 	mailbox       :: * ,
-	receiver      :: * ,
+	rx_strong     :: * ,
+ 	weak_addr     :: * ,
 
 	// Addr::send requires SinkExt, so let's re-export that.
 	//
 	futures::{ SinkExt },
+};
+
+pub(crate) use
+{
+	strong_count::* ,
 };
 
 use futures::Sink;
@@ -61,7 +70,6 @@ pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError>
 /// Type of boxed channel receiver for Mailbox.
 //
 pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
-
 
 
 /// Interface for T: Sink + Clone
@@ -96,23 +104,24 @@ mod import
 	pub(crate) use
 	{
 		thespis         :: { * } ,
-		tracing         :: { * } ,
+		tracing         :: { trace, debug, error, error_span, Span } ,
 		tracing_futures :: { Instrument } ,
 		async_executors :: { SpawnHandle, SpawnHandleExt, LocalSpawnHandle, LocalSpawnHandleExt, JoinHandle } ,
 
 		std ::
 		{
-			fmt                                                  ,
-			pin    :: { Pin                                    } ,
-			sync   :: { Arc, atomic::{ AtomicUsize, Ordering } } ,
-			panic  :: { AssertUnwindSafe                       } ,
-			task   :: { Context as TaskContext, Poll           } ,
+			fmt                                                          ,
+			convert :: { TryFrom                                       } ,
+			pin     :: { Pin                                           } ,
+			sync    :: { Arc, Mutex, atomic::{ AtomicUsize, Ordering } } ,
+			panic   :: { AssertUnwindSafe                              } ,
+			task    :: { Context as TaskContext, Poll                  } ,
 		},
 
 
 		futures ::
 		{
-			stream  :: { StreamExt                                  } ,
+			stream  :: { Stream, StreamExt                          } ,
 			sink    :: { Sink, SinkExt                              } ,
 			channel :: { oneshot                                    } ,
 			future  :: { FutureExt                                  } ,

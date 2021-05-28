@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, SinkError };
+use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, SinkError };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -16,7 +16,7 @@ pub struct ActorBuilder<A: Actor>
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< Arc<str>        > ,
+	name   : Option< String          > ,
 }
 
 
@@ -50,15 +50,15 @@ impl<A: Actor> ActorBuilder<A>
 	/// Configure a name for this actor. This will be helpful for interpreting
 	/// debug logs. You can also retrieve the name later on the Addr.
 	//
-	pub fn name( mut self, name: Arc<str> ) -> Self
+	pub fn name( mut self, name: &str ) -> Self
 	{
-		self.name = name.into();
+		self.name = Some( name.into() );
 		self
 	}
 
 
 	/// Choose the bounded size of the default channel. If unset, will default
-	/// to a bounded channel with a buffer size of
+	/// to a bounded channel with a buffer size of 16.
 	///
 	/// If you set this to `None`, you will get an unbounded channel.
 	///
@@ -105,34 +105,6 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	pub fn build( mut self ) -> (Addr<A>, Mailbox<A>)
 	{
-		#[ cfg( feature = "tokio_channel" ) ]
-		//
-		if self.rx.is_none() || self.tx.is_none()
-		{
-			use async_chanx::{ TokioSender, TokioUnboundedSender };
-
-			if let Some( bounded ) = self.bounded
-			{
-				let (tx, rx) = tokio::sync::mpsc::channel( bounded );
-				let tx = Box::new( TokioSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-
-				self.tx = Some( Box::new(tx) );
-				self.rx = Some( Box::new(rx) );
-			}
-
-			else
-			{
-				let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-				let tx = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| -> SinkError { Box::new(e) } ) );
-
-				self.tx = Some( Box::new(tx) );
-				self.rx = Some( Box::new(rx) );
-			}
-		}
-
-
-		#[ cfg(not( feature = "tokio_channel" )) ]
-		//
 		if self.rx.is_none() || self.tx.is_none()
 		{
 			if let Some( bounded ) = self.bounded
@@ -154,8 +126,10 @@ impl<A: Actor> ActorBuilder<A>
 			}
 		}
 
-		let mb   = crate::Mailbox::new( self.name, self.rx.unwrap() );
-		let addr = Addr::new( mb.id(), mb.name(), self.tx.unwrap() );
+
+		let rx    = self.rx.unwrap();
+		let mb    = Mailbox::new( self.name.as_deref(), rx );
+		let addr  = mb.addr( self.tx.unwrap() );
 
 		(addr, mb)
 	}
@@ -193,9 +167,9 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< Option<Mailbox<A>> > )
+	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< MailboxEnd<A> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 
 		where A: Send
 
@@ -237,9 +211,9 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< Option<Mailbox<A>> > )
+	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< MailboxEnd<A> > )
 
-		-> Result< (Addr<A>, JoinHandle< Option<Mailbox<A>> >), ThesErr >
+		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 
 	{
 		let (addr, mb) = self.build();

@@ -4,6 +4,9 @@
 // - ✔ Call actor in another thread
 // - ✔ Move the future from call to another thread and await it there
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use

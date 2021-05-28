@@ -1,14 +1,14 @@
 //! Does the span we put for tracing in the mailbox get replaced if we spawn another actor from within the handler?
-//! Does the span persist if we spawn other non-actor tasks? Should it?
+//! Does the span persist if we spawn other non-actor tasks? -> No, Should it?
 //!
 
 mod common;
 
 use
 {
-	common          :: { import::*                                                } ,
-	async_executors :: { AsyncStd, SpawnHandleExt, LocalPool, LocalSpawnHandleExt } ,
-	futures         :: { executor::LocalSpawner                                   } ,
+	common          :: { import::*              } ,
+	futures         :: { executor::LocalSpawner } ,
+	// tracing_test    :: { traced_test            } ,
 };
 
 
@@ -17,7 +17,7 @@ use
 #[ derive( Actor ) ] pub struct Created;
 #[ derive( Actor ) ] pub struct Create;
 
-impl Message for Create { type Return = ();  }
+impl Message for Create { type Return = (); }
 
 
 
@@ -29,7 +29,7 @@ impl Handler<Create> for Creator
 
 		async { trace!( "i am awaited within the handler on Creator" ); }.await;
 
-		let mut created = Addr::builder().start( Created, &AsyncStd ).expect( "create new actor" );
+		let mut created = Addr::builder().name( "created".into() ).start( Created, &AsyncStd ).expect( "create new actor" );
 
 		created.call( Create ).await.expect( "call created" );
 	}
@@ -43,7 +43,13 @@ impl Handler<Create> for Created
 	{
 		trace!( "in created handler" );
 
-		AsyncStd.spawn_handle( async {
+		let span = error_span!( parent: tracing::Span::current(), "handle request" );
+
+		let exec = TokioTpBuilder::new().build().expect( "create tokio threadpool" )
+		           .instrument( span )
+		;
+
+		exec.spawn_handle( async {
 
 			trace!( "a spawned subtask" );
 
@@ -58,9 +64,10 @@ impl Handler<Create> for Created
 //
 // It requires looking at the log output in order to see it.
 //
+// #[traced_test]
 #[async_std::test]
 //
-async fn tracing_nested() -> Result<(), Box<dyn Error> >
+async fn tracing_nested_pool() -> Result<(), Box<dyn Error> >
 {
 	let _ = tracing_subscriber::fmt::Subscriber::builder()
 
@@ -68,9 +75,16 @@ async fn tracing_nested() -> Result<(), Box<dyn Error> >
 	   .try_init()
 	;
 
-	let mut addr = Addr::builder().start( Creator, &AsyncStd )?;
+
+
+
+	let mut addr = Addr::builder().name( "creator".into() ).start_local( Creator, &AsyncStd )?;
 
 	addr.call( Create ).await?;
+
+	// assert!( logs_contain( r#"tracing: creating new actor"# ) );
+	// assert!( logs_contain( r#"actor{id=1 name="creator"}: tracing: creating new actor"# ) );
+	// assert!( logs_contain( r#"actor{id=2 name="created"}: thespis_impl::mailbox: mailbox: started for: Created (2, created)"# ) );
 
 	Ok(())
 }
@@ -135,25 +149,25 @@ impl Handler<Create> for CreatedLocal
 //
 // It requires looking at the log output in order to see it.
 //
-#[ test ]
-//
-fn tracing_nested_local()
-{
-	let _ = tracing_subscriber::fmt::Subscriber::builder()
+// #[ test ]
+// //
+// fn tracing_nested_local()
+// {
+// 	let _ = tracing_subscriber::fmt::Subscriber::builder()
 
-	   .with_max_level(tracing::Level::TRACE)
-	   .try_init()
-	;
+// 	   .with_max_level(tracing::Level::TRACE)
+// 	   .try_init()
+// 	;
 
-	let mut pool = LocalPool::new();
-	let exec = pool.spawner();
+// 	let mut pool = LocalPool::new();
+// 	let exec = pool.spawner();
 
-	let task = async
-	{
-		let mut addr = Addr::builder().start_local( Creator, &exec ).expect( "start Creator" );
+// 	let task = async
+// 	{
+// 		let mut addr = Addr::builder().start_local( Creator, &exec ).expect( "start Creator" );
 
-		addr.call( Create ).await.expect( "call Creator" );
-	};
+// 		addr.call( Create ).await.expect( "call Creator" );
+// 	};
 
-	pool.run_until( task );
-}
+// 	pool.run_until( task );
+// }

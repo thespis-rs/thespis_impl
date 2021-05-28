@@ -8,12 +8,5 @@ set -e
 #
 set -x
 
-export RUSTFLAGS="-D warnings"
-
-# --no-default-features is needed to turn of notwasm so this won't try to compile examples
-# features don't work in wasm-pack, so using cargo test directly here
-#
-wasm-pack test --firefox --headless -- --no-default-features
-wasm-pack test --firefox --headless -- --no-default-features --features bindgen
-wasm-pack test --firefox --headless -- --no-default-features --features async_std
-wasm-pack test --firefox --headless -- --no-default-features --features "bindgen async_std"
+wasm-pack test --headless --firefox --release -- --no-default-features
+wasm-pack test --headless --firefox           -- --no-default-features

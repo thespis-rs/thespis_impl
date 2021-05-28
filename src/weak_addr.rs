@@ -1,28 +1,26 @@
-use crate::{ import::*, ActorBuilder, ChanSender, StrongCount, WeakAddr, addr_inner::*, error::* };
+use crate::{ import::*, Addr, addr_inner::*, error::* };
 
 
 /// Reference implementation of `thespis::Address<M>`.
 /// It can be used to send all message types the actor implements thespis::Handler for.
 /// An actor will be dropped when all addresses to it are dropped.
 //
-pub struct Addr< A: Actor >
+pub struct WeakAddr< A: Actor >
 {
-	inner: AddrInner<A> ,
+	inner: AddrInner<A>,
 }
 
 
-impl< A: Actor > Clone for Addr<A>
+impl< A: Actor > Clone for WeakAddr<A>
 {
 	fn clone( &self ) -> Self
 	{
 		let _s = self.span().entered();
-		trace!( "CREATE (clone) Addr" );
-
-		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
+		trace!( "CREATE WeakAddr" );
 
 		Self
 		{
-			inner: self.inner.clone() ,
+			inner: self.inner.clone(),
 		}
 	}
 }
@@ -30,7 +28,7 @@ impl< A: Actor > Clone for Addr<A>
 
 /// Verify whether 2 Receivers will deliver to the same actor.
 //
-impl< A: Actor > PartialEq for Addr<A>
+impl< A: Actor > PartialEq for WeakAddr<A>
 {
 	fn eq( &self, other: &Self ) -> bool
 	{
@@ -38,11 +36,11 @@ impl< A: Actor > PartialEq for Addr<A>
 	}
 }
 
-impl< A: Actor > Eq for Addr<A>{}
+impl< A: Actor > Eq for WeakAddr<A>{}
 
 
 
-impl<A: Actor> fmt::Debug for Addr<A>
+impl<A: Actor> fmt::Debug for WeakAddr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -55,7 +53,7 @@ impl<A: Actor> fmt::Debug for Addr<A>
 		write!
 		(
 			f                          ,
-			"Addr<{}> ~ {}{}"          ,
+			"WeakAddr<{}> ~ {}{}"      ,
 			std::any::type_name::<A>() ,
 			&self.id()                 ,
 			name                       ,
@@ -65,7 +63,7 @@ impl<A: Actor> fmt::Debug for Addr<A>
 
 
 
-impl<A: Actor> fmt::Display for Addr<A>
+impl<A: Actor> fmt::Display for WeakAddr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -80,41 +78,15 @@ impl<A: Actor> fmt::Display for Addr<A>
 
 
 
-impl<A> Addr<A> where A: Actor
+impl<A> WeakAddr<A> where A: Actor
 {
-	// Create a new address. This is restricted to the crate because StrongCount does not
-	// distinguish between the initial state (count==0) and the final (mailbox closed).
+	/// Create a strong address. This requires that there are still other
+	/// strong addresses around at the time of this call, otherwise this will
+	/// return [`ThesErr::MailboxClosed`].
 	//
-	// If we allowed users to call this directly, they could in principle re-create strong
-	// addresses after the mailbox has closed. Now the only way to make your first Addr is
-	// through [`Mailbox::addr`](crate::Mailbox::addr).
-	//
-	pub(crate) fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A>, strong: Arc<Mutex<StrongCount>> ) -> Self
+	pub fn strong( &self ) -> Result< Addr<A>, ThesErr >
 	{
-		strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
-
-		let inner = AddrInner::new( id, name, tx, strong );
-
-		let _s = inner.span().entered();
-		trace!( "CREATE Addr" );
-
-		Self{ inner }
-	}
-
-
-	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`](crate::Mailbox).
-	//
-	pub fn builder() -> ActorBuilder<A>
-	{
-		Default::default()
-	}
-
-
-	/// Create a new WeakAddr.
-	//
-	pub fn weak( &self ) -> WeakAddr<A>
-	{
-		WeakAddr::from( self.inner.clone() )
+		Addr::try_from( self.inner.clone() )
 	}
 
 
@@ -126,22 +98,20 @@ impl<A> Addr<A> where A: Actor
 	}
 }
 
-
-
-impl<A: Actor> Drop for Addr<A>
+// For debugging
+//
+impl<A: Actor> Drop for WeakAddr<A>
 {
 	fn drop( &mut self )
 	{
 		let _s = self.span().entered();
-		trace!( "DROP Addr" );
-
-		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).decrement();
+		trace!( "DROP WeakAddr" );
 	}
 }
 
 
 
-impl<A, M> Address<M> for Addr<A>
+impl<A, M> Address<M> for WeakAddr<A>
 
 	where  A: Actor + Handler<M> ,
 	       M: Message            ,
@@ -161,7 +131,7 @@ impl<A, M> Address<M> for Addr<A>
 }
 
 
-impl<A> Identify for Addr<A>
+impl<A> Identify for WeakAddr<A>
 
 	where  A: Actor,
 
@@ -185,7 +155,7 @@ impl<A> Identify for Addr<A>
 
 
 
-impl<A, M> Sink<M> for Addr<A>
+impl<A, M> Sink<M> for WeakAddr<A>
 
 	where A: Actor + Handler<M> ,
 	      M: Message            ,
@@ -195,6 +165,13 @@ impl<A, M> Sink<M> for Addr<A>
 
 	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll<Result<(), Self::Error>>
 	{
+		// There are no more strong addresses around, we no longer accept messages.
+		//
+		if self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).count() == 0
+		{
+			return Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self.inner) } ) )
+		}
+
 		Pin::new( &mut self.inner ).poll_ready( cx )
 	}
 
@@ -220,27 +197,10 @@ impl<A, M> Sink<M> for Addr<A>
 }
 
 
-impl<A: Actor> TryFrom< AddrInner<A> > for Addr<A>
+impl<A: Actor> From< AddrInner<A> > for WeakAddr<A>
 {
-	type Error = ThesErr;
-
-	fn try_from( inner: AddrInner<A> ) -> Result< Self, ThesErr >
+	fn from( inner: AddrInner<A> ) -> Self
 	{
-		let strong = inner.strong.lock().expect( "Mutex<StrongCount> poisoned" );
-
-		// If already zero, we don't allow making a new strong address.
-		//
-		if strong.count() == 0
-		{
-			Err( ThesErr::MailboxClosed{ actor: format!("{:?}", &inner) } )
-		}
-
-		else
-		{
-			strong.increment();
-			drop(strong);
-
-			Ok( Self{ inner } )
-		}
+		Self{ inner }
 	}
 }

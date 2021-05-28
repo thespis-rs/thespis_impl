@@ -5,6 +5,9 @@
 // - ✔ Manually spawn mailbox for actor that is !Send and !Sync
 // - ✔ Manually spawn mailbox for actor that is Send and Sync but using the local methods
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use
@@ -78,7 +81,6 @@ fn test_send_actor() -> Result<(), DynError >
 
 
 
-
 #[test]
 //
 fn test_manually_not_send_actor() -> Result<(), DynError >
@@ -92,11 +94,9 @@ fn test_manually_not_send_actor() -> Result<(), DynError >
 		let actor = SumNoSend::new(5);
 
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let name     = Some( "SumNoSend".into() )                                ;
-		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
-		let id       = mb.id()                                                   ;
+		let mb       = Mailbox::new( Some("SumNoSend"), Box::new(rx) )           ;
 		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
-		let mut addr = Addr ::new( id, name, tx )                                ;
+		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 
@@ -131,11 +131,9 @@ fn test_manually_send_actor() -> Result<(), DynError >
 		//
 		let actor    = Sum(5)                                                    ;
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let name     = Some( "Sum".into() )                                      ;
-		let mb       = Mailbox::new( name.clone(), Box::new(rx) )                ;
-		let id       = mb.id()                                                   ;
+		let mb       = Mailbox::new( Some("Sum"), Box::new(rx) )                 ;
 		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
-		let mut addr = Addr ::new( id, name, tx )                                ;
+		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
 

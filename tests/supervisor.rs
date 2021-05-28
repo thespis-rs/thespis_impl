@@ -3,6 +3,9 @@
 // ✔ Manually supervise
 // ✔ Use an actor as a supervisor
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
+
 mod common;
 
 use
@@ -38,7 +41,7 @@ impl Handler< Add > for Counter
 
 struct Supervise<A: Actor>
 {
-	inbox : Option< JoinHandle<Option<Mailbox<A>>> > ,
+	inbox : Option< JoinHandle<MailboxEnd<A>> > ,
 	create: Box< dyn FnMut() ->A + Send >            ,
 }
 
@@ -70,7 +73,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 
 		let supervisor = async move
 		{
-			while let Some(mb) = mb_handle.await
+			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{
 				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
 			}
@@ -95,7 +98,7 @@ async fn supervise() -> Result< (), DynError >
 
 	let supervisor = async move
 	{
-		while let Some(mb) = mb_handle.await
+		while let MailboxEnd::Mailbox(mb) = mb_handle.await
 		{
 			mb_handle = mb.start_handle( Counter, &AsyncStd ).unwrap();
 		}

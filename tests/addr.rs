@@ -3,6 +3,8 @@
 // ✔ verify actor stops when all adresses are dropped.
 // ✔ verify actor stops when all adresses are dropped before the mailbox was even started.
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
+
 mod common;
 
 use

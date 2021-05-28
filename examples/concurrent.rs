@@ -87,7 +87,8 @@ impl Handler<Ping> for MyActor
 //
 async fn main() -> Result< (), DynError >
 {
-	let mut addr = Addr::builder().start( MyActor{ exec: Box::new(AsyncStd) }, &AsyncStd )?;
+	let actor    = MyActor{ exec: Box::new(AsyncStd) };
+	let mut addr = Addr::builder().start( actor, &AsyncStd )?;
 
 	// Admittedly, this looks a bit weird. Call is fallible, and it returns a result over
 	// the SpawnError, since the handler needs to spawn and spawning is fallible.
