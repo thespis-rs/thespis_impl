@@ -177,9 +177,6 @@ impl Handler<Hi> for Blocked
 
 
 
-
-// TODO: sometimes hangs.
-//
 #[async_std::test]
 //
 async fn drop_strong_while_mb_pending() -> Result<(), DynError >

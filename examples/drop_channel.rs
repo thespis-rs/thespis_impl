@@ -109,7 +109,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let res = accu_addr.call( Show ).await?;
 	drop( accu_addr );
 
-	println!( "Processed {} messages out of {}", res, MESSAGES * MPSC_SENDERS );
+	println!( "Processed {} messages out of {}", res, MESSAGES );
 
 	accu_thread.join().unwrap();
 
