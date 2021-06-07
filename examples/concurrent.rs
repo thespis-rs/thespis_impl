@@ -26,6 +26,8 @@ impl Message for Ping {	type Return = Result<usize, SpawnError>; }
 
 impl Handler<Ping> for MyActor
 {
+	// Cannot use the async_fn macro as we want to run part of our method synchronously.
+	//
 	fn handle( &mut self, _msg: Ping ) -> Return<'_, <Ping as Message>::Return >
 	{
 		// If self had properties wrapped in Arc, we could clone them here to pass them

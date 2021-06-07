@@ -77,11 +77,6 @@ path = "examples/across_yields.rs"
 required-features = ["not_wasm"]
 
 [[example]]
-name = "address"
-path = "examples/address.rs"
-required-features = ["not_wasm"]
-
-[[example]]
 name = "basic"
 path = "examples/basic.rs"
 required-features = ["not_wasm"]
@@ -122,8 +117,18 @@ path = "examples/multi_thread.rs"
 required-features = ["not_wasm"]
 
 [[example]]
-name = "recipient_is_sink"
-path = "examples/recipient_is_sink.rs"
+name = "recipient"
+path = "examples/recipient.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "recipient_any"
+path = "examples/recipient_any.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "addr_is_sink"
+path = "examples/addr_is_sink.rs"
 required-features = ["not_wasm"]
 
 [[example]]

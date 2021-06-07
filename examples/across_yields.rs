@@ -1,12 +1,12 @@
-// Demonstrates modifying mutable state accross await points. No synchronization needed.
-
+//! Demonstrates modifying mutable state accross await points. No synchronization needed.
+//
 use
 {
 	tracing           :: { *            } ,
 	thespis           :: { *            } ,
 	thespis_impl      :: { *            } ,
-	futures::executor :: { ThreadPool   } ,
 	std               :: { error::Error } ,
+	async_executors   :: { AsyncStd     } ,
 };
 
 
@@ -63,9 +63,8 @@ async fn main() -> Result< (), Box<dyn Error> >
 	;
 
 
-	let     exec  = ThreadPool::new()?;
 	let     a     = MyActor{ seed: "seed - ".into() };
-	let mut addr  = Addr::builder().start( a, &exec )?;
+	let mut addr  = Addr::builder().start( a, &AsyncStd )?;
 	let mut addr2 = addr.clone();
 
 	trace!( "calling addr.call( Ping('ping') )" );

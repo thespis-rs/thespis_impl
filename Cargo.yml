@@ -54,6 +54,9 @@ badges:
 
 features:
 
+  # Internal, ignore. This allows wasm-pack test to run integration tests without
+  # compilation failing because there are examples that aren't compatible with wasm.
+  #
   default: [not_wasm]
 
   # This is only there so `wasm-pack test` wouldn't try to compile the examples.
@@ -177,10 +180,6 @@ example:
     path              : examples/across_yields.rs
     required-features : [ not_wasm ]
 
-  - name              : address
-    path              : examples/address.rs
-    required-features : [ not_wasm ]
-
   - name              : basic
     path              : examples/basic.rs
     required-features : [ not_wasm ]
@@ -213,8 +212,16 @@ example:
     path              : examples/multi_thread.rs
     required-features : [ not_wasm ]
 
-  - name              : recipient_is_sink
-    path              : examples/recipient_is_sink.rs
+  - name              : recipient
+    path              : examples/recipient.rs
+    required-features : [ not_wasm ]
+
+  - name              : recipient_any
+    path              : examples/recipient_any.rs
+    required-features : [ not_wasm ]
+
+  - name              : addr_is_sink
+    path              : examples/addr_is_sink.rs
     required-features : [ not_wasm ]
 
   - name              : supervisor

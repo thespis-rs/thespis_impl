@@ -1,10 +1,8 @@
 ## TODO
 
 - verify log spans.
-   - see tests/tracing.rs
-   - In wasm-logger the spawns show up as error and it spams opening and closing of spans.
-   - guide level docs about debugging.
-   - improve format in tracing_prism
+   - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
+   - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17
 
 - can we rate limit actor messages with stream_throttle?
 
@@ -27,6 +25,11 @@
 - Can we let the user recover their message from the error if sending fails? Is more relevant now since we
   have the WeakAddr. -> Should be possible if we change call to poll_call. We can only return the message
   if the error is in poll_ready of the underlying sink. It won't work for errors in start_send and poll_flush.
+  -> For the moment there is no good solution. Either:
+     1. SinkExt::send is changed to return the message,
+     2. or GAT's so we can have have Call as associated type and let it capture the lifetime of self,
+     3. or we break a lot of the design that splits interface from implementation and we have to implement
+        Call in thespis, which implies having the oneshot for the return type, having Envelope etc.
 
 - Isolating mutable state and enforcing immutable messages guarantees implicit synchronization. However, the concept of asynchronous messaging and no global state challenges coordination. An application may require consensus or a concerted view of state between multiple actors. When multiple actors must be strictly orchestrated in order to provide a distinct application function, correct messaging can become very demanding. Thus, many implementations provide higher-level abstractions that implement low-level coordination protocols based on complex message flows, but hide the internal complexity from the developer. For Erlang, OTP is a standard library that contains a rich set of abstractions, generic protocol implementations and behaviors.
 

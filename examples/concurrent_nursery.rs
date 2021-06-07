@@ -1,4 +1,6 @@
 // Demonstrates how to process messages concurrently if no mutable state is needed.
+// This time we use a nursery to make sure that none of the spawned subtasks outlive
+// the lifetime of our actor.
 //
 use
 {

@@ -1,6 +1,6 @@
 # thespis - CHANGELOG
 
-## 0.1.0-alpha.3 - 2020-11-17
+## 0.1.0-alpha.3 - 2021-05-28
 
   - Add `WeakAddr`, which will not keep the mailbox alive if all `Addr` are dropped.
   - When the mailbox closes normally, it now returns the actor from the `JoinHandle`.
