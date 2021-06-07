@@ -112,11 +112,6 @@ path = "examples/move_fut.rs"
 required-features = ["not_wasm"]
 
 [[example]]
-name = "multi_thread"
-path = "examples/multi_thread.rs"
-required-features = ["not_wasm"]
-
-[[example]]
 name = "recipient"
 path = "examples/recipient.rs"
 required-features = ["not_wasm"]

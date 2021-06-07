@@ -1,7 +1,7 @@
 //! Demonstrates one way of supervising actors with thespis.
 //! The key feature is that the mailbox future will use catch_unwind on your actor and that
 //! it will return the mailbox to you if it panics. This way you can instantiate another actor
-//! and spawn it again.
+//! and spawn it again. All addresses remain valid.
 //!
 use
 {

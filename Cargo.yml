@@ -208,10 +208,6 @@ example:
     path              : examples/move_fut.rs
     required-features : [ not_wasm ]
 
-  - name              : multi_thread
-    path              : examples/multi_thread.rs
-    required-features : [ not_wasm ]
-
   - name              : recipient
     path              : examples/recipient.rs
     required-features : [ not_wasm ]

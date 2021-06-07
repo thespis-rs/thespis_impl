@@ -44,13 +44,14 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// pub type BoxAddress<M, E> = Box< dyn Address<M, Error=E> + Send + Unpin >;
 	// Type can be elided here. It's just there for illustrative purposes.
 	//
-	let mut col: Vec<BoxAddress<Ping, ThesErr>> = Vec::new();
-
 	// Obviously if we have a known number of types, we could use an enum. If
 	// not, we can use a dynamic type.
 	//
-	col.push( addr1.clone_box() );
-	col.push( addr2.clone_box() );
+	let col: Vec<BoxAddress<Ping, ThesErr>> = vec!
+	[
+		addr1.clone_box() ,
+		addr2.clone_box() ,
+	];
 
 
 	for mut addr in col

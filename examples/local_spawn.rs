@@ -1,3 +1,5 @@
+//! Spawn an actor that is !Send.
+//
 use
 {
 	thespis         :: { *                                         } ,
@@ -31,7 +33,7 @@ impl MyActor
 
 impl Handler<Ping> for MyActor
 {
-	// Implement handle_local to enable !Send actor an mailbox.
+	// Implement handle_local to enable !Send actor and mailbox.
 	//
 	#[async_fn_local] fn handle_local( &mut self, _msg: Ping ) -> String
 	{

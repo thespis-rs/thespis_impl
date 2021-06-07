@@ -6,10 +6,7 @@
 
 - can we rate limit actor messages with stream_throttle?
 
-- good docs and examples about how to use Box< dyn Any > now that we removed receiver. Maybe some tests as well.
-
 ### Tests
-- test ringchannel
 - flesh out tests and comment what's being tested. Consistency, expect or return result.
 
 

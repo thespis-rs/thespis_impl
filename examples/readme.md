@@ -6,12 +6,12 @@ These examples demonstrate how to use thespis with the reference implementation 
 2. [*desugar*](/desugar.rs): desugar the `Addr::builder` by creating everything manually.
 3. [*across_yields*](/across_yields.rs): showing the use of &mut self across await points in handle trait method.
 4. [*perf*](/perf): examples I use with cargo flamegraph or profiler.firefox.com to check where time is spent.
-5. *recipient*: Store addresses to several actors that accept the same message type.
+5. [*recipient*](/recipient.rs): Store addresses to several actors that accept the same message type.
+5. [*recipient_any*](/recipient_any.rs): Store addresses to several actors that accept different message types.
 6. [*addr_is_sink*](/addr_is_sink.rs): Shows how to you can use sink combinators on recipient
-7. *multi_thread*: Use addresses to send across threads
-8. *move_fut*: Use address on the same thread, but move the future from call to a different thread before polling it.
-9. *local_spawn*: Use an Actor which is `!Send` and spawn it on a thread local executor.
+8. [*move_fut*](/move_fut.rs): Use address on the same thread, but move the future from call to a different thread before polling it.
+9. [*local_spawn*](/local_spawn.rs): Use an Actor which is `!Send` and spawn it on a thread local executor.
 10. [*concurrent*](/concurrent.rs): Let an actor process messages concurrently when no mutable state is needed.
-11. *concurrent_nursery*: Let an actor process messages concurrently when no mutable state is needed. This time we make sure that none of the spawned subtasks can outlive our actor.
-12. *drop_channel*: An example of using a channel that overwrites older messages instead of providing back pressure.
-
+11. [*concurrent_nursery*](/concurrent_nursery.rs): Let an actor process messages concurrently when no mutable state is needed. This time we make sure that none of the spawned subtasks can outlive our actor.
+12. [*drop_channel*](/drop_channel.rs): An example of using a channel that overwrites older messages instead of providing back pressure.
+13. [*supervisor*](/supervisor.rs): How to supervise an actor in case it panics.

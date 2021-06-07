@@ -1,3 +1,9 @@
+//! Use a drop channel between address and mailbox. Only the most recent message will
+//! be kept. Older messages will be overwritten.
+//!
+//! This will send 100k messages and print how many were actually processed. The rest
+//! was overwritten.
+//
 use
 {
 	thespis           :: { *                                       } ,

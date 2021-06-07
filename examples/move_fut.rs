@@ -1,3 +1,5 @@
+//! Showning how the futures produced by thespis can be ran to completion on any thread.
+//
 use
 {
 	std               :: { thread               } ,
