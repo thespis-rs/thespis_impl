@@ -67,12 +67,12 @@ impl<A> Mailbox<A> where A: Actor
 	{
 		if let Some( name ) = &self.name
 		{
-			error_span!( "actor", id = self.id, r#type = self.type_name(), name = name.as_ref() )
+			error_span!( "actor", id = self.id, "type" = self.type_name(), name = name.as_ref() )
 		}
 
 		else
 		{
-			error_span!( "actor", id = self.id, r#type = self.type_name() )
+			error_span!( "actor", id = self.id, "type" = self.type_name() )
 		}
 	}
 
