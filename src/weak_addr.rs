@@ -169,7 +169,7 @@ impl<A, M> Sink<M> for WeakAddr<A>
 		//
 		if self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).count() == 0
 		{
-			return Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self.inner) } ) )
+			return Poll::Ready( Err( ThesErr::MailboxClosed{ actor: self.inner.actor_info() } ) )
 		}
 
 		Pin::new( &mut self.inner ).poll_ready( cx )

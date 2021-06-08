@@ -114,6 +114,20 @@ impl<A> AddrInner<A> where A: Actor
 			None    => name,
 		}
 	}
+
+
+	pub(crate) fn actor_info( &self ) -> String
+	{
+		if let Some(name) = &self.name
+		{
+			format!("{}: id={}, name={}", self.type_name(), self.id, name)
+		}
+
+		else
+		{
+			format!("{}: id={}", self.type_name(), self.id)
+		}
+	}
 }
 
 
@@ -136,7 +150,7 @@ impl<A, M> Address<M> for AddrInner<A>
 			// MailboxClosed - either the actor panicked, or all strong addresses to the mb
 			// were dropped.
 			//
-			result.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )?;
+			result.map_err( |_| ThesErr::MailboxClosed{ actor: self.actor_info() } )?;
 
 
 			// We have a call type message. It was successfully delivered to the mailbox,
@@ -144,7 +158,7 @@ impl<A, M> Address<M> for AddrInner<A>
 			//
 			ret_rx.await
 
-				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: format!( "{:?}", self ) } )
+				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: self.actor_info() } )
 
 		}.boxed()
 	}
@@ -199,7 +213,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 				Ok (_) => Poll::Ready( Ok(()) ),
 				Err(_) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ) )
+					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: self.actor_info() } ) )
 				}
 			}
 
@@ -218,7 +232,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 
 			// if poll_ready wasn't called, the underlying code panics in tokio-sync.
 			//
-			.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )
+			.map_err( |_| ThesErr::MailboxClosed{ actor: self.actor_info() } )
 	}
 
 
@@ -231,7 +245,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 				Ok (_) => Poll::Ready( Ok(()) ),
 				Err(_) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ))
+					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: self.actor_info() } ))
 				}
 			}
 
