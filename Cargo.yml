@@ -111,6 +111,7 @@ target:
 
       async_executors   : { version: ^0.4, features: [localpool, threadpool, async_std, tokio_ct, tokio_tp, tracing] }
       async_chanx       : { version: ^0.1.0-alpha }
+      stream_throttle   : { version: ^0.4, default-features: false, features: [timer-futures-timer] }
 
       # for benchmarks
       #
@@ -222,4 +223,8 @@ example:
 
   - name              : supervisor
     path              : examples/supervisor.rs
+    required-features : [ not_wasm ]
+
+  - name              : throttle
+    path              : examples/throttle.rs
     required-features : [ not_wasm ]

@@ -131,6 +131,11 @@ name = "supervisor"
 path = "examples/supervisor.rs"
 required-features = ["not_wasm"]
 
+[[example]]
+name = "throttle"
+path = "examples/throttle.rs"
+required-features = ["not_wasm"]
+
 [features]
 default = ["not_wasm"]
 not_wasm = []
@@ -175,6 +180,11 @@ version = "^0.4"
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.criterion]
 features = []
 version = "^0.3"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.stream_throttle]
+default-features = false
+features = ["timer-futures-timer"]
+version = "^0.4"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.tokio]
 features = ["sync", "macros"]
