@@ -30,6 +30,7 @@ version = "^0.2"
 
 [dev-dependencies]
 async_nursery = "^0.3"
+futures-timer = "^3"
 ring-channel = "^0.8"
 
 [dev-dependencies.async-std]
@@ -43,7 +44,7 @@ version = "^0.3"
 
 [dev-dependencies.tracing-subscriber]
 default-features = false
-features = ["ansi", "fmt", "json", "tracing-log", "chrono"]
+features = ["ansi", "fmt", "json", "tracing-log", "chrono", "env-filter"]
 version = "^0.2"
 
 [[example]]
@@ -89,6 +90,11 @@ required-features = ["not_wasm"]
 [[example]]
 name = "concurrent_nursery"
 path = "examples/concurrent_nursery.rs"
+required-features = ["not_wasm"]
+
+[[example]]
+name = "deadlock_prio"
+path = "examples/deadlock_prio.rs"
 required-features = ["not_wasm"]
 
 [[example]]

@@ -81,7 +81,7 @@ dependencies:
 
 dev-dependencies:
 
-  tracing-subscriber : { version: ^0.2, default-features: false, features: [ ansi, fmt, json, tracing-log, chrono ] }
+  tracing-subscriber : { version: ^0.2, default-features: false, features: [ ansi, fmt, json, tracing-log, chrono, env-filter ] }
   ring-channel      : ^0.8
   # pretty_assertions : ^0.6
   # flexi_logger      : ^0.15
@@ -90,7 +90,7 @@ dev-dependencies:
   async_nursery     : ^0.3
   async-std         : { version: ^1, features: [ attributes ] }
   # tracing-test      : { version: ^0.1, path: ../../RUST/tracing-test/tracing-test }
-
+  futures-timer     : ^3
 
 target:
 
@@ -191,6 +191,10 @@ example:
 
   - name              : concurrent_nursery
     path              : examples/concurrent_nursery.rs
+    required-features : [ not_wasm ]
+
+  - name              : deadlock_prio
+    path              : examples/deadlock_prio.rs
     required-features : [ not_wasm ]
 
   - name              : desugar
