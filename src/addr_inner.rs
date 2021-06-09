@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, envelope::*, error::* };
+use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, ActorInfo, envelope::*, error::* };
 
 
 
@@ -13,8 +13,7 @@ use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, envelope::*, error
 pub(crate) struct AddrInner< A: Actor >
 {
 	           mb    : ChanSender<A>             ,
-	           id    : usize                     ,
-	           name  : Option< Arc<str> >        ,
+	pub(crate) info  : Arc<ActorInfo>            ,
 	pub(crate) strong: Arc<Mutex< StrongCount >> ,
 }
 
@@ -27,8 +26,7 @@ impl< A: Actor > Clone for AddrInner<A>
 		Self
 		{
 			mb    : self.mb.clone_sink() ,
-			id    : self.id              ,
-			name  : self.name.clone()    ,
+			info  : self.info.clone()    ,
 			strong: self.strong.clone()  ,
 		}
 	}
@@ -41,7 +39,7 @@ impl< A: Actor > PartialEq for AddrInner<A>
 {
 	fn eq( &self, other: &Self ) -> bool
 	{
-		self.id == other.id
+		self.info.id == other.info.id
 	}
 }
 
@@ -53,7 +51,7 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = match &self.name
+		let name = match &self.info.name
 		{
 			Some( s ) => format!( ", {}", s ) ,
 			None      => String::new()        ,
@@ -64,7 +62,7 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 			f                          ,
 			"AddrInner<{}> ~ {}{}"     ,
 			std::any::type_name::<A>() ,
-			&self.id                   ,
+			&self.info.id                   ,
 			name                       ,
 		)
 	}
@@ -79,9 +77,9 @@ impl<A> AddrInner<A> where A: Actor
 	/// This way allows more control. You need to manually make the mailbox. See the
 	/// no_rt example in the repository.
 	//
-	pub(crate) fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A>, strong: Arc<Mutex<StrongCount>> ) -> Self
+	pub(crate) fn new( tx: ChanSender<A>, info: Arc<ActorInfo>, strong: Arc<Mutex<StrongCount>> ) -> Self
 	{
-		Self{ id, name, mb: tx, strong }
+		Self{ info, mb: tx, strong }
 	}
 
 
@@ -90,15 +88,7 @@ impl<A> AddrInner<A> where A: Actor
 	//
 	pub(crate) fn span( &self ) -> Span
 	{
-		if let Some( name ) = &self.name
-		{
-			error_span!( "actor", id = self.id, "type" = self.type_name(), name = name.as_ref() )
-		}
-
-		else
-		{
-			error_span!( "actor", id = self.id, "type" = self.type_name() )
-		}
+		self.info.span()
 	}
 
 
@@ -106,27 +96,7 @@ impl<A> AddrInner<A> where A: Actor
 	//
 	pub(crate) fn type_name( &self ) -> &str
 	{
-		let name = std::any::type_name::<A>();
-
-		match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		}
-	}
-
-
-	pub(crate) fn actor_info( &self ) -> String
-	{
-		if let Some(name) = &self.name
-		{
-			format!("{}: id={}, name={}", self.type_name(), self.id, name)
-		}
-
-		else
-		{
-			format!("{}: id={}", self.type_name(), self.id)
-		}
+		self.info.type_name()
 	}
 }
 
@@ -150,7 +120,7 @@ impl<A, M> Address<M> for AddrInner<A>
 			// MailboxClosed - either the actor panicked, or all strong addresses to the mb
 			// were dropped.
 			//
-			result.map_err( |_| ThesErr::MailboxClosed{ actor: self.actor_info() } )?;
+			result.map_err( |_| ThesErr::MailboxClosed( self.info.clone() ) )?;
 
 
 			// We have a call type message. It was successfully delivered to the mailbox,
@@ -158,7 +128,7 @@ impl<A, M> Address<M> for AddrInner<A>
 			//
 			ret_rx.await
 
-				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: self.actor_info() } )
+				.map_err( |_| ThesErr::ActorStoppedBeforeResponse( self.info.clone() ) )
 
 		}.boxed()
 	}
@@ -185,12 +155,12 @@ impl<A> Identify for AddrInner<A>
 	//
 	fn id( &self ) -> usize
 	{
-		self.id
+		self.info.id
 	}
 
 	fn name( &self ) -> Option< Arc<str> >
 	{
-		self.name.clone()
+		self.info.name.clone()
 	}
 }
 
@@ -213,7 +183,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 				Ok (_) => Poll::Ready( Ok(()) ),
 				Err(_) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: self.actor_info() } ) )
+					Poll::Ready( Err( ThesErr::MailboxClosed( self.info.clone() ) ) )
 				}
 			}
 
@@ -232,7 +202,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 
 			// if poll_ready wasn't called, the underlying code panics in tokio-sync.
 			//
-			.map_err( |_| ThesErr::MailboxClosed{ actor: self.actor_info() } )
+			.map_err( |_| ThesErr::MailboxClosed( self.info.clone() ) )
 	}
 
 
@@ -245,7 +215,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 				Ok (_) => Poll::Ready( Ok(()) ),
 				Err(_) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: self.actor_info() } ))
+					Poll::Ready( Err( ThesErr::MailboxClosed( self.info.clone() ) ))
 				}
 			}
 

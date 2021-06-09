@@ -1,4 +1,4 @@
-use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender };
+use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender, ActorInfo };
 
 
 /// Type returned to you by the mailbox when it ends. Await the JoinHandle returned
@@ -26,13 +26,8 @@ pub enum MailboxEnd<A: Actor>
 //
 pub struct Mailbox<A> where A: Actor
 {
-	pub(crate) rx : RxStrong<A> ,
-
-	/// This creates a unique id for every mailbox in the program. This way recipients
-	/// can impl Eq to say whether they refer to the same actor.
-	//
-	pub(crate) id   : usize              ,
-	pub(crate) name : Option< Arc<str> > ,
+	rx  : RxStrong<A>    ,
+	info: Arc<ActorInfo> ,
 }
 
 
@@ -51,51 +46,26 @@ impl<A> Mailbox<A> where A: Actor
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
 		let rx = RxStrong::new(rx);
+		let info = Arc::new( ActorInfo::new::<A>( id, name.map( |n| n.into() ) ) );
 
-		Self
-		{
-			rx,
-			id,
-			name: name.map( |n| n.into() ),
-		}
+		Self { rx, info }
 	}
 
 
-	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	/// Getter for [`ActorInfo`].
 	//
-	pub fn span( &self ) -> Span
+	pub fn info( &self ) -> &ActorInfo
 	{
-		if let Some( name ) = &self.name
-		{
-			error_span!( "actor", id = self.id, "type" = self.type_name(), name = name.as_ref() )
-		}
-
-		else
-		{
-			error_span!( "actor", id = self.id, "type" = self.type_name() )
-		}
+		&self.info
 	}
 
-
-	/// The type of the actor.
-	//
-	pub fn type_name( &self ) -> &str
-	{
-		let name = std::any::type_name::<A>();
-
-		match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		}
-	}
 
 
 	/// Create an `Addr` to send messages to this mailbox.
 	//
 	pub fn addr( &self, tx: ChanSender<A> ) -> Addr<A>
 	{
-		Addr::new( self.id, self.name.clone(), tx, self.rx.count() )
+		Addr::new( tx, self.info.clone(), self.rx.count() )
 	}
 
 
@@ -117,7 +87,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		where A: Send
 	{
-		let span = self.span();
+		let span = self.info.span();
 
 		async
 		{
@@ -165,7 +135,7 @@ impl<A> Mailbox<A> where A: Actor
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> MailboxEnd<A>
 	{
-		let span = self.span();
+		let span = self.info.span();
 
 		async
 		{
@@ -204,11 +174,11 @@ impl<A> Mailbox<A> where A: Actor
 		where A: Send
 
 	{
-		let id = self.id;
+		let info = self.info.clone();
 
 		exec.spawn( self.start(actor).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
+			.map_err( |_e| ThesErr::Spawn( info ) )
 	}
 
 
@@ -231,11 +201,11 @@ impl<A> Mailbox<A> where A: Actor
 		where A: Send
 
 	{
-		let id = self.id;
+		let info = self.info.clone();
 
 		exec.spawn_handle( self.start(actor) )
 
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
+			.map_err( |_e| ThesErr::Spawn( info ) )
 	}
 
 
@@ -244,11 +214,11 @@ impl<A> Mailbox<A> where A: Actor
 	//
 	pub fn spawn_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
 	{
-		let id = self.id;
+		let info = self.info.clone();
 
 		exec.spawn_local( self.start_local( actor ).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
+			.map_err( |_e| ThesErr::Spawn( info ) )
 	}
 
 
@@ -269,11 +239,11 @@ impl<A> Mailbox<A> where A: Actor
 		-> ThesRes< JoinHandle< MailboxEnd<A> > >
 
 	{
-		let id = self.id;
+		let info = self.info.clone();
 
 		exec.spawn_handle_local( self.start_local( actor ) )
 
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
+			.map_err( |_e| ThesErr::Spawn( info ) )
 	}
 }
 
@@ -283,14 +253,14 @@ impl<A: Actor> Identify for Mailbox<A>
 {
 	fn id( &self ) -> usize
 	{
-		self.id
+		self.info.id
 	}
 
 
 
 	fn name( &self ) -> Option<Arc<str>>
 	{
-		self.name.clone()
+		self.info.name.clone()
 	}
 }
 
@@ -299,7 +269,7 @@ impl<A: Actor> fmt::Debug for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.info.id )
 	}
 }
 
@@ -308,10 +278,10 @@ impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		match &self.name
+		match &self.info.name
 		{
-			Some(n) => write!( f, "{} ({}, {})", self.type_name(), self.id, n ) ,
-			None    => write!( f, "{} ({})"    , self.type_name(), self.id    ) ,
+			Some(n) => write!( f, "{} ({}, {})", self.info.type_name(), self.info.id, n ) ,
+			None    => write!( f, "{} ({})"    , self.info.type_name(), self.info.id    ) ,
 		}
 	}
 }

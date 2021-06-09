@@ -58,7 +58,7 @@ impl Handler< Show > for Accu
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let (tx, rx) = ring_channel( NonZeroUsize::new(MPSC_BOUNDED).unwrap() );
-	let tx = tx.sink_map_err( |_| Box::new( thespis_impl::ThesErr::MailboxClosed{ actor: "".to_string() } ) as SinkError );
+	let tx       = tx.sink_map_err( |e| Box::new(e) as SinkError );
 
 	let (mut accu_addr , accu_mb) = Addr::builder()
 

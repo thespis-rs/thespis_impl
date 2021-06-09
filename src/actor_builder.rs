@@ -151,7 +151,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn( async { fut.await; } ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		exec.spawn( async { fut.await; } ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
 
 		Ok(addr)
 	}
@@ -179,7 +179,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		let handle = exec.spawn_handle( fut ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		let handle = exec.spawn_handle( fut ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
 
 		Ok(( addr, handle ))
 	}
@@ -197,7 +197,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn_local( async { fut.await; } ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		exec.spawn_local( async { fut.await; } ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
 
 		Ok(addr)
 	}
@@ -221,7 +221,7 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		let handle = exec.spawn_handle_local( fut ).map_err( |_| ThesErr::Spawn{ actor: format!( "inbox id: {:?}", addr.id() ) } )?;
+		let handle = exec.spawn_handle_local( fut ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
 
 		Ok(( addr, handle ))
 	}

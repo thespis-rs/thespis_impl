@@ -1,4 +1,4 @@
-use crate::{ import::*, ActorBuilder, ChanSender, StrongCount, WeakAddr, addr_inner::*, error::* };
+use crate::{ import::*, ActorBuilder, ActorInfo, ChanSender, StrongCount, WeakAddr, addr_inner::*, error::* };
 
 
 /// Reference implementation of `thespis::Address<M>`.
@@ -89,11 +89,11 @@ impl<A> Addr<A> where A: Actor
 	// addresses after the mailbox has closed. Now the only way to make your first Addr is
 	// through [`Mailbox::addr`](crate::Mailbox::addr).
 	//
-	pub(crate) fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A>, strong: Arc<Mutex<StrongCount>> ) -> Self
+	pub(crate) fn new( tx: ChanSender<A>, info: Arc<ActorInfo>, strong: Arc<Mutex<StrongCount>> ) -> Self
 	{
 		strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
 
-		let inner = AddrInner::new( id, name, tx, strong );
+		let inner = AddrInner::new( tx, info, strong );
 
 		let _s = inner.span().entered();
 		trace!( "CREATE Addr" );
@@ -123,6 +123,14 @@ impl<A> Addr<A> where A: Actor
 	pub fn span( &self ) -> Span
 	{
 		self.inner.span()
+	}
+
+
+	/// Information about the actor, id, name and typename.
+	//
+	pub fn info( &self ) -> Arc<ActorInfo>
+	{
+		self.inner.info.clone()
 	}
 }
 
@@ -232,7 +240,7 @@ impl<A: Actor> TryFrom< AddrInner<A> > for Addr<A>
 		//
 		if strong.count() == 0
 		{
-			Err( ThesErr::MailboxClosed{ actor: format!("{:?}", &inner) } )
+			Err( ThesErr::MailboxClosed( inner.info ) )
 		}
 
 		else

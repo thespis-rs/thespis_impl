@@ -22,6 +22,7 @@
 )]
 
 mod actor_builder ;
+mod actor_info    ;
 mod addr          ;
 mod addr_inner    ;
 mod envelope      ;
@@ -35,6 +36,7 @@ mod weak_addr     ;
 pub use
 {
 	actor_builder :: * ,
+	actor_info    :: * ,
 	addr          :: * ,
 	error         :: * ,
 	mailbox       :: * ,

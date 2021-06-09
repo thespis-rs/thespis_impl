@@ -1,12 +1,19 @@
 ## TODO
 
+- error handling: src of spawn and channel errors...
+
 - verify log spans.
    - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
    - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17
 
-- can we rate limit actor messages with stream_throttle?
+- explore further shenanigans with channels:
+  - different channels per address by using StreamExt::left_stream right stream.
+  - channel that goes over network? After all we only need stream and sink. -> Remote actors...
+  - priority channels with some select_biased...
+  - stream::abortable can be used to stop actors.
 
 ### Tests
+
 - flesh out tests and comment what's being tested. Consistency, expect or return result.
 
 

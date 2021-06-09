@@ -1,4 +1,4 @@
-use crate::import::*;
+use crate::{ import::*, ActorInfo };
 
 /// Result which has a ThesErr as error type.
 //
@@ -13,12 +13,7 @@ pub enum ThesErr
 	/// Either the actor panicked during processing of the message or the mailbox was dropped.
 	/// Only returned when doing a `call`.
 	//
-	ActorStoppedBeforeResponse
-	{
-		/// The actor concerned by the error.
-		//
-		actor: String
-	},
+	ActorStoppedBeforeResponse( Arc<ActorInfo> ),
 
 
 	/// You try to use a mailbox that is already closed. The mailbox can be closed by dropping all
@@ -27,12 +22,7 @@ pub enum ThesErr
 	/// When you get this error, the mailbox is gone and the address should be dropped. It will never
 	/// accept messages again.
 	//
-	MailboxClosed
-	{
-		/// The actor concerned by the error.
-		//
-		actor: String
-	},
+	MailboxClosed( Arc<ActorInfo> ),
 
 
 	// /// The mailbox cannot take more messages right now. This only happens on
@@ -44,18 +34,13 @@ pub enum ThesErr
 	// {
 	// 	/// The actor concerned by the error.
 	// 	//
-	// 	actor: String
+	// 	actor: ActorInfo
 	// },
 
 
 	/// Failed to spawn the mailbox.
 	//
-	Spawn
-	{
-		/// The actor concerned by the error.
-		//
-		actor: String
-	}
+	Spawn( Arc<ActorInfo> )
 }
 
 
@@ -68,15 +53,15 @@ impl fmt::Display for ThesErr
 	{
 		match &self
 		{
-			ThesErr::ActorStoppedBeforeResponse{ actor } =>
+			ThesErr::ActorStoppedBeforeResponse(actor) =>
 
 				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", actor ),
 
-			ThesErr::MailboxClosed{ actor } =>
+			ThesErr::MailboxClosed(actor) =>
 
 				write!( f, "You try to use a mailbox that is already closed. For actor: {}", actor ),
 
-			ThesErr::Spawn{ actor } =>
+			ThesErr::Spawn(actor) =>
 
 				write!( f, "Failed to spawn the mailbox for actor: {}", actor ),
 		}
