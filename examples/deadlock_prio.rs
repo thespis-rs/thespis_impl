@@ -17,13 +17,13 @@
 //!
 use
 {
-	tracing           :: { *                            } ,
-	thespis           :: { *                            } ,
-	thespis_impl      :: { *                            } ,
-	async_executors   :: { AsyncStd                     } ,
-	std               :: { error::Error, time::Duration } ,
-	futures_timer     :: { Delay                        } ,
-	futures      :: { stream::{ select_bias, SelectWhich } } ,
+	tracing           :: { *                                 } ,
+	thespis           :: { *                                 } ,
+	thespis_impl      :: { *                                 } ,
+	async_executors   :: { AsyncStd                          } ,
+	std               :: { error::Error, time::Duration      } ,
+	futures_timer     :: { Delay                             } ,
+	futures           :: { stream::{ select_bias, PollNext } } ,
 };
 
 static BOUNDED: usize = 5;
@@ -150,7 +150,7 @@ async fn fancy() -> DynResult<()>
 	let ( low_tx,  low_rx) = futures::channel::mpsc::channel( BOUNDED );
 	let (high_tx, high_rx) = futures::channel::mpsc::channel( BOUNDED );
 
-	let strategy = |_: &mut ()| SelectWhich::Left;
+	let strategy = |_: &mut ()| PollNext::Left;
 	let gate_rx = Box::new( select_bias( high_rx, low_rx, strategy ) );
 
 	let gate_mb = Mailbox::new( Some("gate"), gate_rx );
