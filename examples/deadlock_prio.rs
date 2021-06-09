@@ -20,7 +20,7 @@ use
 	tracing           :: { *                                 } ,
 	thespis           :: { *                                 } ,
 	thespis_impl      :: { *                                 } ,
-	async_executors   :: { AsyncStd                          } ,
+	async_executors   :: { AsyncStd, SpawnHandleExt          } ,
 	std               :: { error::Error, time::Duration      } ,
 	futures_timer     :: { Delay                             } ,
 	futures           :: { stream::{ select_bias, PollNext } } ,
@@ -113,8 +113,8 @@ async fn _naive() -> DynResult<()>
 	let gate   = Gate    { worker: worker_addr.weak() };
 	let worker = Worker  { gate  : gate_addr.clone()  };
 
-	let   gate_handle =   gate_mb.start_handle(   gate, &AsyncStd )?;
-	let worker_handle = worker_mb.start_handle( worker, &AsyncStd )?;
+	let   gate_handle = AsyncStd.spawn_handle(   gate_mb.start(   gate ) )?;
+	let worker_handle = AsyncStd.spawn_handle( worker_mb.start( worker ) )?;
 
 	for i in 1..100
 	{
@@ -166,8 +166,8 @@ async fn fancy() -> DynResult<()>
 	let gate   = Gate   { worker: worker_addr.weak() };
 	let worker = Worker { gate  : gate_high_addr     };
 
-	let   gate_handle =   gate_mb.start_handle(   gate, &AsyncStd )?;
-	let worker_handle = worker_mb.start_handle( worker, &AsyncStd )?;
+	let   gate_handle = AsyncStd.spawn_handle(   gate_mb.start(   gate ) )?;
+	let worker_handle = AsyncStd.spawn_handle( worker_mb.start( worker ) )?;
 
 	for i in 1..100
 	{

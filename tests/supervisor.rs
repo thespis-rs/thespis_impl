@@ -75,7 +75,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 		{
 			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{
-				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
+				mb_handle = AsyncStd.spawn_handle( mb.start( (actor.create)() ) ).unwrap();
 			}
 		};
 
@@ -100,7 +100,7 @@ async fn supervise() -> Result< (), DynError >
 	{
 		while let MailboxEnd::Mailbox(mb) = mb_handle.await
 		{
-			mb_handle = mb.start_handle( Counter, &AsyncStd ).unwrap();
+			mb_handle = AsyncStd.spawn_handle( mb.start( Counter ) ).unwrap();
 		}
 	};
 

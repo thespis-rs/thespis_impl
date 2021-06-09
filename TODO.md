@@ -1,5 +1,7 @@
 ## TODO
 
+- evaluate identify trait and maybe impl through ActorInfo.
+
 - verify log spans.
    - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
    - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17

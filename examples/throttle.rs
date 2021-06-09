@@ -4,8 +4,8 @@
 use
 {
 	thespis         :: { *                                           } ,
-	thespis_impl    :: { DynError, Mailbox                          } ,
-	async_executors :: { AsyncStd                                    } ,
+	thespis_impl    :: { DynError, Mailbox                           } ,
+	async_executors :: { AsyncStd, SpawnHandleExt                    } ,
 	std             :: { error::Error, time::Duration                } ,
 	futures         :: { channel::mpsc, SinkExt                      } ,
 	stream_throttle :: { ThrottleRate, ThrottlePool, ThrottledStream } ,
@@ -60,7 +60,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let mut addr = mb.addr( tx );
 
 
-	let mb_handle = mb.start_handle( MyActor{ count: 0 }, &AsyncStd )?;
+	let mb_handle = AsyncStd.spawn_handle( mb.start( MyActor{ count: 0 } ) )?;
 
 
 	for _ in 0..10

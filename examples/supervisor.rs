@@ -5,12 +5,12 @@
 //!
 use
 {
-	thespis           :: { *                    } ,
-	thespis_impl      :: { *                    } ,
-	tracing           :: { *                    } ,
-	futures::task     :: { Spawn, SpawnExt      } ,
-	std               :: { error::Error         } ,
-	async_executors   :: { AsyncStd, JoinHandle } ,
+	thespis         :: { *                                    } ,
+	thespis_impl    :: { *                                    } ,
+	tracing         :: { *                                    } ,
+	futures::task   :: { Spawn, SpawnExt                      } ,
+	std             :: { error::Error                         } ,
+	async_executors :: { AsyncStd, JoinHandle, SpawnHandleExt } ,
 };
 
 
@@ -103,7 +103,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 			//
 			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{
-				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
+				mb_handle = AsyncStd.spawn_handle( mb.start( (actor.create)() ) ).unwrap();
 			}
 		};
 

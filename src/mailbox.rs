@@ -1,4 +1,4 @@
-use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender, ActorInfo };
+use crate::{ import::*, Addr, ChanReceiver, RxStrong, ChanSender, ActorInfo };
 
 
 /// Type returned to you by the mailbox when it ends. Await the JoinHandle returned
@@ -164,89 +164,7 @@ impl<A> Mailbox<A> where A: Actor
 		.instrument( span )
 		.await
 	}
-
-
-	/// Spawn the mailbox. Use this if you don't want to supervise the actor and don't want a
-	/// JoinHandle.
-	//
-	pub fn spawn( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
-
-		where A: Send
-
-	{
-		let info = self.info.clone();
-
-		exec.spawn( self.start(actor).map(|_|()) )
-
-			.map_err( |src| ThesErr::Spawn{ info, src } )
-	}
-
-
-	/// Spawn the mailbox. You get a joinhandle you can await to detect when the mailbox
-	/// terminates and which will return you the mailbox if the actor panicked during
-	/// message processing. You can use this to supervise the actor.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
-	//
-	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< MailboxEnd<A> > ) ->
-
-		ThesRes< JoinHandle< MailboxEnd<A> > >
-
-		where A: Send
-
-	{
-		let info = self.info.clone();
-
-		exec.spawn_handle( self.start(actor) )
-
-			.map_err( |src| ThesErr::Spawn{ info, src } )
-	}
-
-
-	/// Spawn the mailbox on the current thread. Use this if you don't want to supervise the actor and don't want a
-	/// JoinHandle.
-	//
-	pub fn spawn_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
-	{
-		let info = self.info.clone();
-
-		exec.spawn_local( self.start_local( actor ).map(|_|()) )
-
-			.map_err( |src| ThesErr::Spawn{ info, src } )
-	}
-
-
-	/// Spawn the mailbox on the current thread. You get a joinhandle you can await to detect when the mailbox
-	/// terminates and which will return you the mailbox if the actor panicked during
-	/// message processing. You can use this to supervise the actor.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
-	//
-	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< MailboxEnd<A> > )
-
-		-> ThesRes< JoinHandle< MailboxEnd<A> > >
-
-	{
-		let info = self.info.clone();
-
-		exec.spawn_handle_local( self.start_local( actor ) )
-
-			.map_err( |src| ThesErr::Spawn{ info, src } )
-	}
 }
-
 
 
 impl<A: Actor> Identify for Mailbox<A>
