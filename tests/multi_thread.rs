@@ -11,10 +11,10 @@ mod common;
 
 use
 {
-	std             :: { thread                  } ,
-	common          :: { *, actors::*, import::* } ,
-	async_executors :: { AsyncStd                } ,
-	futures         :: { executor::block_on      } ,
+	std             :: { thread               } ,
+	common          :: { actors::*, import::* } ,
+	async_executors :: { AsyncStd             } ,
+	futures         :: { executor::block_on   } ,
 };
 
 

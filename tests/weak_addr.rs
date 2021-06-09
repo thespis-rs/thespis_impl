@@ -15,8 +15,8 @@ mod common;
 
 use
 {
-	common          :: { import::*, *, actors::* } ,
-	async_executors :: { AsyncStd                } ,
+	common          :: { import::*, actors::* } ,
+	async_executors :: { AsyncStd             } ,
 };
 
 
@@ -72,7 +72,7 @@ async fn weak_refuse() -> Result<(), DynError >
 	let     addr = Addr::builder().start( Sum(5), &AsyncStd )?;
 	let mut weak = addr.weak();
 
-	let addr2 = weak.strong();
+	let addr2 = weak.strong()?;
 	let addr3 = addr2.clone();
 
 	drop( addr  );

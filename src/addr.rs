@@ -240,7 +240,7 @@ impl<A: Actor> TryFrom< AddrInner<A> > for Addr<A>
 		//
 		if strong.count() == 0
 		{
-			Err( ThesErr::MailboxClosed( inner.info ) )
+			Err( ThesErr::MailboxClosed{ info: inner.info, src: None } )
 		}
 
 		else

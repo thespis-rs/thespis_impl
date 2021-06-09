@@ -178,7 +178,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		exec.spawn( self.start(actor).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn( info ) )
+			.map_err( |src| ThesErr::Spawn{ info, src } )
 	}
 
 
@@ -205,7 +205,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		exec.spawn_handle( self.start(actor) )
 
-			.map_err( |_e| ThesErr::Spawn( info ) )
+			.map_err( |src| ThesErr::Spawn{ info, src } )
 	}
 
 
@@ -218,7 +218,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		exec.spawn_local( self.start_local( actor ).map(|_|()) )
 
-			.map_err( |_e| ThesErr::Spawn( info ) )
+			.map_err( |src| ThesErr::Spawn{ info, src } )
 	}
 
 
@@ -243,7 +243,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		exec.spawn_handle_local( self.start_local( actor ) )
 
-			.map_err( |_e| ThesErr::Spawn( info ) )
+			.map_err( |src| ThesErr::Spawn{ info, src } )
 	}
 }
 

@@ -177,6 +177,7 @@ actix = "^0.11"
 actix-rt = "^2"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]
+path = "../../async_chanx"
 version = "^0.1.0-alpha"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_executors]

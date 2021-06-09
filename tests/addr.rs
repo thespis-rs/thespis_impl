@@ -9,7 +9,7 @@ mod common;
 
 use
 {
-	common          :: { import::*, *, actors::* } ,
+	common          :: { import::*, actors::* } ,
 	async_executors :: { AsyncStd                } ,
 };
 

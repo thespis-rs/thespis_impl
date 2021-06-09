@@ -4,7 +4,7 @@
 use
 {
 	thespis         :: { Return, Actor, Message, Handler, Address } ,
-	thespis_impl    :: { SinkError, Mailbox, MailboxEnd           } ,
+	thespis_impl    :: { DynError, Mailbox, MailboxEnd           } ,
 	async_executors :: { AsyncStd, SpawnHandleExt                 } ,
 	std             :: { error::Error                             } ,
 	futures         :: { channel::mpsc, FutureExt, SinkExt        } ,
@@ -44,7 +44,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// We must use a dynamic error for the Sink, so Addr can store it, whichever
 	// error type our channel actually uses.
 	//
-	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as SinkError ) );
+	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) );
 
 	// Manually create a mailbox, with a name for the actor and the receiver of
 	// our channel.

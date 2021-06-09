@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, SinkError };
+use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, DynError };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -110,7 +110,7 @@ impl<A: Actor> ActorBuilder<A>
 			if let Some( bounded ) = self.bounded
 			{
 				let (tx, rx) = futures::channel::mpsc::channel( bounded );
-				let tx       = Box::new( tx.sink_map_err( |e| -> SinkError { Box::new(e) } ) );
+				let tx       = Box::new( tx.sink_map_err( |e| -> DynError { Box::new(e) } ) );
 
 				self.tx = Some( Box::new(tx) );
 				self.rx = Some( Box::new(rx) );
@@ -119,7 +119,7 @@ impl<A: Actor> ActorBuilder<A>
 			else
 			{
 				let (tx, rx) = futures::channel::mpsc::unbounded();
-				let tx       = Box::new( tx.sink_map_err( |e| -> SinkError { Box::new(e) } ) );
+				let tx       = Box::new( tx.sink_map_err( |e| -> DynError { Box::new(e) } ) );
 
 				self.tx = Some( Box::new(tx) );
 				self.rx = Some( Box::new(rx) );
@@ -151,7 +151,10 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn( async { fut.await; } ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
+		exec.spawn( async { fut.await; } )
+
+			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
+		;
 
 		Ok(addr)
 	}
@@ -179,7 +182,10 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		let handle = exec.spawn_handle( fut ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
+		let handle = exec.spawn_handle( fut )
+
+			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
+		;
 
 		Ok(( addr, handle ))
 	}
@@ -197,7 +203,10 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		exec.spawn_local( async { fut.await; } ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
+		exec.spawn_local( async { fut.await; } )
+
+			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
+		;
 
 		Ok(addr)
 	}
@@ -221,7 +230,10 @@ impl<A: Actor> ActorBuilder<A>
 
 		// Todo, include a source error.
 		//
-		let handle = exec.spawn_handle_local( fut ).map_err( |_| ThesErr::Spawn( addr.info() ) )?;
+		let handle = exec.spawn_handle_local( fut )
+
+			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
+		;
 
 		Ok(( addr, handle ))
 	}

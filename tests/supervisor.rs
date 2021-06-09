@@ -10,7 +10,7 @@ mod common;
 
 use
 {
-	common :: { *, import::* } ,
+	common::import::*,
 };
 
 

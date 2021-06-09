@@ -12,8 +12,8 @@ mod common;
 
 use
 {
-	common          :: { import::*, *, actors::* } ,
-	async_executors :: { AsyncStd                } ,
+	common          :: { import::*, actors::* } ,
+	async_executors :: { AsyncStd             } ,
 };
 
 

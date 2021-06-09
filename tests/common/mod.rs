@@ -17,8 +17,6 @@ pub mod import
 	};
 }
 
-pub type DynError = Box< dyn std::error::Error + Send + Sync >;
-
 
 pub fn init_tracing()
 {

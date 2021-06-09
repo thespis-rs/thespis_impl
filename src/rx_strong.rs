@@ -41,10 +41,14 @@ impl<A> Stream for RxStrong<A> where A: Actor
 
 	fn poll_next( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll< Option<Self::Item> >
 	{
+		let size_hint = self.rx.size_hint();
+
 		match Pin::new( &mut self.rx ).poll_next( cx )
 		{
 			Poll::Pending =>
 			{
+				trace!( "size hint is: {:?}", size_hint );
+
 				let count = self.count.lock().expect( "Mutex<StrongCount> poisoned" );
 
 				if count.count() == 0

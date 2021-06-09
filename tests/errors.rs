@@ -10,7 +10,7 @@ mod common;
 
 use
 {
-	common :: { *, actors::*, import::* } ,
+	common :: { actors::*, import::*    } ,
 	std    :: { panic::AssertUnwindSafe } ,
 };
 

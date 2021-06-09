@@ -4,7 +4,7 @@
 use
 {
 	thespis         :: { *                                           } ,
-	thespis_impl    :: { SinkError, Mailbox                          } ,
+	thespis_impl    :: { DynError, Mailbox                          } ,
 	async_executors :: { AsyncStd                                    } ,
 	std             :: { error::Error, time::Duration                } ,
 	futures         :: { channel::mpsc, SinkExt                      } ,
@@ -55,7 +55,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let pool = ThrottlePool::new( rate );
 	let rx   = rx.throttle( pool );
 
-	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as SinkError ) );
+	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) );
 	let mb = Mailbox::new( Some("Throttled"), Box::new(rx) );
 	let mut addr = mb.addr( tx );
 

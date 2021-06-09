@@ -1,4 +1,4 @@
-use crate::{ import::*, ActorInfo };
+use crate::{ import::*, ActorInfo, DynError };
 
 /// Result which has a ThesErr as error type.
 //
@@ -6,14 +6,23 @@ pub type ThesRes<T> = Result<T, ThesErr>;
 
 /// Errors that can happen in thespis_impl.
 //
-#[ derive( Debug, Clone, PartialEq, Eq ) ]
+#[ derive( Debug ) ]
 //
 pub enum ThesErr
 {
 	/// Either the actor panicked during processing of the message or the mailbox was dropped.
 	/// Only returned when doing a `call`.
 	//
-	ActorStoppedBeforeResponse( Arc<ActorInfo> ),
+	ActorStoppedBeforeResponse
+	{
+		/// Actor information.
+		//
+		info: Arc<ActorInfo>,
+
+		/// Source error.
+		//
+		src : DynError,
+	},
 
 
 	/// You try to use a mailbox that is already closed. The mailbox can be closed by dropping all
@@ -22,7 +31,16 @@ pub enum ThesErr
 	/// When you get this error, the mailbox is gone and the address should be dropped. It will never
 	/// accept messages again.
 	//
-	MailboxClosed( Arc<ActorInfo> ),
+	MailboxClosed
+	{
+		/// Actor information.
+		//
+		info: Arc<ActorInfo>,
+
+		/// Source error.
+		//
+		src : Option<DynError>,
+	},
 
 
 	// /// The mailbox cannot take more messages right now. This only happens on
@@ -40,11 +58,47 @@ pub enum ThesErr
 
 	/// Failed to spawn the mailbox.
 	//
-	Spawn( Arc<ActorInfo> )
+	Spawn
+	{
+		/// Actor information.
+		//
+		info: Arc<ActorInfo>,
+
+		/// Source error.
+		//
+		src : SpawnError,
+	}
 }
 
 
-impl std::error::Error for ThesErr {}
+impl ThesErr
+{
+	/// Get to the actor information of the error.
+	//
+	pub fn actor_info( &self ) -> &ActorInfo
+	{
+		match self
+		{
+			Self::ActorStoppedBeforeResponse { info, .. } => info,
+			Self::MailboxClosed              { info, .. } => info,
+			Self::Spawn                      { info, .. } => info,
+		}
+	}
+}
+
+
+impl Error for ThesErr
+{
+	fn source( &self ) -> Option< &(dyn Error + 'static) >
+	{
+		match &self
+		{
+			Self::ActorStoppedBeforeResponse { src, .. } => Some(src.as_ref()) ,
+			Self::MailboxClosed              { src, .. } => src.as_ref().map(|e| {let a: &(dyn Error + 'static) = e.as_ref(); a}  ) ,
+			Self::Spawn                      { src, .. } => Some(src) ,
+		}
+	}
+}
 
 
 impl fmt::Display for ThesErr
@@ -53,17 +107,30 @@ impl fmt::Display for ThesErr
 	{
 		match &self
 		{
-			ThesErr::ActorStoppedBeforeResponse(actor) =>
+			ThesErr::ActorStoppedBeforeResponse{ info, .. } =>
 
-				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", actor ),
+				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", info ),
 
-			ThesErr::MailboxClosed(actor) =>
+			ThesErr::MailboxClosed{ info, .. } =>
 
-				write!( f, "You try to use a mailbox that is already closed. For actor: {}", actor ),
+				write!( f, "You try to use a mailbox that is already closed. For actor: {}", info ),
 
-			ThesErr::Spawn(actor) =>
+			ThesErr::Spawn{ info, .. } =>
 
-				write!( f, "Failed to spawn the mailbox for actor: {}", actor ),
+				write!( f, "Failed to spawn the mailbox for actor: {}", info ),
 		}
 	}
 }
+
+
+impl PartialEq for ThesErr
+{
+	fn eq( &self, other: &Self ) -> bool
+	{
+		   std::mem::discriminant( self ) == std::mem::discriminant( other )
+		&& self.actor_info()              == other.actor_info()
+	}
+}
+
+impl Eq for ThesErr {}
+

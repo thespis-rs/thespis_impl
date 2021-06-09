@@ -3,7 +3,6 @@
 //
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
 #![ deny   ( missing_docs                                   ) ]
-#![ forbid ( unsafe_code                                    ) ]
 #![ allow  ( clippy::suspicious_else_formatting             ) ]
 
 #![ warn
@@ -58,15 +57,15 @@ use futures::Sink;
 
 /// Shorthand for a `Send` boxed envelope.
 //
-pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send >;
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send + Sync>;
 
 /// A boxed error type for the sink
 //
-pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
+pub type DynError = Box< dyn std::error::Error + Send + Sync >;
 
 /// Type of boxed channel sender for Addr.
 //
-pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
+pub type ChanSender<A> = Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >;
 
 /// Type of boxed channel receiver for Mailbox.
 //
@@ -112,6 +111,7 @@ mod import
 		std ::
 		{
 			fmt                                                          ,
+			error   :: { Error                                         } ,
 			convert :: { TryFrom                                       } ,
 			pin     :: { Pin                                           } ,
 			sync    :: { Arc, Mutex, atomic::{ AtomicUsize, Ordering } } ,
@@ -122,11 +122,11 @@ mod import
 
 		futures ::
 		{
-			stream  :: { Stream, StreamExt                          } ,
-			sink    :: { Sink, SinkExt                              } ,
-			channel :: { oneshot                                    } ,
-			future  :: { FutureExt                                  } ,
-			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
+			stream  :: { Stream, StreamExt                                      } ,
+			sink    :: { Sink, SinkExt                                          } ,
+			channel :: { oneshot                                                } ,
+			future  :: { FutureExt                                              } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, SpawnError } ,
 		},
 	};
 }

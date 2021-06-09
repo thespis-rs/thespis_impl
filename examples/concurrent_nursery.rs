@@ -6,14 +6,10 @@ use
 {
 	thespis           :: { *                                                 } ,
 	thespis_impl      :: { *                                                 } ,
-	std               :: { error::Error                                      } ,
 	futures           :: { FutureExt, task::{ SpawnError }                   } ,
 	async_executors   :: { AsyncStd, SpawnHandle, SpawnHandleExt, JoinHandle } ,
 	async_nursery     :: { Nursery, NurseErr, Nurse, NurseExt                } ,
 };
-
-
-type DynError = Box<dyn Error + Send + Sync>;
 
 
 #[ derive( Actor ) ]

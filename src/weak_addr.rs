@@ -169,7 +169,7 @@ impl<A, M> Sink<M> for WeakAddr<A>
 		//
 		if self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).count() == 0
 		{
-			return Poll::Ready( Err( ThesErr::MailboxClosed( self.inner.info.clone() ) ) )
+			return Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.inner.info.clone(), src: None } ) )
 		}
 
 		Pin::new( &mut self.inner ).poll_ready( cx )
