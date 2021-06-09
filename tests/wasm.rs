@@ -1,3 +1,11 @@
+// Tested:
+//
+// ✔ Basic send
+// ✔ Basic call
+// ✔ Send from multiple addresses
+// ✔ Call from multiple addresses
+// ✔ Stop when addresses dropped before starting the mb.
+//
 #![ cfg( target_arch = "wasm32" ) ]
 
 wasm_bindgen_test_configure!( run_in_browser );
@@ -16,7 +24,7 @@ use
 
 #[ wasm_bindgen_test ]
 //
-async fn stop_when_adresses_dropped_before_start_mb()
+async fn stop_when_addresses_dropped_before_start_mb()
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 

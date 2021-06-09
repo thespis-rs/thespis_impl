@@ -10,14 +10,14 @@ mod common;
 use
 {
 	common          :: { import::*, actors::* } ,
-	async_executors :: { AsyncStd                } ,
+	async_executors :: { AsyncStd             } ,
 };
 
 
 
 #[async_std::test]
 //
-async fn stop_when_adresses_dropped_before_start_mb() -> Result<(), DynError >
+async fn stop_when_addresses_dropped_before_start_mb() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
@@ -40,7 +40,7 @@ async fn stop_when_adresses_dropped_before_start_mb() -> Result<(), DynError >
 
 #[async_std::test]
 //
-async fn stop_when_adresses_dropped() -> Result<(), DynError >
+async fn stop_when_addresses_dropped() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 

@@ -1,7 +1,5 @@
 ## TODO
 
-- error handling: src of spawn and channel errors...
-
 - verify log spans.
    - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
    - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17
@@ -14,8 +12,7 @@
 
 ### Tests
 
-- flesh out tests and comment what's being tested. Consistency, expect or return result.
-
+- flesh out tests.
 
 # Perf
 
