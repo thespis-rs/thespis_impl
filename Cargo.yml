@@ -116,46 +116,55 @@ target:
       # for benchmarks
       #
       actix-rt          : ^2
-      actix             : ^0.11
+      actix             : ^0.12
       criterion         : { version: ^0.3, features: [] }
       tokio             : { version: ^1, features: [ sync, macros ] }
       tokio-stream      : { version: ^0.1 }
 
 
+patch:
+  crates-io:
+    futures-task: { version: ^0.3, path: ../../RUST/futures-rs/futures-task }
+    futures-io: { version: ^0.3, path: ../../RUST/futures-rs/futures-io }
+    futures-core: { version: ^0.3, path: ../../RUST/futures-rs/futures-core }
+    futures-sink: { version: ^0.3, path: ../../RUST/futures-rs/futures-sink }
+    futures-util: { version: ^0.3, path: ../../RUST/futures-rs/futures-util }
+    futures-executor: { version: ^0.3, path: ../../RUST/futures-rs/futures-executor }
+    futures: { version: ^0.3, path: ../../RUST/futures-rs/futures }
 
 build-dependencies:
 
-  rustc_version: ^0.3
+  rustc_version: ^0.4
 
 
-# bench:
+bench:
 
-#   - name   : single_thread_delivery
-#     path   : benches/single_thread/delivery.rs
-#     harness: false
+  - name   : single_thread_delivery
+    path   : benches/single_thread/delivery.rs
+    harness: false
 
-#   - name   : multi_thread_delivery
-#     path   : benches/multi_thread/delivery.rs
-#     harness: false
+  - name   : multi_thread_delivery
+    path   : benches/multi_thread/delivery.rs
+    harness: false
 
-#   - name   : contention
-#     path   : benches/multi_thread/contention.rs
-#     harness: false
+  - name   : contention
+    path   : benches/multi_thread/contention.rs
+    harness: false
 
 
 example:
 
-  # - name: actix_perf
-  #   path: examples/perf/actix.rs
+  - name: actix_perf
+    path: examples/perf/actix.rs
 
-  # - name: actix_local_perf
-  #   path: examples/perf/actix_local.rs
+  - name: actix_local_perf
+    path: examples/perf/actix_local.rs
 
-  # - name: actix_mpsc_perf
-  #   path: examples/perf/actix_mpsc.rs
+  - name: actix_mpsc_perf
+    path: examples/perf/actix_mpsc.rs
 
-  # - name: actix_unbounded_perf
-  #   path: examples/perf/actix_unbounded.rs
+  - name: actix_unbounded_perf
+    path: examples/perf/actix_unbounded.rs
 
   - name              : thespis_perf
     path              : examples/perf/thespis.rs

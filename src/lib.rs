@@ -57,7 +57,7 @@ use futures::Sink;
 
 /// Shorthand for a `Send` boxed envelope.
 //
-pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send + Sync>;
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A> + Send + Sync>;
 
 /// A boxed error type for the sink
 //

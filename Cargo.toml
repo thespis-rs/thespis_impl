@@ -6,8 +6,23 @@ status = "actively-developed"
 [badges.travis-ci]
 repository = "thespis-rs/thespis_impl"
 
+[[bench]]
+harness = false
+name = "single_thread_delivery"
+path = "benches/single_thread/delivery.rs"
+
+[[bench]]
+harness = false
+name = "multi_thread_delivery"
+path = "benches/multi_thread/delivery.rs"
+
+[[bench]]
+harness = false
+name = "contention"
+path = "benches/multi_thread/contention.rs"
+
 [build-dependencies]
-rustc_version = "^0.3"
+rustc_version = "^0.4"
 
 [dependencies]
 once_cell = "^1"
@@ -46,6 +61,22 @@ version = "^0.3"
 default-features = false
 features = ["ansi", "fmt", "json", "tracing-log", "chrono", "env-filter"]
 version = "^0.2"
+
+[[example]]
+name = "actix_perf"
+path = "examples/perf/actix.rs"
+
+[[example]]
+name = "actix_local_perf"
+path = "examples/perf/actix_local.rs"
+
+[[example]]
+name = "actix_mpsc_perf"
+path = "examples/perf/actix_mpsc.rs"
+
+[[example]]
+name = "actix_unbounded_perf"
+path = "examples/perf/actix_unbounded.rs"
 
 [[example]]
 name = "thespis_perf"
@@ -170,10 +201,40 @@ version = "0.1.0-alpha.3"
 all-features = true
 targets = []
 
+[patch]
+[patch.crates-io]
+[patch.crates-io.futures]
+path = "../../RUST/futures-rs/futures"
+version = "^0.3"
+
+[patch.crates-io.futures-core]
+path = "../../RUST/futures-rs/futures-core"
+version = "^0.3"
+
+[patch.crates-io.futures-executor]
+path = "../../RUST/futures-rs/futures-executor"
+version = "^0.3"
+
+[patch.crates-io.futures-io]
+path = "../../RUST/futures-rs/futures-io"
+version = "^0.3"
+
+[patch.crates-io.futures-sink]
+path = "../../RUST/futures-rs/futures-sink"
+version = "^0.3"
+
+[patch.crates-io.futures-task]
+path = "../../RUST/futures-rs/futures-task"
+version = "^0.3"
+
+[patch.crates-io.futures-util]
+path = "../../RUST/futures-rs/futures-util"
+version = "^0.3"
+
 [target]
 [target."cfg(not(target_arch = \"wasm32\"))"]
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies]
-actix = "^0.11"
+actix = "^0.12"
 actix-rt = "^2"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]

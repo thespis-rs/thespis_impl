@@ -18,17 +18,15 @@ async fn main() -> Result< (), DynError >
 
 	// Create SumIn.
 	//
-	let builder = thread::Builder::new().name( "sum_in".to_string() );
+	let sum_in_thread = Arbiter::new();
 
-	let _sum_in_thread = builder.spawn( move ||
+	sum_in_thread.spawn_fn( move ||
 	{
-		System::run( ||
-		{
-			let sum_in = SumIn{ count: 0 };
+		let sum_in = SumIn{ count: 0 };
 
-			tx.send( sum_in.start() ).unwrap();
-		})
-	})?;
+		tx.send( sum_in.start() ).unwrap();
+
+	});
 
 	let sum_in_addr = rx.await?;
 	let (tx, rx) = oneshot::channel();
@@ -36,17 +34,16 @@ async fn main() -> Result< (), DynError >
 
 	// Create Sum.
 	//
-	let builder = thread::Builder::new().name( "sum".to_string() );
+	let sum_thread = Arbiter::new();
 
-	let _sum_thread = builder.spawn( move ||
+	sum_thread.spawn_fn( move ||
 	{
-		System::run( ||
-		{
-			let sum = ActixSum{ total: 5, inner: sum_in_addr, _nosend: PhantomData };
+		let sum = ActixSum{ total: 5, inner: sum_in_addr, _nosend: PhantomData };
 
-			tx.send( sum.start() ).unwrap();
-		})
-	})?;
+		tx.send( sum.start() ).unwrap();
+
+	});
+
 
 	let sum_addr = rx.await?;
 
@@ -58,9 +55,14 @@ async fn main() -> Result< (), DynError >
 
 	let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-	assert_eq!( MESSAGES *10 + 5 + termial( MESSAGES ), res as usize );
+	assert_eq!( MESSAGES *10 + 5 + termial( MESSAGES ), dbg!(res) as usize );
 
-	System::current().stop();
+
+	sum_thread.stop();
+	sum_thread.join().unwrap();
+
+	sum_in_thread.stop();
+	sum_in_thread.join().unwrap();
 
 	Ok(())
 }

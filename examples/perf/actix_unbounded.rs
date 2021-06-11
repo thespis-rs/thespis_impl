@@ -1,6 +1,9 @@
 // This benchmark allows profiling where the performance is used. It contains an outer actor which has
 // to do an async operation in it's handler and an inner actor which just does a sync addition of u64.
 //
+// TODO: currently completely broken. The only way to get the messages from do_send to arrive is to
+// include a very long thread sleep.
+//
 use
 {
 	actix::{ prelude::*, fut::wrap_future },
@@ -84,11 +87,11 @@ async fn main()
 	let sum_in_thread = Arbiter::new();
 	let sum_thread    = Arbiter::new();
 
-	let sum_in = SumIn{ count: 0 };
-	let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread, |_| sum_in );
+	let sum_in        = SumIn{ count: 0 };
+	let sum_in_addr   = SumIn::start_in_arbiter( &sum_in_thread.handle(), |_| sum_in );
 
-	let sum = Sum{ total: 5, inner: sum_in_addr };
-	let sum_addr = Sum::start_in_arbiter( &sum_thread, |_| sum );
+	let sum           = Sum{ total: 5, inner: sum_in_addr };
+	let sum_addr      = Sum::start_in_arbiter( &sum_thread.handle(), |_| sum );
 
 
 	for _ in 0..MESSAGES
@@ -96,13 +99,20 @@ async fn main()
 		sum_addr.do_send( Add( 10 ) );
 	}
 
+	// std::thread::sleep( std::time::Duration::from_millis(25000) );
+
 	let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
 	dbg!( res );
 
 	assert_eq!( MESSAGES as u64 *10 + 5 + termial( MESSAGES as u64 ), res );
 
-	System::current().stop();
+
+	sum_in_thread.stop();
+	sum_thread   .stop();
+
+	sum_in_thread.join().expect( "join arbiter thread" );
+	sum_thread   .join().expect( "join arbiter thread" );
 }
 
 

@@ -8,7 +8,7 @@ pub use
 	thespis_impl      :: { *                                                } ,
 	std               :: { thread, sync::{ Arc, Mutex }, convert::TryFrom   } ,
 	std               :: { marker::PhantomData, rc::Rc                      } ,
-	// actix             :: { Actor as _, ActorFuture, Arbiter, System         } ,
+	actix             :: { Actor as _, ActorFuture, ActorFutureExt, Arbiter, System         } ,
 	futures           :: { executor::block_on                               } ,
 	async_executors   :: { *                                                } ,
 };
@@ -90,63 +90,63 @@ impl Handler< Show > for SumIn
 }
 
 
-// #[ derive( Debug ) ]
-// //
-// pub struct ActixSum
-// {
-// 	pub total: u64,
-// 	pub inner: actix::Addr<SumIn>,
-// 	pub _nosend: PhantomData<Rc<()>>,
-// }
+#[ derive( Debug ) ]
+//
+pub struct ActixSum
+{
+	pub total: u64,
+	pub inner: actix::Addr<SumIn>,
+	pub _nosend: PhantomData<Rc<()>>,
+}
 
-// impl actix::Actor for ActixSum { type Context = actix::Context<Self>; }
-// impl actix::Actor for SumIn    { type Context = actix::Context<Self>; }
+impl actix::Actor for ActixSum { type Context = actix::Context<Self>; }
+impl actix::Actor for SumIn    { type Context = actix::Context<Self>; }
 
-// impl actix::Message for Add  { type Result = () ; }
-// impl actix::Message for Show { type Result = u64; }
-
-
-// impl actix::Handler< Add > for ActixSum
-// {
-// 	type Result = actix::ResponseActFuture< Self, <Add as actix::Message>::Result >;
-
-// 	fn handle( &mut self, msg: Add, _ctx: &mut Self::Context ) -> Self::Result
-// 	{
-// 		let action = self.inner.send( Show );
-
-// 		let act = actix::fut::wrap_future::<_, Self>(action);
-
-// 		let update_self = act.map( move |result, actor, _ctx|
-// 		{
-// 			actor.total += msg.0 + result.expect( "Call SumIn" );
-// 		});
-
-// 		Box::pin( update_self )
-// 	}
-// }
+impl actix::Message for Add  { type Result = () ; }
+impl actix::Message for Show { type Result = u64; }
 
 
-// impl actix::Handler< Show > for ActixSum
-// {
-// 	type Result = u64;
+impl actix::Handler< Add > for ActixSum
+{
+	type Result = actix::ResponseActFuture< Self, <Add as actix::Message>::Result >;
 
-// 	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
-// 	{
-// 		self.total
-// 	}
-// }
+	fn handle( &mut self, msg: Add, _ctx: &mut Self::Context ) -> Self::Result
+	{
+		let action = self.inner.send( Show );
+
+		let act = actix::fut::wrap_future::<_, Self>(action);
+
+		let update_self = act.map( move |result, actor, _ctx|
+		{
+			actor.total += msg.0 + result.expect( "Call SumIn" );
+		});
+
+		Box::pin( update_self )
+	}
+}
 
 
-// impl actix::Handler< Show > for SumIn
-// {
-// 	type Result = u64;
+impl actix::Handler< Show > for ActixSum
+{
+	type Result = u64;
 
-// 	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
-// 	{
-// 		self.count += 1;
-// 		self.count
-// 	}
-// }
+	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
+	{
+		self.total
+	}
+}
+
+
+impl actix::Handler< Show > for SumIn
+{
+	type Result = u64;
+
+	fn handle( &mut self, _msg: Show, _ctx: &mut actix::Context<Self> ) -> Self::Result
+	{
+		self.count += 1;
+		self.count
+	}
+}
 
 
 pub struct Accu
