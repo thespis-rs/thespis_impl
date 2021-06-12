@@ -81,7 +81,7 @@ pub(crate) struct CallEnvelope<M> where M: Message
 	// must remain private because of unsafe Sync impl.
 	//
 	msg : M,
-	addr: oneshot::Sender< M::Return >,
+	addr: OneSender< M::Return >,
 }
 
 
@@ -92,7 +92,7 @@ unsafe impl<M: Message + Send> Sync for CallEnvelope<M> {}
 
 impl<M> CallEnvelope<M> where M: Message
 {
-	pub(crate) fn new( msg: M, addr: oneshot::Sender< M::Return > ) -> Self
+	pub(crate) fn new( msg: M, addr: OneSender< M::Return > ) -> Self
 	{
 		Self { msg, addr }
 	}
@@ -107,12 +107,12 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()>
 	{
-		let CallEnvelope { msg, addr } = *self;
+		let CallEnvelope { msg, mut addr } = *self;
 
 		let fut = < A as Handler<M> >::handle( actor, msg );
 
 
-		async
+		async move
 		{
 			// trace!( "Send from envelope" );
 
@@ -129,12 +129,12 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 
 	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<'_, ()>
 	{
-		let CallEnvelope { msg, addr } = *self;
+		let CallEnvelope { msg, mut addr } = *self;
 
 		let fut = < A as Handler<M> >::handle_local( actor, msg );
 
 
-		async
+		async move
 		{
 			// trace!( "Send from envelope" );
 

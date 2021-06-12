@@ -113,7 +113,7 @@ impl<A, M> Address<M> for AddrInner<A>
 	{
 		async move
 		{
-			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
+			let (ret_tx, ret_rx)     = oneshot::<M::Return>()                       ;
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
 			let result               = self.mb.send( envl ).await                   ;
 
@@ -128,7 +128,13 @@ impl<A, M> Address<M> for AddrInner<A>
 			//
 			ret_rx.await
 
-				.map_err( |e| ThesErr::ActorStoppedBeforeResponse{ info: self.info.clone(), src: Box::new(e) } )
+				.map_err( |_|
+				{
+					ThesErr::ActorStoppedBeforeResponse
+					{
+						info: self.info.clone()
+					}
+				})
 
 		}.boxed()
 	}

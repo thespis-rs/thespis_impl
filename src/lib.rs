@@ -124,9 +124,10 @@ mod import
 		{
 			stream  :: { Stream, StreamExt                                      } ,
 			sink    :: { Sink, SinkExt                                          } ,
-			channel :: { oneshot                                                } ,
 			future  :: { FutureExt                                              } ,
 			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, SpawnError } ,
 		},
+
+		async_oneshot::{ oneshot, Sender as OneSender } ,
 	};
 }

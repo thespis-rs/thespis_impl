@@ -18,10 +18,6 @@ pub enum ThesErr
 		/// Actor information.
 		//
 		info: Arc<ActorInfo>,
-
-		/// Source error.
-		//
-		src : DynError,
 	},
 
 
@@ -93,7 +89,7 @@ impl Error for ThesErr
 	{
 		match &self
 		{
-			Self::ActorStoppedBeforeResponse { src, .. } => Some(src.as_ref()) ,
+			Self::ActorStoppedBeforeResponse {      .. } => None ,
 			Self::MailboxClosed              { src, .. } => src.as_ref().map(|e| {let a: &(dyn Error + 'static) = e.as_ref(); a}  ) ,
 			Self::Spawn                      { src, .. } => Some(src) ,
 		}
