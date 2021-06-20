@@ -149,8 +149,6 @@ impl<A: Actor> ActorBuilder<A>
 		let (addr, mb) = self.build();
 		let fut = mb.start( actor );
 
-		// Todo, include a source error.
-		//
 		exec.spawn( async { fut.await; } )
 
 			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
@@ -180,8 +178,6 @@ impl<A: Actor> ActorBuilder<A>
 		let (addr, mb) = self.build();
 		let fut = mb.start( actor );
 
-		// Todo, include a source error.
-		//
 		let handle = exec.spawn_handle( fut )
 
 			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
@@ -201,8 +197,6 @@ impl<A: Actor> ActorBuilder<A>
 		let (addr, mb) = self.build();
 		let fut = mb.start_local( actor );
 
-		// Todo, include a source error.
-		//
 		exec.spawn_local( async { fut.await; } )
 
 			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
@@ -228,8 +222,6 @@ impl<A: Actor> ActorBuilder<A>
 		let (addr, mb) = self.build();
 		let fut = mb.start_local( actor );
 
-		// Todo, include a source error.
-		//
 		let handle = exec.spawn_handle_local( fut )
 
 			.map_err( |src| ThesErr::Spawn{ info: addr.info(), src } )?
@@ -240,12 +232,16 @@ impl<A: Actor> ActorBuilder<A>
 }
 
 
-// TODO: Print out fields.
-//
+
+
 impl<A: Actor> fmt::Debug for ActorBuilder<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "ActorBuilder" )
+		f.debug_struct( "ActorBuilder<A>" )
+
+			.field( "bounded", &self.bounded )
+			.field( "name"   , &self.name    )
+			.finish()
 	}
 }
