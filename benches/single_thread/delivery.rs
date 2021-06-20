@@ -5,7 +5,7 @@ use
 	futures           :: { executor::{ block_on }                                } ,
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { *                                                     } ,
-	actix             :: { Actor as _, ActorFuture                               } ,
+	actix             :: { Actor as _, ActorFutureExt                            } ,
 };
 
 
@@ -177,8 +177,8 @@ fn seq( c: &mut Criterion )
 				move || // setup
 				{
 					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
-					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
+					let sum                      = Sum{ total: 5, inner: sum_in_addr }              ;
+					let (sum_addr, sum_mb)       = Addr::builder().bounded( Some(BOUNDED) ).build() ;
 
 					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
@@ -202,11 +202,10 @@ fn seq( c: &mut Criterion )
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
 						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
-
 						drop( sum_addr );
 
-						sumin_handle.await;
-						sum_handle  .await;
+						drop( sum_handle  .await );
+						drop( sumin_handle.await );
 					});
 				},
 
@@ -287,8 +286,8 @@ fn seq( c: &mut Criterion )
 
 						drop( sum_addr );
 
-						sumin_handle.await;
-						sum_handle  .await;
+						drop( sum_handle  .await );
+						drop( sumin_handle.await );
 					});
 				},
 
@@ -305,7 +304,7 @@ fn seq( c: &mut Criterion )
 			(
 				||
 				{
-					actix_rt::System::new( "main" ).block_on( async move
+					actix_rt::System::new().block_on( async move
 					{
 						let sum_in      = SumIn{ count: 0 };
 						let sum_in_addr = SumIn::start( sum_in );

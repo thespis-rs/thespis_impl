@@ -5,7 +5,7 @@ use
 	thespis      :: { *                                                     } ,
 	thespis_impl :: { *                                                     } ,
 	std          :: { thread, sync::{ Arc, Mutex }                          } ,
-	actix        :: { Actor as _, ActorFuture                               } ,
+	actix        :: { Actor as _, ActorFutureExt                            } ,
 };
 
 
@@ -286,16 +286,16 @@ fn spsc( c: &mut Criterion )
 			(
 				||
 				{
-					actix_rt::System::new( "main" ).block_on( async move
+					actix_rt::System::new().block_on( async move
 					{
-						let mut sum_in_thread = actix::Arbiter::new();
-						let mut sum_thread    = actix::Arbiter::new();
+						let sum_in_thread = actix::Arbiter::new();
+						let sum_thread    = actix::Arbiter::new();
 
 						let sum_in      = SumIn{ count: 0 };
-						let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread, |_| sum_in );
+						let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread.handle(), |_| sum_in );
 
 						let sum      = ActixSum{ total: 5, inner: sum_in_addr };
-						let sum_addr = ActixSum::start_in_arbiter( &sum_thread, |_| sum );
+						let sum_addr = ActixSum::start_in_arbiter( &sum_thread.handle(), |_| sum );
 
 						for _ in 0..*msgs
 						{

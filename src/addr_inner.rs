@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, envelope::*, error::* };
+use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, ActorInfo, envelope::*, error::* };
 
 
 
@@ -13,8 +13,7 @@ use crate::{ import::*, ChanSender, BoxEnvelope, StrongCount, envelope::*, error
 pub(crate) struct AddrInner< A: Actor >
 {
 	           mb    : ChanSender<A>             ,
-	           id    : usize                     ,
-	           name  : Option< Arc<str> >        ,
+	pub(crate) info  : Arc<ActorInfo>            ,
 	pub(crate) strong: Arc<Mutex< StrongCount >> ,
 }
 
@@ -27,8 +26,7 @@ impl< A: Actor > Clone for AddrInner<A>
 		Self
 		{
 			mb    : self.mb.clone_sink() ,
-			id    : self.id              ,
-			name  : self.name.clone()    ,
+			info  : self.info.clone()    ,
 			strong: self.strong.clone()  ,
 		}
 	}
@@ -41,7 +39,7 @@ impl< A: Actor > PartialEq for AddrInner<A>
 {
 	fn eq( &self, other: &Self ) -> bool
 	{
-		self.id == other.id
+		self.info.id == other.info.id
 	}
 }
 
@@ -53,7 +51,7 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = match &self.name
+		let name = match &self.info.name
 		{
 			Some( s ) => format!( ", {}", s ) ,
 			None      => String::new()        ,
@@ -64,7 +62,7 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 			f                          ,
 			"AddrInner<{}> ~ {}{}"     ,
 			std::any::type_name::<A>() ,
-			&self.id                   ,
+			&self.info.id                   ,
 			name                       ,
 		)
 	}
@@ -79,9 +77,9 @@ impl<A> AddrInner<A> where A: Actor
 	/// This way allows more control. You need to manually make the mailbox. See the
 	/// no_rt example in the repository.
 	//
-	pub(crate) fn new( id: usize, name: Option< Arc<str> >, tx: ChanSender<A>, strong: Arc<Mutex<StrongCount>> ) -> Self
+	pub(crate) fn new( tx: ChanSender<A>, info: Arc<ActorInfo>, strong: Arc<Mutex<StrongCount>> ) -> Self
 	{
-		Self{ id, name, mb: tx, strong }
+		Self{ info, mb: tx, strong }
 	}
 
 
@@ -90,15 +88,7 @@ impl<A> AddrInner<A> where A: Actor
 	//
 	pub(crate) fn span( &self ) -> Span
 	{
-		if let Some( name ) = &self.name
-		{
-			error_span!( "actor", id = self.id, r#type = self.type_name(), name = name.as_ref() )
-		}
-
-		else
-		{
-			error_span!( "actor", id = self.id, r#type = self.type_name() )
-		}
+		self.info.span()
 	}
 
 
@@ -106,13 +96,7 @@ impl<A> AddrInner<A> where A: Actor
 	//
 	pub(crate) fn type_name( &self ) -> &str
 	{
-		let name = std::any::type_name::<A>();
-
-		match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		}
+		self.info.type_name()
 	}
 }
 
@@ -129,14 +113,14 @@ impl<A, M> Address<M> for AddrInner<A>
 	{
 		async move
 		{
-			let (ret_tx, ret_rx)     = oneshot::channel::<M::Return>()              ;
+			let (ret_tx, ret_rx)     = oneshot::<M::Return>()                       ;
 			let envl: BoxEnvelope<A> = Box::new( CallEnvelope::new( msg, ret_tx ) ) ;
 			let result               = self.mb.send( envl ).await                   ;
 
 			// MailboxClosed - either the actor panicked, or all strong addresses to the mb
 			// were dropped.
 			//
-			result.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )?;
+			result.map_err( |e| ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } )?;
 
 
 			// We have a call type message. It was successfully delivered to the mailbox,
@@ -144,7 +128,13 @@ impl<A, M> Address<M> for AddrInner<A>
 			//
 			ret_rx.await
 
-				.map_err( |_| ThesErr::ActorStoppedBeforeResponse{ actor: format!( "{:?}", self ) } )
+				.map_err( |_|
+				{
+					ThesErr::ActorStoppedBeforeResponse
+					{
+						info: self.info.clone()
+					}
+				})
 
 		}.boxed()
 	}
@@ -163,20 +153,14 @@ impl<A> Identify for AddrInner<A>
 	where  A: Actor,
 
 {
-	/// Get the id of the mailbox this address sends to. There will be exactly one for each
-	/// actor, so you can use this for uniquely identifying your actors.
-	///
-	/// This is an atomic usize that is incremented for every new mailbox. There currently
-	/// is no overflow protection.
-	//
 	fn id( &self ) -> usize
 	{
-		self.id
+		self.info.id()
 	}
 
 	fn name( &self ) -> Option< Arc<str> >
 	{
-		self.name.clone()
+		self.info.name()
 	}
 }
 
@@ -197,9 +181,9 @@ impl<A, M> Sink<M> for AddrInner<A>
 			Poll::Ready( p ) => match p
 			{
 				Ok (_) => Poll::Ready( Ok(()) ),
-				Err(_) =>
+				Err(e) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ) )
+					Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } ) )
 				}
 			}
 
@@ -215,10 +199,7 @@ impl<A, M> Sink<M> for AddrInner<A>
 		Pin::new( &mut self.mb )
 
 			.start_send( envl )
-
-			// if poll_ready wasn't called, the underlying code panics in tokio-sync.
-			//
-			.map_err( |_| ThesErr::MailboxClosed{ actor: format!("{:?}", self) } )
+			.map_err( |e| ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } )
 	}
 
 
@@ -229,9 +210,9 @@ impl<A, M> Sink<M> for AddrInner<A>
 			Poll::Ready( p ) => match p
 			{
 				Ok (_) => Poll::Ready( Ok(()) ),
-				Err(_) =>
+				Err(e) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self) } ))
+					Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } ) )
 				}
 			}
 

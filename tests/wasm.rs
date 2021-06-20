@@ -1,3 +1,11 @@
+// Tested:
+//
+// ✔ Basic send
+// ✔ Basic call
+// ✔ Send from multiple addresses
+// ✔ Call from multiple addresses
+// ✔ Stop when addresses dropped before starting the mb.
+//
 #![ cfg( target_arch = "wasm32" ) ]
 
 wasm_bindgen_test_configure!( run_in_browser );
@@ -16,7 +24,7 @@ use
 
 #[ wasm_bindgen_test ]
 //
-async fn stop_when_adresses_dropped_before_start_mb()
+async fn stop_when_addresses_dropped_before_start_mb()
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
@@ -40,7 +48,7 @@ async fn stop_when_adresses_dropped_before_start_mb()
 //
 async fn test_basic_send()
 {
-	let mut addr = Addr::builder().start( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
 
 	addr.send( Add( 10 ) ).await.unwrap_throw();
 
@@ -53,7 +61,7 @@ async fn test_basic_send()
 //
 async fn test_basic_call()
 {
-	let mut addr = Addr::builder().start( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
 
 	addr.call( Add(10) ).await.unwrap_throw();
 
@@ -66,7 +74,7 @@ async fn test_basic_call()
 //
 async fn send_from_multiple_addrs()
 {
-	let mut addr  = Addr::builder().start( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr  = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
 	let mut addr2 = addr.clone();
 
 	addr .send( Add( 10 ) ).await.unwrap_throw();
@@ -81,7 +89,7 @@ async fn send_from_multiple_addrs()
 //
 async fn call_from_multiple_addrs()
 {
-	let mut addr  = Addr::builder().start( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr  = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
 	let mut addr2 = addr.clone();
 
 	addr .call( Add( 10 ) ).await.unwrap_throw();

@@ -1,11 +1,12 @@
+//! Demonstrates that Addresses are Sinks. We can forward a stream into them.
+//
 use
 {
 	futures           :: { stream, StreamExt } ,
 	thespis           :: { *                 } ,
 	thespis_impl      :: { *                 } ,
-	futures::executor :: { ThreadPool        } ,
 	std               :: { error::Error      } ,
-	// async_executors   :: { ThreadPool        } ,
+	async_executors   :: { AsyncStd          } ,
 };
 
 
@@ -31,10 +32,14 @@ impl Handler< Count > for MyActor
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let     a      = MyActor { count: 0 };
-	let     exec   = ThreadPool::new()?;
-	let mut addr   = Addr::builder().start( a, &exec )?;
-	let     stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
+	let mut addr   = Addr::builder().spawn( a, &AsyncStd )?;
 
+	// Create an ad hoc stream.
+	//
+	let stream = stream::iter( vec![ Count, Count, Count ].into_iter() ).map( Ok );
+
+	// Have the actor process all.
+	//
 	stream.forward( &mut addr ).await?;
 
 	let total = addr.call( Count ).await?;

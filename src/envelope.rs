@@ -1,4 +1,4 @@
-use crate::{import::*};
+use crate::import::*;
 
 
 /// Wrapper for a message that is generic over actor instead of over message type.
@@ -27,6 +27,8 @@ pub trait Envelope<A> where A: Actor, Self: Send
 //
 pub(crate) struct SendEnvelope<M> where M: Message
 {
+	// must remain private because of unsafe Sync impl.
+	//
 	msg: M,
 }
 
@@ -71,20 +73,21 @@ impl<A, M> Envelope<A> for SendEnvelope<M>
 //
 pub(crate) struct CallEnvelope<M> where M: Message
 {
+	// must remain private because of unsafe Sync impl.
+	//
 	msg : M,
-	addr: oneshot::Sender< M::Return >,
+	addr: OneSender< M::Return >,
 }
 
 
 
 impl<M> CallEnvelope<M> where M: Message
 {
-	pub(crate) fn new( msg: M, addr: oneshot::Sender< M::Return > ) -> Self
+	pub(crate) fn new( msg: M, addr: OneSender< M::Return > ) -> Self
 	{
 		Self { msg, addr }
 	}
 }
-
 
 
 impl<A, M> Envelope<A> for CallEnvelope<M>
@@ -100,7 +103,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 		let fut = < A as Handler<M> >::handle( actor, msg );
 
 
-		async
+		async move
 		{
 			// trace!( "Send from envelope" );
 
@@ -122,7 +125,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 		let fut = < A as Handler<M> >::handle_local( actor, msg );
 
 
-		async
+		async move
 		{
 			// trace!( "Send from envelope" );
 

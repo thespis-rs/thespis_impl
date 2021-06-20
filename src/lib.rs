@@ -1,5 +1,4 @@
-#![ cfg_attr( nightly, feature( external_doc             ) ) ]
-#![ cfg_attr( nightly, doc    ( include = "../README.md" ) ) ]
+#![ cfg_attr( nightly, cfg_attr( nightly, doc = include_str!("../README.md") )) ]
 #![ doc = "" ] // empty doc line to handle missing doc warning when the feature is missing.
 //
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
@@ -23,6 +22,7 @@
 )]
 
 mod actor_builder ;
+mod actor_info    ;
 mod addr          ;
 mod addr_inner    ;
 mod envelope      ;
@@ -36,10 +36,10 @@ mod weak_addr     ;
 pub use
 {
 	actor_builder :: * ,
+	actor_info    :: * ,
 	addr          :: * ,
 	error         :: * ,
 	mailbox       :: * ,
-	rx_strong     :: * ,
  	weak_addr     :: * ,
 
 	// Addr::send requires SinkExt, so let's re-export that.
@@ -49,7 +49,8 @@ pub use
 
 pub(crate) use
 {
-	strong_count::* ,
+	strong_count ::* ,
+	rx_strong    ::* ,
 };
 
 use futures::Sink;
@@ -57,15 +58,15 @@ use futures::Sink;
 
 /// Shorthand for a `Send` boxed envelope.
 //
-pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A>  + Send >;
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A> + Send >;
 
 /// A boxed error type for the sink
 //
-pub type SinkError = Box< dyn std::error::Error + Send + 'static >;
+pub type DynError = Box< dyn std::error::Error + Send + Sync >;
 
 /// Type of boxed channel sender for Addr.
 //
-pub type ChanSender<A> = Box< dyn CloneSink< 'static, BoxEnvelope<A>, SinkError> >;
+pub type ChanSender<A> = Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >;
 
 /// Type of boxed channel receiver for Mailbox.
 //
@@ -111,6 +112,7 @@ mod import
 		std ::
 		{
 			fmt                                                          ,
+			error   :: { Error                                         } ,
 			convert :: { TryFrom                                       } ,
 			pin     :: { Pin                                           } ,
 			sync    :: { Arc, Mutex, atomic::{ AtomicUsize, Ordering } } ,
@@ -121,11 +123,12 @@ mod import
 
 		futures ::
 		{
-			stream  :: { Stream, StreamExt                          } ,
-			sink    :: { Sink, SinkExt                              } ,
-			channel :: { oneshot                                    } ,
-			future  :: { FutureExt                                  } ,
-			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt } ,
+			stream  :: { Stream, StreamExt                                      } ,
+			sink    :: { Sink, SinkExt                                          } ,
+			future  :: { FutureExt                                              } ,
+			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, SpawnError } ,
 		},
+
+		oneshot::{ channel as oneshot, Sender as OneSender } ,
 	};
 }

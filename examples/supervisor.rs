@@ -1,16 +1,16 @@
 //! Demonstrates one way of supervising actors with thespis.
 //! The key feature is that the mailbox future will use catch_unwind on your actor and that
 //! it will return the mailbox to you if it panics. This way you can instantiate another actor
-//! and spawn it again.
+//! and spawn it again. All addresses remain valid.
 //!
 use
 {
-	thespis           :: { *                    } ,
-	thespis_impl      :: { *                    } ,
-	tracing           :: { *                    } ,
-	futures::task     :: { Spawn, SpawnExt      } ,
-	std               :: { error::Error         } ,
-	async_executors   :: { AsyncStd, JoinHandle } ,
+	thespis         :: { *                                    } ,
+	thespis_impl    :: { *                                    } ,
+	tracing         :: { *                                    } ,
+	futures::task   :: { Spawn, SpawnExt                      } ,
+	std             :: { error::Error                         } ,
+	async_executors :: { AsyncStd, JoinHandle, SpawnHandleExt } ,
 };
 
 
@@ -84,7 +84,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 
 		let mut mb_handle = if actor.mailbox.is_none()
 		{
-			let (addr_new, mb_handle) = Addr::builder().start_handle( (actor.create)(), &AsyncStd ).unwrap();
+			let (addr_new, mb_handle) = Addr::builder().spawn_handle( (actor.create)(), &AsyncStd ).unwrap();
 
 			addr = Some(addr_new);
 
@@ -103,10 +103,15 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 			//
 			while let MailboxEnd::Mailbox(mb) = mb_handle.await
 			{
-				mb_handle = mb.start_handle( (actor.create)(), &AsyncStd ).unwrap();
+				mb_handle = AsyncStd.spawn_handle( mb.start( (actor.create)() ) ).unwrap();
 			}
 		};
 
+
+		// If you don't want these tasks to become orphaned and run off into the void, use a nursery
+		// from the async_nursery crate to manage the joinhandles and guarantee cleanup in case this
+		// actor stops.
+		//
 		self.exec.spawn( supervisor ).unwrap();
 
 		addr
@@ -124,7 +129,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	   .init()
 	;
 
-	let mut supervisor = Addr::builder().start( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?;
+	let mut supervisor = Addr::builder().spawn( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?;
 
 
 	// Here we use a closure to create new actors, but if you don't need to capture

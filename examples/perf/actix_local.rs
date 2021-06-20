@@ -41,8 +41,7 @@ impl Handler< Add > for Sum
 	fn handle( &mut self, msg: Add, _ctx: &mut Self::Context ) -> Self::Result
 	{
 		let action = self.inner.send( Show );
-
-		let act = wrap_future::<_, Self>(action);
+		let act    = wrap_future::<_, Self>(action);
 
 		let update_self = act.map( move |result, actor, _ctx|
 		{
@@ -81,19 +80,16 @@ impl Handler< Show > for SumIn
 //
 async fn main()
 {
-	let sum_in_thread = Arbiter::new();
-	let sum_thread    = Arbiter::new();
-
 	let sum_in = SumIn{ count: 0 };
-	let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread, |_| sum_in );
+	let sum_in_addr = sum_in.start();
 
 	let sum = Sum{ total: 5, inner: sum_in_addr };
-	let sum_addr = Sum::start_in_arbiter( &sum_thread, |_| sum );
+	let sum_addr = sum.start();
 
 
 	for _ in 0..MESSAGES
 	{
-		sum_addr.do_send( Add( 10 ) );
+		sum_addr.send( Add( 10 ) ).await.expect( "Send failed" );
 	}
 
 	let res = sum_addr.send( Show{} ).await.expect( "Call failed" );

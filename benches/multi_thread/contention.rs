@@ -5,7 +5,7 @@ use
 	thespis           :: { *                                          } ,
 	thespis_impl      :: { *                                          } ,
 	std               :: { thread, sync::{ Arc, Mutex }               } ,
-	actix             :: { Actor as _, ActorFuture                    } ,
+	actix             :: { Actor as _, ActorFutureExt                 } ,
 	async_std         :: { task::block_on                             } ,
 };
 
@@ -237,8 +237,8 @@ fn mpsc( c: &mut Criterion )
 						assert_eq!( total_msgs, res as usize );
 					});
 
-					sum_in_thread.join().expect( "join sum_in thread" );
-					sum_thread   .join().expect( "join sum    thread" );
+					drop( sum_thread   .join().expect( "join sum    thread" ) );
+					drop( sum_in_thread.join().expect( "join sum_in thread" ) );
 				}
 			)
 		);
@@ -252,16 +252,16 @@ fn mpsc( c: &mut Criterion )
 			(
 				||
 				{
-					actix_rt::System::new( "main" ).block_on( async move
+					actix_rt::System::new().block_on( async move
 					{
-						let mut sum_in_thread = actix::Arbiter::new();
-						let mut sum_thread    = actix::Arbiter::new();
+						let sum_in_thread = actix::Arbiter::new();
+						let sum_thread    = actix::Arbiter::new();
 
 						let sum_in      = SumIn{ count: 0 };
-						let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread, |_| sum_in );
+						let sum_in_addr = SumIn::start_in_arbiter( &sum_in_thread.handle(), |_| sum_in );
 
 						let sum      = ActixSum{ total: 5, inner: sum_in_addr };
-						let sum_addr = ActixSum::start_in_arbiter( &sum_thread, |_| sum );
+						let sum_addr = ActixSum::start_in_arbiter( &sum_thread.handle(), |_| sum );
 
 						let mut senders = Vec::with_capacity( SENDERS );
 
@@ -269,7 +269,7 @@ fn mpsc( c: &mut Criterion )
 						{
 							let addr = sum_addr.clone();
 							let arb  = actix::Arbiter::new();
-							let arb2 = arb.clone();
+							let arb2 = arb.handle();
 
 							let fut = async move
 							{
@@ -281,12 +281,12 @@ fn mpsc( c: &mut Criterion )
 								arb2.stop();
 							};
 
-							arb.send( fut.boxed() );
+							arb.spawn( fut.boxed() );
 
 							senders.push( arb );
 						}
 
-						for mut sender in senders.into_iter()
+						for sender in senders.into_iter()
 						{
 							sender.join().expect( "join sender thread" );
 						}
@@ -356,8 +356,8 @@ fn mpsc( c: &mut Criterion )
 						assert_eq!( total_msgs, res as usize );
 					});
 
-					sum_in_thread.join().expect( "join sum_in thread" );
-					sum_thread   .join().expect( "join sum    thread" );
+					drop( sum_thread   .join().expect( "join sum    thread" ) );
+					drop( sum_in_thread.join().expect( "join sum_in thread" ) );
 				}
 			)
 		);

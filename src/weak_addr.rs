@@ -1,9 +1,12 @@
-use crate::{ import::*, Addr, addr_inner::*, error::* };
+use crate::{ import::*, Addr, addr_inner::*, error::*, ActorInfo };
 
 
-/// Reference implementation of `thespis::Address<M>`.
-/// It can be used to send all message types the actor implements thespis::Handler for.
-/// An actor will be dropped when all addresses to it are dropped.
+/// This is an address with similar functionality as [`Addr`], but it does not keep the
+/// mailbox alive.
+///
+/// When using `send` or `call`, a [`ThesErr::MailboxClosed`] is returned
+/// if no more strong addresses are around. The mailbox will still finish processing messages
+/// already in the channel but [`WeakAddr`] will not accept any new messages.
 //
 pub struct WeakAddr< A: Actor >
 {
@@ -15,7 +18,7 @@ impl< A: Actor > Clone for WeakAddr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		let _s = self.span().entered();
+		let _s = self.info().span().entered();
 		trace!( "CREATE WeakAddr" );
 
 		Self
@@ -90,11 +93,11 @@ impl<A> WeakAddr<A> where A: Actor
 	}
 
 
-	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	/// Information about the actor: id, name, typename and a span for tracing.
 	//
-	pub fn span( &self ) -> Span
+	pub fn info( &self ) -> Arc<ActorInfo>
 	{
-		self.inner.span()
+		self.inner.info.clone()
 	}
 }
 
@@ -104,7 +107,7 @@ impl<A: Actor> Drop for WeakAddr<A>
 {
 	fn drop( &mut self )
 	{
-		let _s = self.span().entered();
+		let _s = self.info().span().entered();
 		trace!( "DROP WeakAddr" );
 	}
 }
@@ -169,7 +172,7 @@ impl<A, M> Sink<M> for WeakAddr<A>
 		//
 		if self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).count() == 0
 		{
-			return Poll::Ready( Err( ThesErr::MailboxClosed{ actor: format!("{:?}", self.inner) } ) )
+			return Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.inner.info.clone(), src: None } ) )
 		}
 
 		Pin::new( &mut self.inner ).poll_ready( cx )

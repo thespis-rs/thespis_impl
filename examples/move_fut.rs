@@ -1,3 +1,5 @@
+//! Showning how the futures produced by thespis can be ran to completion on any thread.
+//
 use
 {
 	std               :: { thread               } ,
@@ -36,7 +38,7 @@ impl Handler< Ping > for MyActor
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let     exec = ThreadPool::new()?;
-	let mut addr = Addr::builder().start( MyActor, &exec )?;
+	let mut addr = Addr::builder().spawn( MyActor, &exec )?;
 
 	// call uses &mut self for Addr, so it's borrowed by the future. This means we can't just
 	// move the future to another thread or spawn it directly. We have to move Addr with it.

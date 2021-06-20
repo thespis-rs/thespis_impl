@@ -1,3 +1,5 @@
+//! Spawn an actor that is !Send.
+//
 use
 {
 	thespis         :: { *                                         } ,
@@ -31,7 +33,7 @@ impl MyActor
 
 impl Handler<Ping> for MyActor
 {
-	// Implement handle_local to enable !Send actor an mailbox.
+	// Implement handle_local to enable !Send actor and mailbox.
 	//
 	#[async_fn_local] fn handle_local( &mut self, _msg: Ping ) -> String
 	{
@@ -60,7 +62,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let     exec = pool.spawner();
 
 	let actor    = MyActor { i: 3, nosend: PhantomData };
-	let mut addr = Addr::builder().start_local( actor, &exec )?;
+	let mut addr = Addr::builder().spawn_local( actor, &exec )?;
 
 	exec.spawn_local( async move
 	{

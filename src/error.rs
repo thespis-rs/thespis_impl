@@ -1,4 +1,4 @@
-use crate::import::*;
+use crate::{ import::*, ActorInfo, DynError };
 
 /// Result which has a ThesErr as error type.
 //
@@ -6,7 +6,7 @@ pub type ThesRes<T> = Result<T, ThesErr>;
 
 /// Errors that can happen in thespis_impl.
 //
-#[ derive( Debug, Clone, PartialEq, Eq ) ]
+#[ derive( Debug ) ]
 //
 pub enum ThesErr
 {
@@ -15,9 +15,9 @@ pub enum ThesErr
 	//
 	ActorStoppedBeforeResponse
 	{
-		/// The actor concerned by the error.
+		/// Actor information.
 		//
-		actor: String
+		info: Arc<ActorInfo>,
 	},
 
 
@@ -29,9 +29,13 @@ pub enum ThesErr
 	//
 	MailboxClosed
 	{
-		/// The actor concerned by the error.
+		/// Actor information.
 		//
-		actor: String
+		info: Arc<ActorInfo>,
+
+		/// Source error.
+		//
+		src : Option<DynError>,
 	},
 
 
@@ -44,7 +48,7 @@ pub enum ThesErr
 	// {
 	// 	/// The actor concerned by the error.
 	// 	//
-	// 	actor: String
+	// 	actor: ActorInfo
 	// },
 
 
@@ -52,14 +56,45 @@ pub enum ThesErr
 	//
 	Spawn
 	{
-		/// The actor concerned by the error.
+		/// Actor information.
 		//
-		actor: String
+		info: Arc<ActorInfo>,
+
+		/// Source error.
+		//
+		src : SpawnError,
 	}
 }
 
 
-impl std::error::Error for ThesErr {}
+impl ThesErr
+{
+	/// Get to the actor information of the error.
+	//
+	pub fn actor_info( &self ) -> &ActorInfo
+	{
+		match self
+		{
+			Self::ActorStoppedBeforeResponse { info, .. } => info,
+			Self::MailboxClosed              { info, .. } => info,
+			Self::Spawn                      { info, .. } => info,
+		}
+	}
+}
+
+
+impl Error for ThesErr
+{
+	fn source( &self ) -> Option< &(dyn Error + 'static) >
+	{
+		match &self
+		{
+			Self::ActorStoppedBeforeResponse {      .. } => None ,
+			Self::MailboxClosed              { src, .. } => src.as_ref().map(|e| {let a: &(dyn Error + 'static) = e.as_ref(); a}  ) ,
+			Self::Spawn                      { src, .. } => Some(src) ,
+		}
+	}
+}
 
 
 impl fmt::Display for ThesErr
@@ -68,17 +103,30 @@ impl fmt::Display for ThesErr
 	{
 		match &self
 		{
-			ThesErr::ActorStoppedBeforeResponse{ actor } =>
+			ThesErr::ActorStoppedBeforeResponse{ info, .. } =>
 
-				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", actor ),
+				write!( f, "The mailbox was closed before the result of the computation got returned upon `call`. For actor: {}", info ),
 
-			ThesErr::MailboxClosed{ actor } =>
+			ThesErr::MailboxClosed{ info, .. } =>
 
-				write!( f, "You try to use a mailbox that is already closed. For actor: {}", actor ),
+				write!( f, "You try to use a mailbox that is already closed. For actor: {}", info ),
 
-			ThesErr::Spawn{ actor } =>
+			ThesErr::Spawn{ info, .. } =>
 
-				write!( f, "Failed to spawn the mailbox for actor: {}", actor ),
+				write!( f, "Failed to spawn the mailbox for actor: {}", info ),
 		}
 	}
 }
+
+
+impl PartialEq for ThesErr
+{
+	fn eq( &self, other: &Self ) -> bool
+	{
+		   std::mem::discriminant( self ) == std::mem::discriminant( other )
+		&& self.actor_info()              == other.actor_info()
+	}
+}
+
+impl Eq for ThesErr {}
+

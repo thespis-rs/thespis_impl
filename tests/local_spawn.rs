@@ -12,7 +12,7 @@ mod common;
 
 use
 {
-	common  :: { *, actors::*, import::*                  } ,
+	common  :: { actors::*, import::*                     } ,
 	futures :: { task::LocalSpawnExt, executor::LocalPool } ,
 };
 
@@ -32,7 +32,7 @@ fn test_not_send_actor() -> Result<(), DynError >
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let mut addr = Addr::builder().start_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
+		let mut addr = Addr::builder().spawn_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send" );
 
@@ -64,7 +64,7 @@ fn test_send_actor() -> Result<(), DynError >
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let mut addr = Addr::builder().start_local( Sum(5), &exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::builder().spawn_local( Sum(5), &exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 
@@ -95,7 +95,7 @@ fn test_manually_not_send_actor() -> Result<(), DynError >
 
 		let (tx, rx) = mpsc::unbounded()                                         ;
 		let mb       = Mailbox::new( Some("SumNoSend"), Box::new(rx) )           ;
-		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError )) ;
 		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
@@ -132,7 +132,7 @@ fn test_manually_send_actor() -> Result<(), DynError >
 		let actor    = Sum(5)                                                    ;
 		let (tx, rx) = mpsc::unbounded()                                         ;
 		let mb       = Mailbox::new( Some("Sum"), Box::new(rx) )                 ;
-		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as SinkError )) ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError )) ;
 		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );

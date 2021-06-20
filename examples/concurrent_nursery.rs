@@ -1,17 +1,15 @@
 // Demonstrates how to process messages concurrently if no mutable state is needed.
+// This time we use a nursery to make sure that none of the spawned subtasks outlive
+// the lifetime of our actor.
 //
 use
 {
 	thespis           :: { *                                                 } ,
 	thespis_impl      :: { *                                                 } ,
-	std               :: { error::Error                                      } ,
 	futures           :: { FutureExt, task::{ SpawnError }                   } ,
 	async_executors   :: { AsyncStd, SpawnHandle, SpawnHandleExt, JoinHandle } ,
 	async_nursery     :: { Nursery, NurseErr, Nurse, NurseExt                } ,
 };
-
-
-type DynError = Box<dyn Error + Send + Sync>;
 
 
 #[ derive( Actor ) ]
@@ -101,7 +99,7 @@ impl Handler<Ping> for MyActor
 async fn main() -> Result< (), DynError >
 {
 	let     actor = MyActor::new( Box::new(AsyncStd) )?;
-	let mut addr  = Addr::builder().start( actor, &AsyncStd )?;
+	let mut addr  = Addr::builder().spawn( actor, &AsyncStd )?;
 
 	// Admittedly, this looks a bit weird. Call is fallible, and it returns a result over
 	// the NurseErr, since the handler needs to spawn and spawning is fallible.

@@ -1,4 +1,4 @@
-use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender };
+use crate::{ import::*, Addr, ChanReceiver, RxStrong, ChanSender, ActorInfo };
 
 
 /// Type returned to you by the mailbox when it ends. Await the JoinHandle returned
@@ -9,6 +9,9 @@ use crate::{ import::*, error::*, Addr, ChanReceiver, RxStrong, ChanSender };
 pub enum MailboxEnd<A: Actor>
 {
 	/// When you get the Actor variant, you actor stopped because all addresses to it were dropped.
+	/// You can however re-use this actor and spawn it on a new mailbox. Also beware if you count on
+	/// it being dropped (eg. because it holds addresses to other mailboxes you want to shut down).
+	/// You still need to drop it before it gets cleaned up.
 	//
 	Actor( A ) ,
 
@@ -26,13 +29,8 @@ pub enum MailboxEnd<A: Actor>
 //
 pub struct Mailbox<A> where A: Actor
 {
-	pub(crate) rx : RxStrong<A> ,
-
-	/// This creates a unique id for every mailbox in the program. This way recipients
-	/// can impl Eq to say whether they refer to the same actor.
-	//
-	pub(crate) id   : usize              ,
-	pub(crate) name : Option< Arc<str> > ,
+	rx  : RxStrong<A>    ,
+	info: Arc<ActorInfo> ,
 }
 
 
@@ -51,51 +49,26 @@ impl<A> Mailbox<A> where A: Actor
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
 		let rx = RxStrong::new(rx);
+		let info = Arc::new( ActorInfo::new::<A>( id, name.map( |n| n.into() ) ) );
 
-		Self
-		{
-			rx,
-			id,
-			name: name.map( |n| n.into() ),
-		}
+		Self { rx, info }
 	}
 
 
-	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
+	/// Getter for [`ActorInfo`].
 	//
-	pub fn span( &self ) -> Span
+	pub fn info( &self ) -> &ActorInfo
 	{
-		if let Some( name ) = &self.name
-		{
-			error_span!( "actor", id = self.id, r#type = self.type_name(), name = name.as_ref() )
-		}
-
-		else
-		{
-			error_span!( "actor", id = self.id, r#type = self.type_name() )
-		}
+		&self.info
 	}
 
-
-	/// The type of the actor.
-	//
-	pub fn type_name( &self ) -> &str
-	{
-		let name = std::any::type_name::<A>();
-
-		match name.split( "::" ).last()
-		{
-			Some(t) => t,
-			None    => name,
-		}
-	}
 
 
 	/// Create an `Addr` to send messages to this mailbox.
 	//
 	pub fn addr( &self, tx: ChanSender<A> ) -> Addr<A>
 	{
-		Addr::new( self.id, self.name.clone(), tx, self.rx.count() )
+		Addr::new( tx, self.info.clone(), self.rx.count() )
 	}
 
 
@@ -117,7 +90,7 @@ impl<A> Mailbox<A> where A: Actor
 
 		where A: Send
 	{
-		let span = self.span();
+		let span = self.info.span();
 
 		async
 		{
@@ -149,23 +122,11 @@ impl<A> Mailbox<A> where A: Actor
 	}
 
 
-	/// Run the mailbox with a non-Send Actor. Returns a future that processes incoming messages. If the
-	/// actor panics during message processing, this will return the mailbox to you
-	/// so you can supervise actors by re-initiating your actor and then calling this method
-	/// on the mailbox again. All addresses will remain valid in this scenario.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// Warning: if you drop the future returned by this function in order to stop an actor,
-	/// [`Actor::stopped`] will not be called.
+	/// Exactly as [`Mailbox::start`], but works for `!Send` actors.
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> MailboxEnd<A>
 	{
-		let span = self.span();
+		let span = self.info.span();
 
 		async
 		{
@@ -194,103 +155,21 @@ impl<A> Mailbox<A> where A: Actor
 		.instrument( span )
 		.await
 	}
-
-
-	/// Spawn the mailbox. Use this if you don't want to supervise the actor and don't want a
-	/// JoinHandle.
-	//
-	pub fn spawn( self, actor: A, exec: &impl Spawn ) -> ThesRes<()>
-
-		where A: Send
-
-	{
-		let id = self.id;
-
-		exec.spawn( self.start(actor).map(|_|()) )
-
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
-	}
-
-
-	/// Spawn the mailbox. You get a joinhandle you can await to detect when the mailbox
-	/// terminates and which will return you the mailbox if the actor panicked during
-	/// message processing. You can use this to supervise the actor.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
-	//
-	pub fn start_handle( self, actor: A, exec: &impl SpawnHandle< MailboxEnd<A> > ) ->
-
-		ThesRes< JoinHandle< MailboxEnd<A> > >
-
-		where A: Send
-
-	{
-		let id = self.id;
-
-		exec.spawn_handle( self.start(actor) )
-
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
-	}
-
-
-	/// Spawn the mailbox on the current thread. Use this if you don't want to supervise the actor and don't want a
-	/// JoinHandle.
-	//
-	pub fn spawn_local( self, actor: A, exec: &impl LocalSpawn ) -> ThesRes<()>
-	{
-		let id = self.id;
-
-		exec.spawn_local( self.start_local( actor ).map(|_|()) )
-
-			.map_err( |_e| ThesErr::Spawn{ /*source: e.into(), */actor: format!("{:?}", id) } )
-	}
-
-
-	/// Spawn the mailbox on the current thread. You get a joinhandle you can await to detect when the mailbox
-	/// terminates and which will return you the mailbox if the actor panicked during
-	/// message processing. You can use this to supervise the actor.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// If you drop the handle, the mailbox will be dropped and [`Actor::stopped`] will not be called.
-	//
-	pub fn spawn_handle_local( self, actor: A, exec: &impl LocalSpawnHandle< MailboxEnd<A> > )
-
-		-> ThesRes< JoinHandle< MailboxEnd<A> > >
-
-	{
-		let id = self.id;
-
-		exec.spawn_handle_local( self.start_local( actor ) )
-
-			.map_err( |_e| ThesErr::Spawn{ actor: format!("{:?}", id) } )
-	}
 }
-
 
 
 impl<A: Actor> Identify for Mailbox<A>
 {
 	fn id( &self ) -> usize
 	{
-		self.id
+		self.info.id
 	}
 
 
 
 	fn name( &self ) -> Option<Arc<str>>
 	{
-		self.name.clone()
+		self.info.name.clone()
 	}
 }
 
@@ -299,7 +178,7 @@ impl<A: Actor> fmt::Debug for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.id )
+		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.info.id )
 	}
 }
 
@@ -308,10 +187,10 @@ impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		match &self.name
+		match &self.info.name
 		{
-			Some(n) => write!( f, "{} ({}, {})", self.type_name(), self.id, n ) ,
-			None    => write!( f, "{} ({})"    , self.type_name(), self.id    ) ,
+			Some(n) => write!( f, "{} ({}, {})", self.info.type_name(), self.info.id, n ) ,
+			None    => write!( f, "{} ({})"    , self.info.type_name(), self.info.id    ) ,
 		}
 	}
 }

@@ -7,7 +7,7 @@ use crate::{ import::*, BoxEnvelope, ChanReceiver, StrongCount };
 ///
 /// A waker is stored in case the strong count goes to zero while we are already pending.
 //
-pub struct RxStrong<A>
+pub(crate) struct RxStrong<A>
 {
 	rx   : ChanReceiver<A>,
 	count: Arc<Mutex< StrongCount >>,
@@ -19,7 +19,7 @@ impl<A> RxStrong<A> where A: Actor
 	/// Create a new receiver for a mailbox. The `StrongCount` must be a clone from the
 	/// one provided to any Addr that are to communicate with this mailbox.
 	//
-	pub fn new( rx: ChanReceiver<A> ) -> Self
+	pub(crate) fn new( rx: ChanReceiver<A> ) -> Self
 	{
 		let count = Arc::new( Mutex::new( StrongCount::new() ) );
 		Self{ rx, count }
@@ -41,10 +41,14 @@ impl<A> Stream for RxStrong<A> where A: Actor
 
 	fn poll_next( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll< Option<Self::Item> >
 	{
+		let size_hint = self.rx.size_hint();
+
 		match Pin::new( &mut self.rx ).poll_next( cx )
 		{
 			Poll::Pending =>
 			{
+				trace!( "size hint is: {:?}", size_hint );
+
 				let count = self.count.lock().expect( "Mutex<StrongCount> poisoned" );
 
 				if count.count() == 0
