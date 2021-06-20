@@ -61,7 +61,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 
 		let mut mb_handle = if actor.inbox.is_none()
 		{
-			let (addr_new, mb_handle) = Addr::builder().start_handle( (actor.create)(), &AsyncStd ).unwrap();
+			let (addr_new, mb_handle) = Addr::builder().spawn_handle( (actor.create)(), &AsyncStd ).unwrap();
 
 			addr = Some(addr_new);
 
@@ -93,7 +93,7 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 //
 async fn supervise() -> Result< (), DynError >
 {
-	let (mut addr, mut mb_handle) = Addr::builder().start_handle( Counter, &AsyncStd )?;
+	let (mut addr, mut mb_handle) = Addr::builder().spawn_handle( Counter, &AsyncStd )?;
 
 
 	let supervisor = async move
@@ -123,7 +123,7 @@ async fn supervise() -> Result< (), DynError >
 //
 async fn supervisor() -> Result< (), DynError >
 {
-	let mut supervisor = Addr::builder().start( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?;
+	let mut supervisor = Addr::builder().spawn( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?;
 
 	let supervise = Supervise
 	{

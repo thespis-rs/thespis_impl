@@ -21,7 +21,7 @@ use
 
 async fn move_addr_send() -> Result<u64, DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 	let mut addr2            = addr.clone();
 
 	thread::spawn( move ||
@@ -42,7 +42,7 @@ async fn move_addr_send() -> Result<u64, DynError >
 
 async fn move_addr() -> Result<u64, DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 	let mut addr2            = addr.clone();
 
 	let (tx, rx) = oneshot::channel::<()>();
@@ -72,7 +72,7 @@ async fn move_addr() -> Result<u64, DynError >
 
 async fn move_call() -> Result<u64, DynError >
 {
-	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr  = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();
 	let (tx, rx)  = oneshot::channel::<()>();
 	let call  = async move { addr2.call( Add( 10 ) ).await.expect( "call addr2" ) };

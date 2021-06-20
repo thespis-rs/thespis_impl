@@ -32,7 +32,7 @@ fn test_not_send_actor() -> Result<(), DynError >
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let mut addr = Addr::builder().start_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
+		let mut addr = Addr::builder().spawn_local( SumNoSend::new(5), &exec2 ).expect( "start mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send" );
 
@@ -64,7 +64,7 @@ fn test_send_actor() -> Result<(), DynError >
 		// If we inline this in the next statement, it actually compiles with rt::spawn( program ) instead
 		// of spawn_local.
 		//
-		let mut addr = Addr::builder().start_local( Sum(5), &exec2 ).expect( "spawn actor mailbox" );
+		let mut addr = Addr::builder().spawn_local( Sum(5), &exec2 ).expect( "spawn actor mailbox" );
 
 		addr.send( Add( 10 ) ).await.expect( "Send failed" );
 

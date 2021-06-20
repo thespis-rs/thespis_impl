@@ -64,7 +64,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 
 
 	let     a     = MyActor{ seed: "seed - ".into() };
-	let mut addr  = Addr::builder().start( a, &AsyncStd )?;
+	let mut addr  = Addr::builder().spawn( a, &AsyncStd )?;
 	let mut addr2 = addr.clone();
 
 	trace!( "calling addr.call( Ping('ping') )" );

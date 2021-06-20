@@ -142,7 +142,7 @@ impl<A: Actor> ActorBuilder<A>
 	/// If you want more control over stopping the actor, look at [`ActorBuilder::start_handle`] or
 	/// [`ActorBuilder::build`].
 	//
-	pub fn start( self, actor: A, exec: &dyn Spawn ) -> Result< Addr<A>, ThesErr >
+	pub fn spawn( self, actor: A, exec: &dyn Spawn ) -> Result< Addr<A>, ThesErr >
 
 		where A: Send
 	{
@@ -170,7 +170,7 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle( self, actor: A, exec: & dyn SpawnHandle< MailboxEnd<A> > )
+	pub fn spawn_handle( self, actor: A, exec: & dyn SpawnHandle< MailboxEnd<A> > )
 
 		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 
@@ -196,7 +196,7 @@ impl<A: Actor> ActorBuilder<A>
 	/// If you want more control over stopping the actor, look at [`ActorBuilder::start_handle_local`] or
 	/// [`ActorBuilder::build`].
 	//
-	pub fn start_local( self, actor: A, exec: & dyn LocalSpawn ) -> Result< Addr<A>, ThesErr >
+	pub fn spawn_local( self, actor: A, exec: & dyn LocalSpawn ) -> Result< Addr<A>, ThesErr >
 	{
 		let (addr, mb) = self.build();
 		let fut = mb.start_local( actor );
@@ -220,7 +220,7 @@ impl<A: Actor> ActorBuilder<A>
 	//
 	#[allow(clippy::type_complexity)] // for return type
 	//
-	pub fn start_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< MailboxEnd<A> > )
+	pub fn spawn_handle_local( self, actor: A, exec: & dyn LocalSpawnHandle< MailboxEnd<A> > )
 
 		-> Result< (Addr<A>, JoinHandle< MailboxEnd<A> >), ThesErr >
 

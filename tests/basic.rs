@@ -22,7 +22,7 @@ use
 //
 async fn test_basic_send() -> Result<(), DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 
 	addr.send( Add( 10 ) ).await?;
 
@@ -37,7 +37,7 @@ async fn test_basic_send() -> Result<(), DynError >
 //
 async fn test_basic_call() -> Result<(), DynError >
 {
-	let mut addr = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 
 	addr.call( Add(10) ).await?;
 
@@ -52,7 +52,7 @@ async fn test_basic_call() -> Result<(), DynError >
 //
 async fn send_from_multiple_addrs() -> Result<(), DynError >
 {
-	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr  = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();
 
 	addr .send( Add( 10 ) ).await?;
@@ -69,7 +69,7 @@ async fn send_from_multiple_addrs() -> Result<(), DynError >
 //
 async fn call_from_multiple_addrs() -> Result<(), DynError >
 {
-	let mut addr  = Addr::builder().start( Sum(5), &AsyncStd )?;
+	let mut addr  = Addr::builder().spawn( Sum(5), &AsyncStd )?;
 	let mut addr2 = addr.clone();
 
 	addr .call( Add( 10 ) ).await?;

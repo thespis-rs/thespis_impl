@@ -29,7 +29,7 @@ impl Handler<Create> for Creator
 
 		async { trace!( "i am awaited within the handler on Creator" ); }.await;
 
-		let mut created = Addr::builder().name( "created".into() ).start( Created, &AsyncStd ).expect( "create new actor" );
+		let mut created = Addr::builder().name( "created".into() ).spawn( Created, &AsyncStd ).expect( "create new actor" );
 
 		created.call( Create ).await.expect( "call created" );
 	}
@@ -115,7 +115,7 @@ impl Handler<Create> for CreatorLocal
 		async { trace!( "i am awaited within the handler on CreatorLocal" ); }.await;
 
 
-		let mut created = Addr::builder().start_local( CreatedLocal{ exec: self.exec.clone() }, &self.exec ).expect( "create new actor" );
+		let mut created = Addr::builder().spawn_local( CreatedLocal{ exec: self.exec.clone() }, &self.exec ).expect( "create new actor" );
 
 		created.call( Create ).await.expect( "call created" );
 	}
@@ -164,7 +164,7 @@ impl Handler<Create> for CreatedLocal
 
 // 	let task = async
 // 	{
-// 		let mut addr = Addr::builder().start_local( Creator, &exec ).expect( "start Creator" );
+// 		let mut addr = Addr::builder().spawn_local( Creator, &exec ).expect( "start Creator" );
 
 // 		addr.call( Create ).await.expect( "call Creator" );
 // 	};

@@ -1,7 +1,5 @@
 ## TODO
 
-- rename ActorBuilder::start... to spawn?
-
 - evaluate identify trait and maybe impl through ActorInfo.
 
 - verify log spans.
