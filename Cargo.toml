@@ -67,18 +67,22 @@ version = "^0.2"
 [[example]]
 name = "actix_perf"
 path = "examples/perf/actix.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "actix_local_perf"
 path = "examples/perf/actix_local.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "actix_mpsc_perf"
 path = "examples/perf/actix_mpsc.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "actix_unbounded_perf"
 path = "examples/perf/actix_unbounded.rs"
+required-features = ["not_wasm"]
 
 [[example]]
 name = "thespis_perf"
