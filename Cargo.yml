@@ -71,7 +71,7 @@ lib:
 
 dependencies:
 
-  thespis            : { version: 0.1.0-alpha }
+  thespis            : { version: ^0.1 }
   futures            : { version: ^0.3, features: [ std, compat ], default-features: false }
   tracing            : ^0.1
   tracing-futures    : { version: ^0.2, features: [ futures-03 ] }

@@ -40,7 +40,7 @@ version = "^0.3"
 version = "^0.1"
 
 [dependencies.thespis]
-version = "0.1.0-alpha"
+version = "^0.1"
 
 [dependencies.tracing-futures]
 features = ["futures-03"]
