@@ -8,6 +8,6 @@ set -e
 #
 set -x
 
-bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/master/travis-install.sh)
+bash <(curl https://raw.githubusercontent.com/xd009642/tarpaulin/release/travis-install.sh)
 cargo tarpaulin --all-features --out Xml
 bash <(curl -s https://codecov.io/bash)
