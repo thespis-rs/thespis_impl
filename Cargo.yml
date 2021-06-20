@@ -123,15 +123,15 @@ target:
       tokio-stream      : { version: ^0.1 }
 
 
-patch:
-  crates-io:
-    futures-task: { version: ^0.3, path: ../../RUST/futures-rs/futures-task }
-    futures-io: { version: ^0.3, path: ../../RUST/futures-rs/futures-io }
-    futures-core: { version: ^0.3, path: ../../RUST/futures-rs/futures-core }
-    futures-sink: { version: ^0.3, path: ../../RUST/futures-rs/futures-sink }
-    futures-util: { version: ^0.3, path: ../../RUST/futures-rs/futures-util }
-    futures-executor: { version: ^0.3, path: ../../RUST/futures-rs/futures-executor }
-    futures: { version: ^0.3, path: ../../RUST/futures-rs/futures }
+# patch:
+#   crates-io:
+#     futures-task: { version: ^0.3, path: ../../RUST/futures-rs/futures-task }
+#     futures-io: { version: ^0.3, path: ../../RUST/futures-rs/futures-io }
+#     futures-core: { version: ^0.3, path: ../../RUST/futures-rs/futures-core }
+#     futures-sink: { version: ^0.3, path: ../../RUST/futures-rs/futures-sink }
+#     futures-util: { version: ^0.3, path: ../../RUST/futures-rs/futures-util }
+#     futures-executor: { version: ^0.3, path: ../../RUST/futures-rs/futures-executor }
+#     futures: { version: ^0.3, path: ../../RUST/futures-rs/futures }
 
 build-dependencies:
 
@@ -203,9 +203,9 @@ example:
     path              : examples/concurrent_nursery.rs
     required-features : [ not_wasm ]
 
-  - name              : deadlock_prio
-    path              : examples/deadlock_prio.rs
-    required-features : [ not_wasm ]
+  # - name              : deadlock_prio
+  #   path              : examples/deadlock_prio.rs
+  #   required-features : [ not_wasm ]
 
   - name              : desugar
     path              : examples/desugar.rs

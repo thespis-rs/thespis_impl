@@ -128,11 +128,6 @@ path = "examples/concurrent_nursery.rs"
 required-features = ["not_wasm"]
 
 [[example]]
-name = "deadlock_prio"
-path = "examples/deadlock_prio.rs"
-required-features = ["not_wasm"]
-
-[[example]]
 name = "desugar"
 path = "examples/desugar.rs"
 required-features = ["not_wasm"]
@@ -204,36 +199,6 @@ version = "0.1.0-alpha.3"
 [package.metadata.docs.rs]
 all-features = true
 targets = []
-
-[patch]
-[patch.crates-io]
-[patch.crates-io.futures]
-path = "../../RUST/futures-rs/futures"
-version = "^0.3"
-
-[patch.crates-io.futures-core]
-path = "../../RUST/futures-rs/futures-core"
-version = "^0.3"
-
-[patch.crates-io.futures-executor]
-path = "../../RUST/futures-rs/futures-executor"
-version = "^0.3"
-
-[patch.crates-io.futures-io]
-path = "../../RUST/futures-rs/futures-io"
-version = "^0.3"
-
-[patch.crates-io.futures-sink]
-path = "../../RUST/futures-rs/futures-sink"
-version = "^0.3"
-
-[patch.crates-io.futures-task]
-path = "../../RUST/futures-rs/futures-task"
-version = "^0.3"
-
-[patch.crates-io.futures-util]
-path = "../../RUST/futures-rs/futures-util"
-version = "^0.3"
 
 [target]
 [target."cfg(not(target_arch = \"wasm32\"))"]
