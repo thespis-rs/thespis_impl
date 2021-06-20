@@ -30,22 +30,6 @@ impl ActorInfo
 	}
 
 
-	/// A unique identifier for each actor in the process.
-	//
-	pub fn id( &self ) -> usize
-	{
-		self.id
-	}
-
-
-	/// The name given to this actor when it's maibox was created.
-	//
-	pub fn name( &self ) -> &Option< Arc<str> >
-	{
-		&self.name
-	}
-
-
 	/// Generate typename from generic.
 	//
 	pub fn gen_name<A: Actor>() -> String
@@ -83,6 +67,22 @@ impl ActorInfo
 		}
 	}
 }
+
+
+
+impl Identify for ActorInfo
+{
+	fn id( &self ) -> usize
+	{
+		self.id
+	}
+
+	fn name( &self ) -> Option< Arc<str> >
+	{
+		self.name.clone()
+	}
+}
+
 
 
 impl From<ActorInfo> for String

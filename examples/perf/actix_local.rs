@@ -41,8 +41,7 @@ impl Handler< Add > for Sum
 	fn handle( &mut self, msg: Add, _ctx: &mut Self::Context ) -> Self::Result
 	{
 		let action = self.inner.send( Show );
-
-		let act = wrap_future::<_, Self>(action);
+		let act    = wrap_future::<_, Self>(action);
 
 		let update_self = act.map( move |result, actor, _ctx|
 		{

@@ -153,20 +153,14 @@ impl<A> Identify for AddrInner<A>
 	where  A: Actor,
 
 {
-	/// Get the id of the mailbox this address sends to. There will be exactly one for each
-	/// actor, so you can use this for uniquely identifying your actors.
-	///
-	/// This is an atomic usize that is incremented for every new mailbox. There currently
-	/// is no overflow protection.
-	//
 	fn id( &self ) -> usize
 	{
-		self.info.id
+		self.info.id()
 	}
 
 	fn name( &self ) -> Option< Arc<str> >
 	{
-		self.info.name.clone()
+		self.info.name()
 	}
 }
 
