@@ -98,7 +98,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 {
 	fn handle( self: Box<Self>, actor: &mut A ) -> Return<'_, ()>
 	{
-		let CallEnvelope { msg, mut addr } = *self;
+		let CallEnvelope { msg, addr } = *self;
 
 		let fut = < A as Handler<M> >::handle( actor, msg );
 
@@ -120,7 +120,7 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 
 	fn handle_local( self: Box<Self>, actor: &mut A ) -> ReturnNoSend<'_, ()>
 	{
-		let CallEnvelope { msg, mut addr } = *self;
+		let CallEnvelope { msg, addr } = *self;
 
 		let fut = < A as Handler<M> >::handle_local( actor, msg );
 

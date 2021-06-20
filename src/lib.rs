@@ -129,6 +129,6 @@ mod import
 			task    :: { Spawn, SpawnExt, LocalSpawn, LocalSpawnExt, SpawnError } ,
 		},
 
-		async_oneshot::{ oneshot, Sender as OneSender } ,
+		oneshot::{ channel as oneshot, Sender as OneSender } ,
 	};
 }
