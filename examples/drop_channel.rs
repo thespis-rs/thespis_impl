@@ -58,7 +58,24 @@ impl Handler< Show > for Accu
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let (tx, rx) = ring_channel( NonZeroUsize::new(MPSC_BOUNDED).unwrap() );
-	let tx       = tx.sink_map_err( |e| Box::new(e) as DynError );
+
+
+	let tx = tx.sink_map_err( |_|
+	{
+		// The error from ring_channel is not Sync, because it contains the message.
+		// This is a problem because we don't require messages to be Sync. That would
+		// imply making thespis unsafe by addin a Sync impl to our wrapper for messages
+		// on the channel.
+		//
+		// Alternatively, we just don't count on recovering the message and construct a
+		// simple io error here. Note that we could have wanted to use ThesErr::MailboxClosed,
+		// but that requires ActorInfo and as we haven't spawned our actor yet, we don't really
+		// know our ActorInfo. You can still do it by not using the builder and first creating
+		// the Mailbox manually, however I don't think it's worth it.
+		//
+		let error = std::io::Error::from(std::io::ErrorKind::NotConnected);
+		Box::new(error) as DynError
+	});
 
 	let (mut accu_addr , accu_mb) = Addr::builder()
 

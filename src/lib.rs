@@ -3,6 +3,7 @@
 //
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
 #![ deny   ( missing_docs                                   ) ]
+#![ forbid ( unsafe_code                                    ) ]
 #![ allow  ( clippy::suspicious_else_formatting             ) ]
 
 #![ warn
@@ -57,7 +58,7 @@ use futures::Sink;
 
 /// Shorthand for a `Send` boxed envelope.
 //
-pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A> + Send + Sync>;
+pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A> + Send >;
 
 /// A boxed error type for the sink
 //

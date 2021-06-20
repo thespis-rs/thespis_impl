@@ -205,9 +205,6 @@ impl<A, M> Sink<M> for AddrInner<A>
 		Pin::new( &mut self.mb )
 
 			.start_send( envl )
-
-			// if poll_ready wasn't called, the underlying code panics in tokio-sync.
-			//
 			.map_err( |e| ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } )
 	}
 

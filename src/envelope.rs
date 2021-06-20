@@ -43,11 +43,6 @@ impl<M> SendEnvelope<M> where M: Message
 }
 
 
-// M will never be accessed by reference, nor from multiple threads at the same time.
-//
-unsafe impl<M: Message + Send> Sync for SendEnvelope<M> {}
-
-
 
 impl<A, M> Envelope<A> for SendEnvelope<M>
 
@@ -84,10 +79,6 @@ pub(crate) struct CallEnvelope<M> where M: Message
 	addr: OneSender< M::Return >,
 }
 
-
-// M will never be accessed by reference, nor from multiple threads at the same time.
-//
-unsafe impl<M: Message + Send> Sync for CallEnvelope<M> {}
 
 
 impl<M> CallEnvelope<M> where M: Message
