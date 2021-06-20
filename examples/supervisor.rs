@@ -107,6 +107,11 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 			}
 		};
 
+
+		// If you don't want these tasks to become orphaned and run off into the void, use a nursery
+		// from the async_nursery crate to manage the joinhandles and guarantee cleanup in case this
+		// actor stops.
+		//
 		self.exec.spawn( supervisor ).unwrap();
 
 		addr
