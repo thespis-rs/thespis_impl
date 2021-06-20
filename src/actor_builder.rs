@@ -110,7 +110,7 @@ impl<A: Actor> ActorBuilder<A>
 			if let Some( bounded ) = self.bounded
 			{
 				let (tx, rx) = futures::channel::mpsc::channel( bounded );
-				let tx       = Box::new( tx.sink_map_err( |e| -> DynError { Box::new(e) } ) );
+				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
 
 				self.tx = Some( Box::new(tx) );
 				self.rx = Some( Box::new(rx) );
@@ -119,7 +119,7 @@ impl<A: Actor> ActorBuilder<A>
 			else
 			{
 				let (tx, rx) = futures::channel::mpsc::unbounded();
-				let tx       = Box::new( tx.sink_map_err( |e| -> DynError { Box::new(e) } ) );
+				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
 
 				self.tx = Some( Box::new(tx) );
 				self.rx = Some( Box::new(rx) );
