@@ -40,7 +40,6 @@ pub use
 	addr          :: * ,
 	error         :: * ,
 	mailbox       :: * ,
-	rx_strong     :: * ,
  	weak_addr     :: * ,
 
 	// Addr::send requires SinkExt, so let's re-export that.
@@ -50,7 +49,8 @@ pub use
 
 pub(crate) use
 {
-	strong_count::* ,
+	strong_count ::* ,
+	rx_strong    ::* ,
 };
 
 use futures::Sink;

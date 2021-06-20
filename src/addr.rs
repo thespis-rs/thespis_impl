@@ -1,9 +1,9 @@
 use crate::{ import::*, ActorBuilder, ActorInfo, ChanSender, StrongCount, WeakAddr, addr_inner::*, error::* };
 
 
-/// Reference implementation of `thespis::Address<M>`.
-/// It can be used to send all message types the actor implements thespis::Handler for.
-/// An actor will be dropped when all addresses to it are dropped.
+/// Reference implementation of [`thespis::Address<M>`].
+/// It can be used to send all message types the actor implements [`thespis::Handler`] for.
+/// When all [`Addr`] to a mailbox are dropped, the mailbox will end.
 //
 pub struct Addr< A: Actor >
 {
@@ -15,7 +15,7 @@ impl< A: Actor > Clone for Addr<A>
 {
 	fn clone( &self ) -> Self
 	{
-		let _s = self.span().entered();
+		let _s = self.info().span().entered();
 		trace!( "CREATE (clone) Addr" );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
@@ -110,7 +110,7 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Create a new WeakAddr.
+	/// Create a new WeakAddr. This is an address that does not keep the mailbox alive.
 	//
 	pub fn weak( &self ) -> WeakAddr<A>
 	{
@@ -118,15 +118,7 @@ impl<A> Addr<A> where A: Actor
 	}
 
 
-	/// Obtain a [`tracing::Span`] identifying the actor with it's id and it's name if it has one.
-	//
-	pub fn span( &self ) -> Span
-	{
-		self.inner.span()
-	}
-
-
-	/// Information about the actor, id, name and typename.
+	/// Information about the actor: id, name, typename and a span for tracing.
 	//
 	pub fn info( &self ) -> Arc<ActorInfo>
 	{
@@ -140,7 +132,7 @@ impl<A: Actor> Drop for Addr<A>
 {
 	fn drop( &mut self )
 	{
-		let _s = self.span().entered();
+		let _s = self.info().span().entered();
 		trace!( "DROP Addr" );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).decrement();

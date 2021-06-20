@@ -53,8 +53,6 @@ Please check out the [changelog](https://github.com/thespis-rs/thespis_impl/blob
 
 This crate has few dependencies. Cargo will automatically handle it's dependencies for you.
 
-There is one optional feature: `tokio_channel`. This causes the `ActorBuilder` to use tokio channels by default instead of futures channels.
-
 
 ### Security
 

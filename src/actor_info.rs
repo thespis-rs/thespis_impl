@@ -2,7 +2,7 @@ use crate::import::*;
 
 
 
-/// Information about an actor, id, name and type_name.
+/// Information about an actor, id, name and type_name. It implements [`Identify`].
 /// Can also generate a span for tracing.
 //
 #[ derive( Debug, Clone, PartialEq, Eq, Hash ) ]
@@ -32,7 +32,7 @@ impl ActorInfo
 
 	/// Generate typename from generic.
 	//
-	pub fn gen_name<A: Actor>() -> String
+	fn gen_name<A: Actor>() -> String
 	{
 		let name = std::any::type_name::<A>();
 

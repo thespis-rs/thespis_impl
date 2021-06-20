@@ -9,6 +9,9 @@ use crate::{ import::*, Addr, ChanReceiver, RxStrong, ChanSender, ActorInfo };
 pub enum MailboxEnd<A: Actor>
 {
 	/// When you get the Actor variant, you actor stopped because all addresses to it were dropped.
+	/// You can however re-use this actor and spawn it on a new mailbox. Also beware if you count on
+	/// it being dropped (eg. because it holds addresses to other mailboxes you want to shut down).
+	/// You still need to drop it before it gets cleaned up.
 	//
 	Actor( A ) ,
 
@@ -119,19 +122,7 @@ impl<A> Mailbox<A> where A: Actor
 	}
 
 
-	/// Run the mailbox with a non-Send Actor. Returns a future that processes incoming messages. If the
-	/// actor panics during message processing, this will return the mailbox to you
-	/// so you can supervise actors by re-initiating your actor and then calling this method
-	/// on the mailbox again. All addresses will remain valid in this scenario.
-	///
-	/// This means that we use [`AssertUnwindSafe`](std::panic::AssertUnwindSafe) and
-	/// [`catch_unwind`](std::panic::catch_unwind) when calling your actor
-	/// and the thread will not unwind. This means that your actor should implement
-	/// [`std::panic::UnwindSafe`]. This might become an enforced trait bound for [`Actor`] in
-	/// the future.
-	///
-	/// Warning: if you drop the future returned by this function in order to stop an actor,
-	/// [`Actor::stopped`] will not be called.
+	/// Exactly as [`Mailbox::start`], but works for `!Send` actors.
 	//
 	pub async fn start_local( mut self, mut actor: A ) -> MailboxEnd<A>
 	{
