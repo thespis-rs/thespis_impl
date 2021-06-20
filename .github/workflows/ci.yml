@@ -56,9 +56,14 @@ jobs:
         run : bash ci/test.bash
 
 
-      - name: Check coverage
-        run: bash ci/coverage.bash
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.17.0'
+          args: '-- --test-threads 1'
 
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.5.2
 
       - name: install wasm-pack
         uses: jetli/wasm-pack-action@v0.3.0
