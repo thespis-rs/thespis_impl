@@ -75,7 +75,7 @@ dependencies:
   #
   async_executors    : { version: ^0.4 }
   futures            : { version: ^0.3, features: [ std, compat ], default-features: false }
-  thespis            : { version: ^0.1 }
+  thespis            : { version: ^0.1, path: ../thespis }
   tracing            : ^0.1
 
   # private dependencies.
