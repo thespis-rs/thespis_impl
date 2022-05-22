@@ -28,7 +28,7 @@ rustc_version = "^0.4"
 tracing = "^0.1"
 
 [dependencies.async_executors]
-version = "^0.4"
+version = "^0.6"
 
 [dependencies.futures]
 default-features = false
@@ -47,9 +47,9 @@ features = ["futures-03"]
 version = "^0.2"
 
 [dev-dependencies]
-async_nursery = "^0.3"
+async_nursery = "^0.5"
 futures-timer = "^3"
-ring-channel = "^0.8"
+ring-channel = "^0.11"
 
 [dev-dependencies.async-std]
 features = ["attributes"]
@@ -62,8 +62,8 @@ version = "^0.3"
 
 [dev-dependencies.tracing-subscriber]
 default-features = false
-features = ["ansi", "fmt", "json", "tracing-log", "chrono", "env-filter"]
-version = "^0.2"
+features = ["ansi", "fmt", "json", "tracing-log", "env-filter"]
+version = "^0.3"
 
 [[example]]
 name = "actix_perf"
@@ -195,7 +195,7 @@ name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
 resolver = "2"
-version = "0.1.0"
+version = "0.2.0"
 
 [package.metadata]
 [package.metadata.docs]
@@ -206,7 +206,7 @@ targets = []
 [target]
 [target."cfg(not(target_arch = \"wasm32\"))"]
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies]
-actix = "^0.12"
+actix = "^0.13"
 actix-rt = "^2"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]
@@ -214,7 +214,7 @@ version = "^0.1.0-alpha"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_executors]
 features = ["localpool", "threadpool", "async_std", "tokio_ct", "tokio_tp", "tracing"]
-version = "^0.4"
+version = "^0.6"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.criterion]
 features = []
@@ -239,7 +239,7 @@ wasm-bindgen-test = "^0.3"
 
 [target."cfg(target_arch = \"wasm32\")".dev-dependencies.async_executors]
 features = ["bindgen", "async_std"]
-version = "^0.4"
+version = "^0.6"
 
 [target."cfg(target_arch = \"wasm32\")".dev-dependencies.wasm-bindgen-futures]
 version = "^0.4"
