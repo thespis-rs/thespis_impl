@@ -5,7 +5,7 @@ use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, Mailbo
 pub const BOUNDED: usize = 16;
 
 
-/// Builder for Addr and Mailbox. This is a convenience API so you don't have to call their constructors
+/// Builder for [Addr] and [Mailbox]. This is a convenience API so you don't have to call their constructors
 /// manually. Mainly lets you set the channel and name for your mailbox.
 ///
 /// Also provides methods for spawning the mailbox immediately as well as a
@@ -16,7 +16,7 @@ pub struct ActorBuilder<A: Actor>
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< String          > ,
+	name   : Option< Arc<str>        > ,
 }
 
 
@@ -50,9 +50,9 @@ impl<A: Actor> ActorBuilder<A>
 	/// Configure a name for this actor. This will be helpful for interpreting
 	/// debug logs. You can also retrieve the name later on both the `Addr` and the `Mailbox`.
 	//
-	pub fn name( mut self, name: &str ) -> Self
+	pub fn name( mut self, name: impl AsRef<str> ) -> Self
 	{
-		self.name = Some( name.into() );
+		self.name = Some( name.as_ref().into() );
 		self
 	}
 

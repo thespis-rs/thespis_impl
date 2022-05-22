@@ -1,9 +1,11 @@
 use crate::{ import::*, ActorBuilder, ActorInfo, ChanSender, StrongCount, WeakAddr, addr_inner::*, error::* };
 
 
-/// Reference implementation of [`thespis::Address<M>`].
+/// Reference implementation of [`thespis::Address<M>`](thespis::Address).
 /// It can be used to send all message types the actor implements [`thespis::Handler`] for.
-/// When all [`Addr`] to a mailbox are dropped, the mailbox will end.
+///
+/// When all [`Addr`] to a mailbox are dropped, the mailbox will end. There is also a [WeakAddr]
+/// that will not keep the actor alive.
 //
 pub struct Addr< A: Actor >
 {
