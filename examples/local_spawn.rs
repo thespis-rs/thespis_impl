@@ -54,9 +54,8 @@ impl Handler<Ping> for MyActor
 }
 
 
-#[async_std::main]
-//
-async fn main() -> Result< (), Box<dyn Error> >
+
+fn main() -> Result< (), Box<dyn Error> >
 {
 	let mut pool = LocalPool::new();
 	let     exec = pool.spawner();
