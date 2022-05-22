@@ -16,7 +16,7 @@ pub struct ActorBuilder<A: Actor>
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< String          > ,
+	name   : Option< Arc<str>        > ,
 }
 
 
@@ -50,9 +50,9 @@ impl<A: Actor> ActorBuilder<A>
 	/// Configure a name for this actor. This will be helpful for interpreting
 	/// debug logs. You can also retrieve the name later on both the `Addr` and the `Mailbox`.
 	//
-	pub fn name( mut self, name: &str ) -> Self
+	pub fn name( mut self, name: impl AsRef<str> ) -> Self
 	{
-		self.name = Some( name.into() );
+		self.name = Some( name.as_ref().into() );
 		self
 	}
 
