@@ -56,6 +56,8 @@ This crate has few dependencies. Cargo will automatically handle it's dependenci
 
 ### Security
 
+It is recommended to always use [cargo-crev](https://github.com/crev-dev/cargo-crev) to verify the trustworthiness of each of your dependencies, including this one. 
+
 This crate has `#![forbid(unsafe_code)]`, but our dependencies do use unsafe.
 
 

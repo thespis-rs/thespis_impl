@@ -1,6 +1,6 @@
-#![ cfg_attr( nightly, cfg_attr( nightly, doc = include_str!("../README.md") )) ]
-#![ doc = "" ] // empty doc line to handle missing doc warning when the feature is missing.
-//
+#![ cfg_attr( nightly, feature(doc_cfg) ) ]
+#![ doc = include_str!("../README.md") ]
+
 #![ doc    ( html_root_url = "https://docs.rs/thespis_impl" ) ]
 #![ deny   ( missing_docs                                   ) ]
 #![ forbid ( unsafe_code                                    ) ]
@@ -8,16 +8,18 @@
 
 #![ warn
 (
+	anonymous_parameters          ,
+	missing_copy_implementations  ,
 	missing_debug_implementations ,
 	missing_docs                  ,
 	nonstandard_style             ,
 	rust_2018_idioms              ,
+	single_use_lifetimes          ,
 	trivial_casts                 ,
 	trivial_numeric_casts         ,
+	unreachable_pub               ,
 	unused_extern_crates          ,
 	unused_qualifications         ,
-	single_use_lifetimes          ,
-	unreachable_pub               ,
 	variant_size_differences      ,
 )]
 

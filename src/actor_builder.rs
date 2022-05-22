@@ -5,7 +5,7 @@ use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, Mailbo
 pub const BOUNDED: usize = 16;
 
 
-/// Builder for Addr and Mailbox. This is a convenience API so you don't have to call their constructors
+/// Builder for [Addr] and [Mailbox]. This is a convenience API so you don't have to call their constructors
 /// manually. Mainly lets you set the channel and name for your mailbox.
 ///
 /// Also provides methods for spawning the mailbox immediately as well as a

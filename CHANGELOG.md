@@ -5,7 +5,7 @@
 [Unreleased]: https://github.com/najamelan/async_executors/compare/release...dev
 
 
-## [0.1.0] - 2021-06-20
+## [0.2.0] - 2022-05-22
 
 [0.2.0]: https://github.com/najamelan/async_executors/compare/0.1.0...0.2.0
 
