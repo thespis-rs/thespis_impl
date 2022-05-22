@@ -161,6 +161,10 @@ impl Accu
 	//
 	async fn add( &self, v: Add )
 	{
+		// The show method immediately returns so locking accross await point here should be fine.
+		//
+		#![ allow( clippy::await_holding_lock) ]
+
 		let from_in = self.inner.lock().unwrap().show().await;
 		let mut count = self.count.lock().unwrap();
 		*count += v.0 + from_in;
