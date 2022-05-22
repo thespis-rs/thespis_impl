@@ -7,7 +7,7 @@
 
 ## [0.1.0] - 2021-06-20
 
-[0.1.0]: https://github.com/najamelan/async_executors/compare/0.1.0...0.2.0
+[0.2.0]: https://github.com/najamelan/async_executors/compare/0.1.0...0.2.0
 
   - __BREAKING__: Update async_executors and async_nursery.
   - Change ActorBuilder::name to take an impl `AsRef<str>`. This should be more flexible than before so it shouldn't be breaking. 
