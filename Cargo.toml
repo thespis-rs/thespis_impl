@@ -39,7 +39,6 @@ version = "^0.3"
 version = "^0.1"
 
 [dependencies.thespis]
-path = "../thespis"
 version = "^0.1"
 
 [dependencies.tracing-futures]
