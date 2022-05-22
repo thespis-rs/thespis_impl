@@ -68,7 +68,7 @@ impl<A> Mailbox<A> where A: Actor
 	//
 	pub fn addr( &self, tx: ChanSender<A> ) -> Addr<A>
 	{
-		Addr::new( tx, self.info.clone(), self.rx.count() )
+		Addr::new( tx, self.info.clone(), RxStrong::count( &self.rx ) )
 	}
 
 
