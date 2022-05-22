@@ -14,6 +14,8 @@ const BOUNDED: usize = 16;
 const SENDERS: usize = 10;
 
 
+// Like factorial but for a sum not a product.
+//
 fn termial( n: usize ) -> usize
 {
 	n * (n + 1) / 2
@@ -171,6 +173,9 @@ impl AccuIn
 }
 
 
+// This tests has a number of SENDERS send x messages from different threads to the same receiver,
+// contending for that receiver.
+//
 #[allow(clippy::same_item_push)]
 //
 fn mpsc( c: &mut Criterion )
@@ -182,6 +187,8 @@ fn mpsc( c: &mut Criterion )
 
 	for msgs in [ 10, 1000 ].iter()
 	{
+		// The value that should be in Sum after running the test.
+		//
 		let total_msgs = SENDERS * *msgs *10 + 5 + termial( SENDERS * *msgs );
 
 		// match buffer_size
@@ -196,7 +203,7 @@ fn mpsc( c: &mut Criterion )
 
 		group.bench_function
 		(
-			format!( "send: {} msgs", &msgs ),
+			format!( "send: {} msgs by {} senders each", &msgs, SENDERS ),
 
 			|b| b.iter
 			(
@@ -250,7 +257,7 @@ fn mpsc( c: &mut Criterion )
 
 		group.bench_function
 		(
-			format!( "actix send: {} msgs", &msgs ),
+			format!( "actix send: {} msgs by {} senders each", &msgs, SENDERS ),
 
 			|b| b.iter
 			(
@@ -315,7 +322,7 @@ fn mpsc( c: &mut Criterion )
 
 		group.bench_function
 		(
-			format!( "call: {} msgs", &msgs ),
+			format!( "call: {} msgs by {} callers each", &msgs, SENDERS ),
 
 			|b| b.iter
 			(
@@ -372,7 +379,7 @@ fn mpsc( c: &mut Criterion )
 
 		group.bench_function
 		(
-			format!( "async method: {} msgs", &msgs ),
+			format!( "async method: {} msgs by {} callers each", &msgs, SENDERS ),
 
 			|b| b.iter
 			(
