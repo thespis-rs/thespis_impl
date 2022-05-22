@@ -34,14 +34,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  thespis_impl: ^0.1
+  thespis_impl: ^0.2
 ```
 
 In Cargo.toml:
 ```toml
 [dependencies]
 
-  thespis_impl = "0.1"
+  thespis_impl = "0.2"
 ```
 
 ### Upgrade
