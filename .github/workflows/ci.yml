@@ -39,15 +39,6 @@ jobs:
             override: true
             components: clippy
 
-
-      - name: Install cargo-tarpaulin binary crate
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-tarpaulin
-          version: latest
-          use-tool-cache: true
-
-
       - name: Checkout crate
         uses: actions/checkout@v2
 
@@ -63,6 +54,13 @@ jobs:
       - name: Run tests
         run : bash ci/test.bash
 
+
+      - name: Install cargo-tarpaulin binary crate
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-tarpaulin
+          version: latest
+          use-tool-cache: true
 
       - name: Run cargo-tarpaulin
         run : |
