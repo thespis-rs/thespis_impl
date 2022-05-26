@@ -12,7 +12,7 @@
 //!
 //! The solution we develop here is rather simple. As thespis uses interfaces
 //! like Sink+Stream for communication between addresses and mailboxes, we
-//! can simply combine two channels with futures::stream::select_bias so that
+//! can simply combine two channels with futures::stream::select_with_strategy so that
 //! one of them takes priority. This way we give outgoing messages priority.
 //!
 use
@@ -23,7 +23,7 @@ use
 	async_executors   :: { AsyncStd, SpawnHandleExt          } ,
 	std               :: { error::Error, time::Duration      } ,
 	futures_timer     :: { Delay                             } ,
-	futures           :: { stream::{ select_bias, PollNext } } ,
+	futures           :: { stream::{ select_with_strategy, PollNext } } ,
 };
 
 static BOUNDED: usize = 5;
@@ -95,7 +95,7 @@ async fn main() -> DynResult<()>
 
 	// The naive implementation deadlocks.
 	//
-	_naive().await?;
+	// _naive().await?;
 
 	// The solution.
 	//
@@ -151,7 +151,7 @@ async fn fancy() -> DynResult<()>
 	let (high_tx, high_rx) = futures::channel::mpsc::channel( BOUNDED );
 
 	let strategy = |_: &mut ()| PollNext::Left;
-	let gate_rx = Box::new( select_bias( high_rx, low_rx, strategy ) );
+	let gate_rx = Box::new( select_with_strategy( high_rx, low_rx, strategy ) );
 
 	let gate_mb = Mailbox::new( Some("gate"), gate_rx );
 

@@ -25,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.2.0
+  version       : 0.2.1
   name          : thespis_impl
   edition       : '2018'
   resolver      : '2'
@@ -198,9 +198,9 @@ example:
     path              : examples/concurrent_nursery.rs
     required-features : [ not_wasm ]
 
-  # - name              : deadlock_prio
-  #   path              : examples/deadlock_prio.rs
-  #   required-features : [ not_wasm ]
+  - name              : deadlock_prio
+    path              : examples/deadlock_prio.rs
+    required-features : [ not_wasm ]
 
   - name              : desugar
     path              : examples/desugar.rs
@@ -236,4 +236,8 @@ example:
 
   - name              : throttle
     path              : examples/throttle.rs
+    required-features : [ not_wasm ]
+
+  - name              : tracing
+    path              : examples/tracing.rs
     required-features : [ not_wasm ]

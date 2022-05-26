@@ -130,6 +130,11 @@ path = "examples/concurrent_nursery.rs"
 required-features = ["not_wasm"]
 
 [[example]]
+name = "deadlock_prio"
+path = "examples/deadlock_prio.rs"
+required-features = ["not_wasm"]
+
+[[example]]
 name = "desugar"
 path = "examples/desugar.rs"
 required-features = ["not_wasm"]
@@ -174,6 +179,11 @@ name = "throttle"
 path = "examples/throttle.rs"
 required-features = ["not_wasm"]
 
+[[example]]
+name = "tracing"
+path = "examples/tracing.rs"
+required-features = ["not_wasm"]
+
 [features]
 default = ["not_wasm"]
 not_wasm = []
@@ -194,7 +204,7 @@ name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
 resolver = "2"
-version = "0.2.0"
+version = "0.2.1"
 
 [package.metadata]
 [package.metadata.docs]

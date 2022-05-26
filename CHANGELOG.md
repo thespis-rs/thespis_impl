@@ -5,10 +5,20 @@
 [Unreleased]: https://github.com/najamelan/async_executors/compare/release...dev
 
 
+## [0.2.1] - 2022-05-26
+
+[0.2.0]: https://github.com/najamelan/async_executors/compare/0.2.0...0.2.1
+
+### Fixed
+
+  - Fix an issue with tracing. We were adding the actor name as a "name" field on the span,
+    but this is already used by tracing, which causes issues on json output.
+
 ## [0.2.0] - 2022-05-22
 
 [0.2.0]: https://github.com/najamelan/async_executors/compare/0.1.0...0.2.0
 
+### Upgraded
   - __BREAKING__: Update async_executors and async_nursery.
   - Change ActorBuilder::name to take an impl `AsRef<str>`. This should be more flexible than before so it shouldn't be breaking. 
 

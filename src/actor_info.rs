@@ -58,7 +58,7 @@ impl ActorInfo
 	{
 		if let Some( name ) = &self.name
 		{
-			error_span!( "actor", id = self.id, "type" = self.type_name(), name = name.as_ref() )
+			error_span!( "actor", id = self.id, "type" = self.type_name(), a_name = name.as_ref() )
 		}
 
 		else
