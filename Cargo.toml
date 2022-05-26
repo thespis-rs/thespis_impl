@@ -194,7 +194,7 @@ name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
 resolver = "2"
-version = "0.2.0"
+version = "0.2.1"
 
 [package.metadata]
 [package.metadata.docs]
