@@ -55,7 +55,7 @@ impl Handler< Ping > for MyActor
 //
 async fn main() -> Result< (), Box<dyn Error> >
 {
-	let _ = tracing_subscriber::fmt::Subscriber::builder()
+	tracing_subscriber::fmt::Subscriber::builder()
 
 		// .with_timer( tracing_subscriber::fmt::time::ChronoLocal::rfc3339() )
 	   // .with_max_level(tracing::Level::TRACE)
