@@ -47,10 +47,10 @@ impl<A: Actor> fmt::Debug for WeakAddr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = match &self.name()
+		let name = match &self.name().is_empty()
 		{
-			Some( s ) => format!( ", {}", s ) ,
-			None      => String::new()        ,
+			true  => String::new(),
+			false => format!( ", {}", &self.name() )
 		};
 
 		write!
@@ -70,11 +70,7 @@ impl<A: Actor> fmt::Display for WeakAddr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		match &self.name()
-		{
-			Some(n) => write!( f, "{} ({}, {})", self.inner.type_name(), self.id(), n ) ,
-			None    => write!( f, "{} ({})"    , self.inner.type_name(), self.id()    ) ,
-		}
+		write!( f, "{} ({}, {})", self.inner.type_name(), self.id(), &self.name() )
 	}
 }
 
@@ -150,7 +146,7 @@ impl<A> Identify for WeakAddr<A>
 		self.inner.id()
 	}
 
-	fn name( &self ) -> Option< Arc<str> >
+	fn name( &self ) -> Arc<str>
 	{
 		self.inner.name()
 	}

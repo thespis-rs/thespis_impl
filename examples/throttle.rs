@@ -56,7 +56,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let rx   = rx.throttle( pool );
 
 	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) );
-	let mb = Mailbox::new( Some("Throttled"), Box::new(rx) );
+	let mb = Mailbox::new( "Throttled", Box::new(rx) );
 	let mut addr = mb.addr( tx );
 
 

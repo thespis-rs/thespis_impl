@@ -94,8 +94,8 @@ fn test_manually_not_send_actor() -> Result<(), DynError >
 		let actor = SumNoSend::new(5);
 
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let mb       = Mailbox::new( Some("SumNoSend"), Box::new(rx) )           ;
-		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError )) ;
+		let mb       = Mailbox::new( "SumNoSend", Box::new(rx) )                 ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError ))  ;
 		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );
@@ -131,8 +131,8 @@ fn test_manually_send_actor() -> Result<(), DynError >
 		//
 		let actor    = Sum(5)                                                    ;
 		let (tx, rx) = mpsc::unbounded()                                         ;
-		let mb       = Mailbox::new( Some("Sum"), Box::new(rx) )                 ;
-		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError )) ;
+		let mb       = Mailbox::new( "Sum", Box::new(rx) )                       ;
+		let tx       = Box::new(tx.sink_map_err( |e| Box::new(e) as DynError ))  ;
 		let mut addr = mb.addr( tx )                                             ;
 
 		exec2.spawn_local( async { mb.start_local( actor ).await; } ).expect( "spawn actor mailbox" );

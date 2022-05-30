@@ -168,7 +168,7 @@ async fn fancy() -> DynResult<()>
 	let gate_low_tx  = low_tx .sink_map_err( |e| Box::new(e) as DynError );
 	let gate_high_tx = high_tx.sink_map_err( |e| Box::new(e) as DynError );
 
-	let     gate_mb        = Mailbox::new( Some("gate"), gate_rx );
+	let     gate_mb        = Mailbox::new( "gate", gate_rx );
 	let mut gate_low_addr  = gate_mb.addr( Box::new( gate_low_tx  ) );
 	let     gate_high_addr = gate_mb.addr( Box::new( gate_high_tx ) );
 

@@ -9,9 +9,9 @@ use crate::import::*;
 //
 pub struct ActorInfo
 {
-	pub(crate) id       : usize              ,
-	pub(crate) name     : Option< Arc<str> > ,
-	pub(crate) type_name: String             ,
+	pub(crate) id       : usize    ,
+	pub(crate) name     : Arc<str> ,
+	pub(crate) type_name: String   ,
 }
 
 
@@ -19,7 +19,7 @@ impl ActorInfo
 {
 	/// Setup actor information.
 	//
-	pub(crate) fn new<A: Actor>( id: usize, name: Option<Arc<str>> ) -> Self
+	pub(crate) fn new<A: Actor>( id: usize, name: Arc<str> ) -> Self
 	{
 		Self
 		{
@@ -56,14 +56,14 @@ impl ActorInfo
 	//
 	pub fn span( &self ) -> Span
 	{
-		if let Some( name ) = &self.name
+		if self.name.is_empty()
 		{
-			error_span!( "actor", id = self.id, "type" = self.type_name(), a_name = name.as_ref() )
+			error_span!( "actor", id = self.id, "type" = self.type_name() )
 		}
 
 		else
 		{
-			error_span!( "actor", id = self.id, "type" = self.type_name() )
+			error_span!( "actor", id = self.id, "type" = self.type_name(), a_name = self.name.as_ref() )
 		}
 	}
 }
@@ -77,7 +77,7 @@ impl Identify for ActorInfo
 		self.id
 	}
 
-	fn name( &self ) -> Option< Arc<str> >
+	fn name( &self ) -> Arc<str>
 	{
 		self.name.clone()
 	}
@@ -98,14 +98,14 @@ impl fmt::Display for ActorInfo
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		if let Some(name) = &self.name
+		if self.name.is_empty()
 		{
-			write!( f, "{}: id={}, name={}", self.type_name(), self.id, name )
+			write!( f, "{}: id={}", self.type_name(), self.id )
 		}
 
 		else
 		{
-			write!( f, "{}: id={}", self.type_name(), self.id )
+			write!( f, "{}: id={}, name={}", self.type_name(), self.id, self.name )
 		}
 	}
 }
