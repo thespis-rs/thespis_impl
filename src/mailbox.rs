@@ -39,7 +39,7 @@ impl<A> Mailbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option<&str>, rx: ChanReceiver<A> ) -> Self
+	pub fn new( name: Option<impl AsRef<str>>, rx: ChanReceiver<A> ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -49,7 +49,7 @@ impl<A> Mailbox<A> where A: Actor
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
 		let rx = RxStrong::new(rx);
-		let info = Arc::new( ActorInfo::new::<A>( id, name.map( |n| n.into() ) ) );
+		let info = Arc::new( ActorInfo::new::<A>( id, name.map( |n| n.as_ref().into() ) ) );
 
 		Self { rx, info }
 	}
