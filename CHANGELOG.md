@@ -5,9 +5,22 @@
 [Unreleased]: https://github.com/najamelan/async_executors/compare/release...dev
 
 
+## [0.3.0] - 2022-05-30
+
+[0.3.0]: https://github.com/najamelan/async_executors/compare/0.2.1...0.3.0
+
+### Upgraded
+
+  - __BREAKING__: Update thespis to 0.2.0.
+
+### Changed
+
+  - __BREAKING__: Names have become mandatory.
+
+
 ## [0.2.1] - 2022-05-26
 
-[0.2.0]: https://github.com/najamelan/async_executors/compare/0.2.0...0.2.1
+[0.2.1]: https://github.com/najamelan/async_executors/compare/0.2.0...0.2.1
 
 ### Fixed
 
