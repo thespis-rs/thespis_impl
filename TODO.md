@@ -5,6 +5,7 @@ fix code coverage, currently still on travis.
 - verify log spans.
    - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
    - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17
+   - log where addr are created and dropped for easier debugging when we have an addr that we forgot to drop.
 
 ### Tests
 

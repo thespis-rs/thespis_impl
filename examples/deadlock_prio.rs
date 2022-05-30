@@ -15,18 +15,32 @@
 //! can simply combine two channels with futures::stream::select_with_strategy so that
 //! one of them takes priority. This way we give outgoing messages priority.
 //!
+//! Why does this work? Well, normally when the whole system is backed up,
+//! the processing actor cannot dump the response into the mailbox of the
+//! gateway, because that mailbox is full. Here however we have 2 channels
+//! making up that mailbox. Thus the response can be put in the channel for
+//! outgoing messages.
+//!
+//! Since it has now been offloaded, this actor will take the next message from
+//! it's mailbox. That free slot will travel all the way back through the pipeline
+//! to the gateway. It now can send of the message it was waiting to send off
+//! for processing. Once it has done that it will look at it's mailbox for the
+//! next message and since the outgoing side has priority, the first thing it
+//! will do is take that outgoing Response and send it on the network before
+//! taking the next incoming message.
+//!
 use
 {
-	tracing           :: { *                                 } ,
-	thespis           :: { *                                 } ,
-	thespis_impl      :: { *                                 } ,
-	async_executors   :: { AsyncStd, SpawnHandleExt          } ,
-	std               :: { error::Error, time::Duration      } ,
-	futures_timer     :: { Delay                             } ,
+	tracing           :: { *                                          } ,
+	thespis           :: { *                                          } ,
+	thespis_impl      :: { *                                          } ,
+	async_executors   :: { AsyncStd, SpawnHandleExt                   } ,
+	std               :: { error::Error, time::Duration               } ,
+	futures_timer     :: { Delay                                      } ,
 	futures           :: { stream::{ select_with_strategy, PollNext } } ,
 };
 
-static BOUNDED: usize = 5;
+const BOUNDED: usize = 5;
 
 pub type DynResult<T> = Result< T, Box<dyn Error> >;
 
@@ -45,7 +59,7 @@ impl Message for Response { type Return = (); }
 
 impl Handler< Request > for Gate
 {
-	#[async_fn]	fn handle( &mut self, req: Request )
+	#[async_fn] fn handle( &mut self, req: Request )
 	{
 		info!( "Gate: New request: {}.", req.0 );
 
@@ -57,7 +71,7 @@ impl Handler< Request > for Gate
 
 impl Handler< Response > for Gate
 {
-	#[async_fn]	fn handle( &mut self, resp: Response )
+	#[async_fn] fn handle( &mut self, resp: Response )
 	{
 		info!( "Gate: Sending reponse to request: {}.", resp.0 );
 	}
@@ -67,7 +81,7 @@ impl Handler< Response > for Gate
 
 impl Handler< Request > for Worker
 {
-	#[async_fn]	fn handle( &mut self, work: Request )
+	#[async_fn] fn handle( &mut self, work: Request )
 	{
 		info!( "Worker: Grinding on request: {}.", work.0 );
 
@@ -87,10 +101,10 @@ async fn main() -> DynResult<()>
 {
 	let _ = tracing_subscriber::fmt::Subscriber::builder()
 
-	   .with_max_level(tracing::Level::TRACE)
-	   .with_env_filter( "info,thespis_impl=debug" )
-	   // .json()
-	   .try_init()
+		.with_max_level(tracing::Level::TRACE)
+		.with_env_filter( "info,thespis_impl=debug" )
+		// .json()
+		.try_init()
 	;
 
 	// The naive implementation deadlocks.
@@ -145,19 +159,16 @@ async fn fancy() -> DynResult<()>
 	// prioritized over taking more inbound work. This will keep the
 	// system from congesting.
 	//
-	// Another solution is to use an unbounded channel for the outbound.
-	//
 	let ( low_tx,  low_rx) = futures::channel::mpsc::channel( BOUNDED );
 	let (high_tx, high_rx) = futures::channel::mpsc::channel( BOUNDED );
 
 	let strategy = |_: &mut ()| PollNext::Left;
 	let gate_rx = Box::new( select_with_strategy( high_rx, low_rx, strategy ) );
 
-	let gate_mb = Mailbox::new( Some("gate"), gate_rx );
-
 	let gate_low_tx  = low_tx .sink_map_err( |e| Box::new(e) as DynError );
 	let gate_high_tx = high_tx.sink_map_err( |e| Box::new(e) as DynError );
 
+	let     gate_mb        = Mailbox::new( Some("gate"), gate_rx );
 	let mut gate_low_addr  = gate_mb.addr( Box::new( gate_low_tx  ) );
 	let     gate_high_addr = gate_mb.addr( Box::new( gate_high_tx ) );
 
