@@ -18,7 +18,7 @@ impl< A: Actor > Clone for Addr<A>
 	fn clone( &self ) -> Self
 	{
 		let _s = self.info().span().entered();
-		trace!( "CREATE (clone) Addr" );
+		trace!( "CREATE (clone) Addr id:{}", self.info().id() );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
 
@@ -81,7 +81,6 @@ impl<A: Actor> fmt::Display for Addr<A>
 
 
 
-
 impl<A> Addr<A> where A: Actor
 {
 	// Create a new address. This is restricted to the crate because StrongCount does not
@@ -98,7 +97,7 @@ impl<A> Addr<A> where A: Actor
 		let inner = AddrInner::new( tx, info, strong );
 
 		let _s = inner.span().entered();
-		trace!( "CREATE Addr" );
+		trace!( "CREATE Addr id:{}", inner.id() );
 
 		Self{ inner }
 	}
@@ -135,7 +134,7 @@ impl<A: Actor> Drop for Addr<A>
 	fn drop( &mut self )
 	{
 		let _s = self.info().span().entered();
-		trace!( "DROP Addr" );
+		trace!( "DROP Addr id:{}", self.info().id() );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).decrement();
 	}
