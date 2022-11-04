@@ -219,6 +219,7 @@ actix = "^0.13"
 actix-rt = "^2"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]
+features = ["tokio"]
 version = "^0.1.0-alpha"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_executors]
@@ -227,7 +228,7 @@ version = "^0.6"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.criterion]
 features = []
-version = "^0.3"
+version = "^0.4"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.stream_throttle]
 default-features = false

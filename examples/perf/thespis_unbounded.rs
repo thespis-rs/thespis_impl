@@ -6,12 +6,10 @@
 //
 use
 {
-	async_chanx       :: { *          } ,
+	async_chanx       :: { tokio      } ,
 	thespis           :: { *          } ,
 	thespis_impl      :: { *          } ,
 	std               :: { thread     } ,
-	tokio             :: { sync::mpsc } ,
-	tokio_stream      :: { wrappers::UnboundedReceiverStream } ,
 };
 
 
@@ -78,16 +76,16 @@ impl Handler< Show > for SumIn
 
 fn main()
 {
-	let (tx, rx)    = mpsc::unbounded_channel()                                                                ;
-	let tx          = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as DynError ) )  ;
-	let sum_in_mb   = Mailbox::new( "sum_in", Box::new( UnboundedReceiverStream::new(rx) ) )                   ;
-	let sum_in_addr = sum_in_mb.addr( tx )                                                                     ;
+	let (tx, rx)    = tokio::mpsc::unbounded_channel()                           ;
+	let tx          = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) ) ;
+	let sum_in_mb   = Mailbox::new( "sum_in", Box::new( rx ) )                   ;
+	let sum_in_addr = sum_in_mb.addr( tx )                                       ;
 
-	let (tx, rx)     = mpsc::unbounded_channel()                                                                ;
-	let     tx       = Box::new( TokioUnboundedSender::new( tx ).sink_map_err( |e| Box::new(e) as DynError ) )  ;
-	let     sum_mb   = Mailbox::new( "sum", Box::new( UnboundedReceiverStream::new(rx) ) )                      ;
-	let mut sum_addr = sum_mb.addr( tx )                                                                        ;
-	let     sum      = Sum{ total: 5, inner: sum_in_addr }                                                      ;
+	let (tx, rx)     = tokio::mpsc::unbounded_channel()                           ;
+	let     tx       = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) ) ;
+	let     sum_mb   = Mailbox::new( "sum", Box::new( rx ) )                      ;
+	let mut sum_addr = sum_mb.addr( tx )                                          ;
+	let     sum      = Sum{ total: 5, inner: sum_in_addr }                        ;
 
 	let sumin_thread = thread::spawn( move ||
 	{

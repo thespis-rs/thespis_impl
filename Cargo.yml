@@ -112,14 +112,14 @@ target:
     dev-dependencies:
 
       async_executors   : { version: ^0.6, features: [localpool, threadpool, async_std, tokio_ct, tokio_tp, tracing] }
-      async_chanx       : { version: ^0.1.0-alpha }
+      async_chanx       : { version: ^0.1.0-alpha, features: [tokio] }
       stream_throttle   : { version: ^0.4, default-features: false, features: [timer-futures-timer] }
 
       # for benchmarks
       #
       actix-rt          : ^2
       actix             : ^0.13
-      criterion         : { version: ^0.3, features: [] }
+      criterion         : { version: ^0.4, features: [] }
       tokio             : { version: ^1, features: [ sync, macros ] }
       tokio-stream      : { version: ^0.1 }
 
