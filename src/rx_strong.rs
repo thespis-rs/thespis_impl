@@ -3,7 +3,8 @@ use crate::{ import::*, BoxEnvelope, ChanReceiver, StrongCount };
 
 /// This wraps a channel receiver in order to do an extra check when the channel returns pending.
 /// We want strong and weak addresses. When there are no strong addresses left, we shall return
-/// `Poll::Ready(None)` instead of `Poll::Pending`.
+/// `Poll::Ready(None)` instead of `Poll::Pending`. This causes the mailbox to stop as it thinks
+/// the channel is closed.
 ///
 /// A waker is stored in case the strong count goes to zero while we are already pending.
 //
@@ -41,13 +42,13 @@ impl<A> Stream for RxStrong<A> where A: Actor
 
 	fn poll_next( mut self: Pin<&mut Self>, cx: &mut TaskContext<'_> ) -> Poll< Option<Self::Item> >
 	{
-		let size_hint = self.rx.size_hint();
+		trace!( "RxStrong polled" );
 
 		match Pin::new( &mut self.rx ).poll_next( cx )
 		{
 			Poll::Pending =>
 			{
-				trace!( "size hint is: {:?}", size_hint );
+				trace!( "RxStrong: inner channel returned Pending" );
 
 				let count = self.count.lock().expect( "Mutex<StrongCount> poisoned" );
 
@@ -68,7 +69,11 @@ impl<A> Stream for RxStrong<A> where A: Actor
 
 			// pass through anything but Pending to the channel.
 			//
-			x => x,
+			x =>
+			{
+				trace!( "RxStrong: inner channel returned Poll::Ready(Some(_)): {}", matches!( x, Poll::Ready(Some(_)) ) );
+				x
+			}
 		}
 	}
 
