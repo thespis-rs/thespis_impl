@@ -47,6 +47,7 @@ version = "^0.2"
 
 [dev-dependencies]
 async_nursery = "^0.5"
+async_progress = "^0.2"
 futures-timer = "^3"
 ring-channel = "^0.11"
 

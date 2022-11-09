@@ -93,6 +93,8 @@ dev-dependencies:
   async-std         : { version: ^1, features: [ attributes ] }
   # tracing-test      : { version: ^0.1, path: ../../RUST/tracing-test/tracing-test }
   futures-timer     : ^3
+  async_progress    : ^0.2
+
 
 target:
 
