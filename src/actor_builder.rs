@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, DynError };
+use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, CloneSinkExt, Addr, ThesErr, Mailbox, MailboxEnd, DynError };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -83,17 +83,26 @@ impl<A: Actor> ActorBuilder<A>
 
 	/// Set the channel to use for communication between `Addr` and `Mailbox`.
 	///
-	/// This option is incompatible with bounded.
+	/// This option is incompatible with [`ActorBuilder::bounded`].
 	///
 	/// ## Panics
 	/// In debug mode this will panic if you have already called [`ActorBuilder::bounded`].
+	///
+	/// ## Example
+	///
+	/// [This example](https://github.com/thespis-rs/thespis_impl/blob/dev/examples/tokio_channel.rs)
+	/// shows how to use tokio channels instead.
 	//
-	pub fn channel( mut self, tx: ChanSender<A>, rx: ChanReceiver<A> ) -> Self
+	pub fn channel<E, TX, RX>( mut self, tx:TX, rx: RX ) -> Self
+
+		where TX: Sink<BoxEnvelope<A>, Error=E> + Clone + Unpin + Send + 'static,
+		      E : Error + Sync + Send + 'static,
+		      RX: Stream<Item=BoxEnvelope<A>> + Send + Unpin + 'static,
 	{
 		debug_assert!( self.bounded == Some( BOUNDED ) );
 
-		self.tx = tx.into();
-		self.rx = rx.into();
+		self.tx = Some( tx.dyned()   );
+		self.rx = Some( Box::new(rx) );
 		self
 	}
 
