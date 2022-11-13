@@ -84,7 +84,10 @@ impl<A: Actor + Send> Handler< Supervise<A> > for Supervisor
 
 		let mut mb_handle = if actor.mailbox.is_none()
 		{
-			let (addr_new, mb_handle) = Addr::builder().spawn_handle( (actor.create)(), &AsyncStd ).unwrap();
+			let (addr_new, mb_handle) = Addr::builder( "supervised" )
+				.spawn_handle( (actor.create)(), &AsyncStd )
+				.unwrap()
+			;
 
 			addr = Some(addr_new);
 
@@ -129,7 +132,9 @@ async fn main() -> Result< (), Box<dyn Error> >
 	   .init()
 	;
 
-	let mut supervisor = Addr::builder().spawn( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?;
+	let mut supervisor = Addr::builder( "supervisor" )
+		.spawn( Supervisor{ exec: Box::new( AsyncStd ) }, &AsyncStd )?
+	;
 
 
 	// Here we use a closure to create new actors, but if you don't need to capture

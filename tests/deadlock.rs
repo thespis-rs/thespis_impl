@@ -201,7 +201,7 @@ async fn deadlock() -> DynResult<()>
 	let mut gate_low_addr  = gate_mb.addr( low_tx.dyned() );
 	let     gate_high_addr = gate_mb.addr( high_tx.dyned() );
 
-	let (worker_addr, worker_mb) = Addr::builder().bounded( Some(BOUNDED) ).build();
+	let (worker_addr, worker_mb) = Addr::builder( "worker" ).bounded( Some(BOUNDED) ).build();
 
 	let gate   = Gate   { worker: worker_addr.weak()                                                      };
 	let worker = Worker { gate  : gate_high_addr, steps: steps.clone(), send_out: send_out.boxed().into() };

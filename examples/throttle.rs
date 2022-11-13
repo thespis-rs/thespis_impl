@@ -55,9 +55,8 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let pool = ThrottlePool::new( rate );
 	let rx   = rx.throttle( pool );
 
-	let (mut addr, mb_handle) = Addr::builder()
+	let (mut addr, mb_handle) = Addr::builder( "Throttled" )
 		.channel( tx, rx )
-		.name( "Throttled" )
 		.spawn_handle( MyActor{ count: 0 }, &AsyncStd )?
 	;
 

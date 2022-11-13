@@ -10,10 +10,10 @@ fn main() -> Result< (), DynError >
 	let exec = TokioCtBuilder::new().build().unwrap();
 
 	let sum_in = SumIn{ count: 0 };
-	let sum_in_addr = Addr::builder().bounded( Some(BOUNDED) ).spawn_local( sum_in, &exec )?;
+	let sum_in_addr = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).spawn_local( sum_in, &exec )?;
 
 	let     sum      = Sum{ total: 5, inner: sum_in_addr, _nosend: PhantomData };
-	let mut sum_addr = Addr::builder().bounded( Some(BOUNDED) ).spawn_local( sum   , &exec )?;
+	let mut sum_addr = Addr::builder( "sum" ).bounded( Some(BOUNDED) ).spawn_local( sum   , &exec )?;
 
 
 	exec.block_on( async move

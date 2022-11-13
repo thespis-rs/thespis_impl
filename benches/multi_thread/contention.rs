@@ -209,8 +209,8 @@ fn mpsc( c: &mut Criterion )
 			(
 				||
 				{
-					let (sum_in_addr , sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let (mut sum_addr, sum_mb   ) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let (sum_in_addr , sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (mut sum_addr, sum_mb   ) = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
 
 					let sum    = Sum   { total: 5, inner: sum_in_addr } ;
 					let sum_in = SumIn { count: 0 }                     ;
@@ -328,8 +328,8 @@ fn mpsc( c: &mut Criterion )
 			(
 				||
 				{
-					let (sum_in_addr , sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let (mut sum_addr, sum_mb   ) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let (sum_in_addr , sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (mut sum_addr, sum_mb   ) = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
 
 					let sum    = Sum   { total: 5, inner: sum_in_addr } ;
 					let sum_in = SumIn { count: 0 }                     ;

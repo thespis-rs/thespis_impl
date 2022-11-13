@@ -59,7 +59,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// We pass in our custom channel here as long as it implements `Sink + Clone + Unpin + 'static`
 	// on the sender and `Stream + Unpin + 'static` on the receiver.
 	//
-	let (mut addr, mb_handle) = Addr::builder()
+	let (mut addr, mb_handle) = Addr::builder( "powerd by tokio" )
 		.channel( tx, rx )
 		.spawn_handle( MyActor, &AsyncStd )?
 	;

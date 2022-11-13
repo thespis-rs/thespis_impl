@@ -69,8 +69,8 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// structured concurrency approach, use `start_handle`, so you can await
 	// the output of the mailbox.
 	//
-	let mut addr  = Addr::builder().name( "Alice" ).spawn( MyActor, &AsyncStd )?;
-	let mut addr2 = Addr::builder().name( "Bob" ).spawn( MyActor, &AsyncStd )?;
+	let mut addr  = Addr::builder( "Alice" ).spawn( MyActor, &AsyncStd )?;
+	let mut addr2 = Addr::builder( "Bob"   ).spawn( MyActor, &AsyncStd )?;
 
 	// Call is request-response, as opposed to `send` which comes from `Sink`
 	// and is a one way message.

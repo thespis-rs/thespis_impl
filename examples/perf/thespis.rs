@@ -15,8 +15,8 @@ const SENDERS: usize = 1  ;
 //
 async fn main()
 {
-	let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-	let (mut sum_addr, sum_mb)   = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+	let (sum_in_addr, sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+	let (mut sum_addr, sum_mb)   = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
 
 	let sum_in = SumIn{ count: 0 }                     ;
 

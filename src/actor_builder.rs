@@ -26,8 +26,7 @@ pub const BOUNDED: usize = 16;
 /// //
 /// struct MyActor;
 ///
-/// let (mut addr, mb_handle) = Addr::builder()
-///    .name( "my very own actor" )
+/// let (mut addr, mb_handle) = Addr::builder( "my very own actor" )
 ///    .bounded( Some(24) )
 ///    .spawn_handle( MyActor, &AsyncStd )?
 /// ;
@@ -46,44 +45,23 @@ pub struct ActorBuilder<A: Actor>
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< Arc<str>        > ,
+	name   : Arc<str>                  ,
 }
-
-
-
-impl<A: Actor> Default for ActorBuilder<A>
-{
-	fn default() -> Self
-	{
-		Self
-		{
-			tx     : None            ,
-			rx     : None            ,
-			bounded: Some( BOUNDED ) ,
-			name   : None            ,
-		}
-	}
-}
-
 
 
 impl<A: Actor> ActorBuilder<A>
 {
 	/// Create a new ActorBuilder with default settings.
 	//
-	pub fn new() -> Self
+	pub fn new( name: impl AsRef<str> ) -> Self
 	{
-		Self::default()
-	}
-
-
-	/// Configure a name for this actor. This will be helpful for interpreting
-	/// debug logs. You can also retrieve the name later on both the `Addr` and the `Mailbox`.
-	//
-	pub fn name( mut self, name: impl AsRef<str> ) -> Self
-	{
-		self.name = Some( name.as_ref().into() );
-		self
+		Self
+		{
+			tx     : None                 ,
+			rx     : None                 ,
+			bounded: Some( BOUNDED )      ,
+			name   : name.as_ref().into() ,
+		}
 	}
 
 
@@ -170,7 +148,7 @@ impl<A: Actor> ActorBuilder<A>
 
 
 		let rx    = self.rx.unwrap();
-		let mb    = Mailbox::new( self.name.unwrap_or_else(|| "".into() ), rx );
+		let mb    = Mailbox::new( self.name, rx );
 		let addr  = mb.addr( self.tx.unwrap() );
 
 		(addr, mb)

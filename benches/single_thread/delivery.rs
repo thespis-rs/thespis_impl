@@ -176,9 +176,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let sum                      = Sum{ total: 5, inner: sum_in_addr }              ;
-					let (sum_addr, sum_mb)       = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (sum_addr, sum_mb)       = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
+					let sum                      = Sum{ total: 5, inner: sum_in_addr }                        ;
 
 					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
@@ -257,9 +257,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
-					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (sum_addr   , sum_mb   ) = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
+					let sum                      = Sum{ total: 5, inner: sum_in_addr }                        ;
 
 					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };

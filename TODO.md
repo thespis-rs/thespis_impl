@@ -1,8 +1,6 @@
 ## TODO
 
-- Compare deadlock example with deadlock integration test. 
 - Document the limitation of futures channels of not waking up the sender, as discovered in the deadlock test. What is the consequence for other actors?
-- figure out if we need a release.
 - align all repo's and update the super repo.
 
 fix code coverage, currently still on travis.

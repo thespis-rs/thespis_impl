@@ -105,9 +105,9 @@ impl<A> Addr<A> where A: Actor
 
 	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`](crate::Mailbox).
 	//
-	pub fn builder() -> ActorBuilder<A>
+	pub fn builder( name: impl AsRef<str> ) -> ActorBuilder<A>
 	{
-		Default::default()
+		ActorBuilder::new( name )
 	}
 
 

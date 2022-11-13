@@ -61,7 +61,7 @@ fn main() -> Result< (), Box<dyn Error> >
 	let     exec = pool.spawner();
 
 	let actor    = MyActor { i: 3, nosend: PhantomData };
-	let mut addr = Addr::builder().spawn_local( actor, &exec )?;
+	let mut addr = Addr::builder( "local" ).spawn_local( actor, &exec )?;
 
 	exec.spawn_local( async move
 	{

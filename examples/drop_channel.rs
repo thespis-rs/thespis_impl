@@ -78,7 +78,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 		std::io::Error::from(std::io::ErrorKind::NotConnected)
 	});
 
-	let (mut accu_addr , accu_mb) = Addr::builder()
+	let (mut accu_addr , accu_mb) = Addr::builder( "accu" )
 
 		.channel( tx, rx )
 		.build() ;

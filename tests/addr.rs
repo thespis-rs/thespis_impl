@@ -21,7 +21,7 @@ async fn stop_when_addresses_dropped_before_start_mb() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-	let (addr, mb) = Addr::builder().build();
+	let (addr, mb) = Addr::builder( "dropped" ).build();
 
 	let addr2 = addr.clone();
 
@@ -44,7 +44,7 @@ async fn stop_when_addresses_dropped() -> Result<(), DynError >
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-	let (mut addr, mb) = Addr::builder().build();
+	let (mut addr, mb) = Addr::builder( "stop" ).build();
 
 	let mb_handle = AsyncStd.spawn_handle( mb.start( Sum(5) ) )?;
 
