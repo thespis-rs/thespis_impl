@@ -181,12 +181,9 @@ async fn deadlock() -> DynResult<()>
 	let strategy = |_: &mut ()| PollNext::Left;
 	let gate_rx  = Box::new( select_with_strategy( high_rx, low_rx, strategy ) );
 
-	let gate_low_tx  = low_tx .sink_map_err( |e| Box::new(e) as DynError );
-	let gate_high_tx = high_tx.sink_map_err( |e| Box::new(e) as DynError );
-
 	let     gate_mb        = Mailbox::new( "gate", gate_rx );
-	let mut gate_low_addr  = gate_mb.addr( Box::new( gate_low_tx  ) );
-	let     gate_high_addr = gate_mb.addr( Box::new( gate_high_tx ) );
+	let mut gate_low_addr  = gate_mb.addr( low_tx.dyned() );
+	let     gate_high_addr = gate_mb.addr( high_tx.dyned() );
 
 	let (worker_addr, worker_mb) = Addr::builder().bounded( Some(BOUNDED) ).build();
 

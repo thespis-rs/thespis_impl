@@ -10,6 +10,36 @@ pub const BOUNDED: usize = 16;
 ///
 /// Also provides methods for spawning the mailbox immediately as well as a
 /// [`build`](ActorBuilder::build) method which lets you do it manually.
+///
+/// ## Example
+///
+/// ```rust
+/// # futures::executor::block_on(async {
+/// use
+/// {
+///    thespis         :: { *        } ,
+///    thespis_impl    :: { *        } ,
+///    async_executors :: { AsyncStd } ,
+/// };
+///
+/// #[ derive( Actor ) ]
+/// //
+/// struct MyActor;
+///
+/// let (mut addr, mb_handle) = Addr::builder()
+///    .name( "my very own actor" )
+///    .bounded( Some(24) )
+///    .spawn_handle( MyActor, &AsyncStd )?
+/// ;
+///
+/// // mb will end when the last addr is dropped.
+/// //
+/// drop(addr);
+/// mb_handle.await;
+///
+/// # Ok::<(), ThesErr>(())
+/// # }).unwrap();
+/// ```
 //
 pub struct ActorBuilder<A: Actor>
 {
