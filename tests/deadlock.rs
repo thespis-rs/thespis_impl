@@ -37,6 +37,7 @@
 //! not work with futures channels as they don't guarantee to wake up a sender when
 //! a message is read from a reader.
 //
+#![ cfg(not( target_arch = "wasm32" )) ]
 #![allow(clippy::suspicious_else_formatting)]
 use
 {
