@@ -207,7 +207,7 @@ fn spsc( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 					});
 
 					sumin_thread.join().expect( "join sum_in thread" );
@@ -266,7 +266,7 @@ fn spsc( c: &mut Criterion )
 
 		// 				let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-		// 				assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+		// 				assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 		// 			});
 
 		// 			sumin_thread.join().expect( "join sum_in thread" );
@@ -304,7 +304,7 @@ fn spsc( c: &mut Criterion )
 
 						let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 						sum_in_thread.stop();
 						sum_thread   .stop();
@@ -359,7 +359,7 @@ fn spsc( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 					});
 
 					sumin_thread.join().expect( "join sum_in thread" );
@@ -419,7 +419,7 @@ fn spsc( c: &mut Criterion )
 
 		// 				let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-		// 				assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+		// 				assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 		// 			});
 
 		// 			sumin_thread.join().expect( "join sum_in thread" );

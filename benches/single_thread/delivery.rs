@@ -201,7 +201,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 						drop( sum_addr );
 
 						drop( sum_handle  .await );
@@ -240,7 +240,7 @@ fn seq( c: &mut Criterion )
 
 		// 				let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-		// 				assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+		// 				assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 		// 				actix_rt::System::current().stop();
 		// 			});
@@ -282,7 +282,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 						drop( sum_addr );
 
@@ -319,7 +319,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 						actix_rt::System::current().stop();
 					});
