@@ -15,3 +15,4 @@ These examples demonstrate how to use thespis with the reference implementation 
 11. [*concurrent_nursery*](/concurrent_nursery.rs): Let an actor process messages concurrently when no mutable state is needed. This time we make sure that none of the spawned subtasks can outlive our actor.
 12. [*drop_channel*](/drop_channel.rs): An example of using a channel that overwrites older messages instead of providing back pressure.
 13. [*supervisor*](/supervisor.rs): How to supervise an actor in case it panics.
+14. [*tokio_channel*](/tokio_channel): How to use a tokio channel with thespis.
