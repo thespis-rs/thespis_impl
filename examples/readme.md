@@ -16,3 +16,4 @@ These examples demonstrate how to use thespis with the reference implementation 
 12. [*drop_channel*](/drop_channel.rs): An example of using a channel that overwrites older messages instead of providing back pressure.
 13. [*supervisor*](/supervisor.rs): How to supervise an actor in case it panics.
 14. [*tokio_channel*](/tokio_channel): How to use a tokio channel with thespis.
+15. [*deadlock_prio*](../tests/deadlock.rs): Use a priority channel with thespis to give an actor a double mailbox and avoid a deadlock in a specific situation. Note you can also use priority channels like this for other usecases, eg. you can make a channel that will poll different addresses in an alternating pattern.
