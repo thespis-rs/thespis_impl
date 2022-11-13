@@ -20,11 +20,18 @@
 //! The downside is that this only works in this most simple use case. As soon as you have
 //! more than one source of new messages (either more connections sending requests, or new
 //! messages being created internally), you cannot guarantee the free slot propagates to the
-//! gate that received the response.
+//! gate that received the response. Actually an actor can block itself by sending itself
+//! a message while it's mailbox is full.
 //!
 //! My conclusion is that in a more complex system using channels for backpressure is not
-//! an option. Using a semaphore to keep track of how many requests are currently being
-//! processed by the system is a better solution.
+//! an option. There are a few things you can do based on the architecture of your application:
+//!
+//! - use a semaphore to keep track of how many requests are currently being
+//!   processed by the system.
+//! - spawn tasks so that they can operate concurrently, so if they block on a send, they are
+//!   not blocking a processing actor.
+//! - use unbounded channels for outgoing messages, for example with a priority channel
+//!   as in this test.
 //!
 //! This test is an implementation of the priority channel solution. Note that this does
 //! not work with futures channels as they don't guarantee to wake up a sender when
@@ -36,11 +43,12 @@ use
 	tracing           :: { *                                                     } ,
 	thespis           :: { *                                                     } ,
 	thespis_impl      :: { *                                                     } ,
-	async_chanx       :: { tokio::mpsc                                           } ,
 	async_executors   :: { AsyncStd, SpawnHandleExt                              } ,
 	std               :: { error::Error, future::Future, pin::Pin                } ,
 	futures           :: { stream::{ select_with_strategy, PollNext }, FutureExt } ,
 	async_progress    :: { Progress                                              } ,
+	tokio_util        :: { sync::PollSender                                      } ,
+	tokio_stream      :: { wrappers::ReceiverStream                              } ,
 };
 
 
@@ -175,8 +183,16 @@ async fn deadlock() -> DynResult<()>
 	let backed_up = steps.once( GateStep::BackedUp );
 	let send_out  = steps.once( GateStep::SendOut ).map(|_|());
 
-	let ( low_tx,  low_rx) = mpsc::channel( BOUNDED );
-	let (high_tx, high_rx) = mpsc::channel( BOUNDED );
+	let ( low_tx,  low_rx) = tokio::sync::mpsc::channel( BOUNDED );
+	let (high_tx, high_rx) = tokio::sync::mpsc::channel( BOUNDED );
+
+	let  low_rx = ReceiverStream::new( low_rx);
+	let high_rx = ReceiverStream::new(high_rx);
+
+	// tokio error contains the message which isn't guaranteed to be `Sync`.
+	//
+	let  low_tx = PollSender::new( low_tx).sink_map_err( |_| std::io::Error::from(std::io::ErrorKind::NotConnected) );
+	let high_tx = PollSender::new(high_tx).sink_map_err( |_| std::io::Error::from(std::io::ErrorKind::NotConnected) );
 
 	let strategy = |_: &mut ()| PollNext::Left;
 	let gate_rx  = Box::new( select_with_strategy( high_rx, low_rx, strategy ) );

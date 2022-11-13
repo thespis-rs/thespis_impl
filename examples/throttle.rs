@@ -4,8 +4,8 @@
 use
 {
 	thespis         :: { *                                           } ,
-	thespis_impl    :: { DynError, Mailbox                           } ,
-	async_executors :: { AsyncStd, SpawnHandleExt                    } ,
+	thespis_impl    :: { Addr                                        } ,
+	async_executors :: { AsyncStd,                                   } ,
 	std             :: { error::Error, time::Duration                } ,
 	futures         :: { channel::mpsc, SinkExt                      } ,
 	stream_throttle :: { ThrottleRate, ThrottlePool, ThrottledStream } ,
@@ -55,12 +55,11 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let pool = ThrottlePool::new( rate );
 	let rx   = rx.throttle( pool );
 
-	let tx = Box::new( tx.sink_map_err( |e| Box::new(e) as DynError ) );
-	let mb = Mailbox::new( "Throttled", Box::new(rx) );
-	let mut addr = mb.addr( tx );
-
-
-	let mb_handle = AsyncStd.spawn_handle( mb.start( MyActor{ count: 0 } ) )?;
+	let (mut addr, mb_handle) = Addr::builder()
+		.channel( tx, rx )
+		.name( "Throttled" )
+		.spawn_handle( MyActor{ count: 0 }, &AsyncStd )?
+	;
 
 
 	for _ in 0..10
