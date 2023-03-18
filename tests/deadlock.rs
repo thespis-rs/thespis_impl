@@ -172,13 +172,13 @@ enum GateStep
 //
 async fn deadlock() -> DynResult<()>
 {
-	let _ = tracing_subscriber::fmt::Subscriber::builder()
+	// let _ = tracing_subscriber::fmt::Subscriber::builder()
 
-		.with_max_level(tracing::Level::TRACE)
-		.with_env_filter( "trace" )
-		.json()
-		.try_init()
-	;
+	// 	.with_max_level(tracing::Level::TRACE)
+	// 	.with_env_filter( "trace" )
+	// 	.json()
+	// 	.try_init()
+	// ;
 
 	let steps     = Progress::new( GateStep::Fill );
 	let backed_up = steps.once( GateStep::BackedUp );

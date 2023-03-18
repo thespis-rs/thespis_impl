@@ -1,4 +1,4 @@
-use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, CloneSinkExt, Addr, ThesErr, Mailbox, MailboxEnd, DynError };
+use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, CloneSinkExt, Addr, ThesErr, Mailbox, MailboxEnd };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -130,18 +130,14 @@ impl<A: Actor> ActorBuilder<A>
 			if let Some( bounded ) = self.bounded
 			{
 				let (tx, rx) = futures::channel::mpsc::channel( bounded );
-				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
-
-				self.tx = Some( Box::new(tx) );
+				self.tx = Some( tx.dyned()   );
 				self.rx = Some( Box::new(rx) );
 			}
 
 			else
 			{
 				let (tx, rx) = futures::channel::mpsc::unbounded();
-				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
-
-				self.tx = Some( Box::new(tx) );
+				self.tx = Some( tx.dyned()   );
 				self.rx = Some( Box::new(rx) );
 			}
 		}
