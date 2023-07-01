@@ -180,14 +180,24 @@ impl<A, M> Sink<M> for AddrInner<A>
 		{
 			Poll::Ready( p ) => match p
 			{
-				Ok (_) => Poll::Ready( Ok(()) ),
+				Ok (_) =>
+				{
+					self.info.span().in_scope(|| trace!( "Mailbox ready for message." ));
+					Poll::Ready( Ok(()) )
+				}
+
 				Err(e) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } ) )
+					let err = ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() };
+					Poll::Ready( Err(err) )
 				}
 			}
 
-			Poll::Pending => Poll::Pending
+			Poll::Pending =>
+			{
+				self.info.span().in_scope(|| trace!( "Mailbox giving backpressure." ));
+				Poll::Pending
+			}
 		}
 	}
 
