@@ -5,17 +5,19 @@
 [Unreleased]: https://github.com/najamelan/async_executors/compare/release...dev
 
 
-## [0.3.0] - 2022-05-30
+## [0.3.0] - 2022-11-13
 
 [0.3.0]: https://github.com/najamelan/async_executors/compare/0.2.1...0.3.0
 
 ### Upgraded
 
   - __BREAKING__: Update thespis to 0.2.0.
+  - __BREAKING__: Change the `ActorBuilder::channel` signature so you don't
+                  have to manually convert the error type on the `Sink`.
 
 ### Changed
 
-  - __BREAKING__: Names have become mandatory.
+  - __BREAKING__: Names have become mandatory on `Mailbox` and `ActorBuilder`.
 
 
 ## [0.2.1] - 2022-05-26
