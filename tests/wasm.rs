@@ -28,7 +28,7 @@ async fn stop_when_addresses_dropped_before_start_mb()
 {
 	// let _ = flexi_logger::Logger::with_str( "trace" ).start();
 
-	let (addr, mb) = Addr::builder().build();
+	let (addr, mb) = Addr::builder( "stop_when_addresses_dropped_before_start_mb" ).build();
 
 	let addr2 = addr.clone();
 
@@ -46,9 +46,9 @@ async fn stop_when_addresses_dropped_before_start_mb()
 
 #[ wasm_bindgen_test ]
 //
-async fn test_basic_send()
+async fn basic_send()
 {
-	let mut addr = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr = Addr::builder( "basic_send" ).spawn( Sum(5), &Bindgen ).unwrap_throw();
 
 	addr.send( Add( 10 ) ).await.unwrap_throw();
 
@@ -59,9 +59,9 @@ async fn test_basic_send()
 
 #[ wasm_bindgen_test ]
 //
-async fn test_basic_call()
+async fn basic_call()
 {
-	let mut addr = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr = Addr::builder( "basic_call" ).spawn( Sum(5), &Bindgen ).unwrap_throw();
 
 	addr.call( Add(10) ).await.unwrap_throw();
 
@@ -74,7 +74,7 @@ async fn test_basic_call()
 //
 async fn send_from_multiple_addrs()
 {
-	let mut addr  = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr  = Addr::builder( "send_from_multiple_addrs" ).spawn( Sum(5), &Bindgen ).unwrap_throw();
 	let mut addr2 = addr.clone();
 
 	addr .send( Add( 10 ) ).await.unwrap_throw();
@@ -89,7 +89,7 @@ async fn send_from_multiple_addrs()
 //
 async fn call_from_multiple_addrs()
 {
-	let mut addr  = Addr::builder().spawn( Sum(5), &Bindgen ).unwrap_throw();
+	let mut addr  = Addr::builder( "call_from_multiple_addrs" ).spawn( Sum(5), &Bindgen ).unwrap_throw();
 	let mut addr2 = addr.clone();
 
 	addr .call( Add( 10 ) ).await.unwrap_throw();

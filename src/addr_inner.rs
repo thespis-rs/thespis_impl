@@ -51,10 +51,10 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = match &self.info.name
+		let name = match &self.info.name().is_empty()
 		{
-			Some( s ) => format!( ", {}", s ) ,
-			None      => String::new()        ,
+			true  => String::new(),
+			false => format!( ", {}", &self.info.name )
 		};
 
 		write!
@@ -62,7 +62,7 @@ impl<A: Actor> fmt::Debug for AddrInner<A>
 			f                          ,
 			"AddrInner<{}> ~ {}{}"     ,
 			std::any::type_name::<A>() ,
-			&self.info.id                   ,
+			&self.info.id              ,
 			name                       ,
 		)
 	}
@@ -158,7 +158,7 @@ impl<A> Identify for AddrInner<A>
 		self.info.id()
 	}
 
-	fn name( &self ) -> Option< Arc<str> >
+	fn name( &self ) -> Arc<str>
 	{
 		self.info.name()
 	}
@@ -180,14 +180,24 @@ impl<A, M> Sink<M> for AddrInner<A>
 		{
 			Poll::Ready( p ) => match p
 			{
-				Ok (_) => Poll::Ready( Ok(()) ),
+				Ok (_) =>
+				{
+					self.info.span().in_scope(|| trace!( "Mailbox ready for message." ));
+					Poll::Ready( Ok(()) )
+				}
+
 				Err(e) =>
 				{
-					Poll::Ready( Err( ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() } ) )
+					let err = ThesErr::MailboxClosed{ info: self.info.clone(), src: e.into() };
+					Poll::Ready( Err(err) )
 				}
 			}
 
-			Poll::Pending => Poll::Pending
+			Poll::Pending =>
+			{
+				self.info.span().in_scope(|| trace!( "Mailbox giving backpressure." ));
+				Poll::Pending
+			}
 		}
 	}
 

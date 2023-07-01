@@ -21,9 +21,9 @@ use
 //
 #[async_std::test]
 //
-async fn test_mb_closed() -> Result<(), DynError >
+async fn mb_closed() -> Result<(), DynError >
 {
-	let (mut addr, mb) = Addr::builder().build();
+	let (mut addr, mb) = Addr::builder( "mb_closed" ).build();
 
 	let (trigger_tx, trigger_rx) = oneshot::channel();
 
@@ -84,11 +84,11 @@ impl Handler<Void> for Panic
 
 #[async_std::test]
 //
-async fn test_mb_closed_before_response() -> Result<(), DynError >
+async fn mb_closed_before_response() -> Result<(), DynError >
 {
 	// flexi_logger::Logger::with_str( "warn, thespis_impl=trace" ).start().expect( "flexi_logger");
 
-	let (mut addr, mb) = Addr::builder().build();
+	let (mut addr, mb) = Addr::builder( "mb_closed_before_response" ).build();
 
 
 	let mb_task = async move

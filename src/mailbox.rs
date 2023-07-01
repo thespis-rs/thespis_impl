@@ -39,7 +39,7 @@ impl<A> Mailbox<A> where A: Actor
 {
 	/// Create a new inbox.
 	//
-	pub fn new( name: Option<&str>, rx: ChanReceiver<A> ) -> Self
+	pub fn new( name: impl AsRef<str>, rx: ChanReceiver<A> ) -> Self
 	{
 		static MB_COUNTER: AtomicUsize = AtomicUsize::new( 1 );
 
@@ -49,7 +49,7 @@ impl<A> Mailbox<A> where A: Actor
 		let id = MB_COUNTER.fetch_add( 1, Ordering::Relaxed );
 
 		let rx = RxStrong::new(rx);
-		let info = Arc::new( ActorInfo::new::<A>( id, name.map( |n| n.into() ) ) );
+		let info = Arc::new( ActorInfo::new::<A>( id, name.as_ref().into() ) );
 
 		Self { rx, info }
 	}
@@ -167,7 +167,7 @@ impl<A: Actor> Identify for Mailbox<A>
 
 
 
-	fn name( &self ) -> Option<Arc<str>>
+	fn name( &self ) -> Arc<str>
 	{
 		self.info.name.clone()
 	}
@@ -178,7 +178,11 @@ impl<A: Actor> fmt::Debug for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "Mailbox<{}> ~ {}", std::any::type_name::<A>(), &self.info.id )
+		match self.info.name.is_empty()
+		{
+			true  => write!( f, "Mailbox<{}> ~ id: {}"          , std::any::type_name::<A>(), &self.info.id                 ) ,
+			false => write!( f, "Mailbox<{}> ~ id: {}, name: {}", std::any::type_name::<A>(), &self.info.id, self.info.name ) ,
+		}
 	}
 }
 
@@ -187,10 +191,10 @@ impl<A: Actor> fmt::Display for Mailbox<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		match &self.info.name
+		match self.info.name.is_empty()
 		{
-			Some(n) => write!( f, "{} ({}, {})", self.info.type_name(), self.info.id, n ) ,
-			None    => write!( f, "{} ({})"    , self.info.type_name(), self.info.id    ) ,
+			true  => write!( f, "{} ({})"    , self.info.type_name(), self.info.id                 ) ,
+			false => write!( f, "{} ({}, {})", self.info.type_name(), self.info.id, self.info.name ) ,
 		}
 	}
 }

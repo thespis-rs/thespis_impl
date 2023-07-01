@@ -1,4 +1,4 @@
-use crate::{ import::*, ChanSender, ChanReceiver, Addr, ThesErr, Mailbox, MailboxEnd, DynError };
+use crate::{ import::*, BoxEnvelope, ChanSender, ChanReceiver, CloneSinkExt, Addr, ThesErr, Mailbox, MailboxEnd };
 
 /// Default buffer size for bounded channel between Addr and Mailbox.
 //
@@ -10,50 +10,58 @@ pub const BOUNDED: usize = 16;
 ///
 /// Also provides methods for spawning the mailbox immediately as well as a
 /// [`build`](ActorBuilder::build) method which lets you do it manually.
+///
+/// ## Example
+///
+/// ```rust
+/// # futures::executor::block_on(async {
+/// use
+/// {
+///    thespis         :: { *        } ,
+///    thespis_impl    :: { *        } ,
+///    async_executors :: { AsyncStd } ,
+/// };
+///
+/// #[ derive( Actor ) ]
+/// //
+/// struct MyActor;
+///
+/// let (mut addr, mb_handle) = Addr::builder( "my very own actor" )
+///    .bounded( Some(24) )
+///    .spawn_handle( MyActor, &AsyncStd )?
+/// ;
+///
+/// // mb will end when the last addr is dropped.
+/// //
+/// drop(addr);
+/// mb_handle.await;
+///
+/// # Ok::<(), ThesErr>(())
+/// # }).unwrap();
+/// ```
 //
 pub struct ActorBuilder<A: Actor>
 {
 	tx     : Option< ChanSender  <A> > ,
 	rx     : Option< ChanReceiver<A> > ,
 	bounded: Option< usize           > ,
-	name   : Option< Arc<str>        > ,
+	name   : Arc<str>                  ,
 }
-
-
-
-impl<A: Actor> Default for ActorBuilder<A>
-{
-	fn default() -> Self
-	{
-		Self
-		{
-			tx     : None            ,
-			rx     : None            ,
-			bounded: Some( BOUNDED ) ,
-			name   : None            ,
-		}
-	}
-}
-
 
 
 impl<A: Actor> ActorBuilder<A>
 {
 	/// Create a new ActorBuilder with default settings.
 	//
-	pub fn new() -> Self
+	pub fn new( name: impl AsRef<str> ) -> Self
 	{
-		Self::default()
-	}
-
-
-	/// Configure a name for this actor. This will be helpful for interpreting
-	/// debug logs. You can also retrieve the name later on both the `Addr` and the `Mailbox`.
-	//
-	pub fn name( mut self, name: impl AsRef<str> ) -> Self
-	{
-		self.name = Some( name.as_ref().into() );
-		self
+		Self
+		{
+			tx     : None                 ,
+			rx     : None                 ,
+			bounded: Some( BOUNDED )      ,
+			name   : name.as_ref().into() ,
+		}
 	}
 
 
@@ -83,17 +91,26 @@ impl<A: Actor> ActorBuilder<A>
 
 	/// Set the channel to use for communication between `Addr` and `Mailbox`.
 	///
-	/// This option is incompatible with bounded.
+	/// This option is incompatible with [`ActorBuilder::bounded`].
 	///
 	/// ## Panics
 	/// In debug mode this will panic if you have already called [`ActorBuilder::bounded`].
+	///
+	/// ## Example
+	///
+	/// [This example](https://github.com/thespis-rs/thespis_impl/blob/dev/examples/tokio_channel.rs)
+	/// shows how to use tokio channels instead.
 	//
-	pub fn channel( mut self, tx: ChanSender<A>, rx: ChanReceiver<A> ) -> Self
+	pub fn channel<E, TX, RX>( mut self, tx:TX, rx: RX ) -> Self
+
+		where TX: Sink<BoxEnvelope<A>, Error=E> + Clone + Unpin + Send + 'static,
+		      E : Error + Sync + Send + 'static,
+		      RX: Stream<Item=BoxEnvelope<A>> + Send + Unpin + 'static,
 	{
 		debug_assert!( self.bounded == Some( BOUNDED ) );
 
-		self.tx = tx.into();
-		self.rx = rx.into();
+		self.tx = Some( tx.dyned()   );
+		self.rx = Some( Box::new(rx) );
 		self
 	}
 
@@ -113,25 +130,21 @@ impl<A: Actor> ActorBuilder<A>
 			if let Some( bounded ) = self.bounded
 			{
 				let (tx, rx) = futures::channel::mpsc::channel( bounded );
-				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
-
-				self.tx = Some( Box::new(tx) );
+				self.tx = Some( tx.dyned()   );
 				self.rx = Some( Box::new(rx) );
 			}
 
 			else
 			{
 				let (tx, rx) = futures::channel::mpsc::unbounded();
-				let tx       = tx.sink_map_err( |e| -> DynError { Box::new(e) } );
-
-				self.tx = Some( Box::new(tx) );
+				self.tx = Some( tx.dyned()   );
 				self.rx = Some( Box::new(rx) );
 			}
 		}
 
 
 		let rx    = self.rx.unwrap();
-		let mb    = Mailbox::new( self.name.as_deref(), rx );
+		let mb    = Mailbox::new( self.name, rx );
 		let addr  = mb.addr( self.tx.unwrap() );
 
 		(addr, mb)

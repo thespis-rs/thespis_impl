@@ -7,13 +7,13 @@ pub mod import
 {
 	pub use
 	{
-		futures :: { future::{ FutureExt }, stream, SinkExt, StreamExt, task::{ Spawn, SpawnExt }, channel::* } ,
-		thespis :: { * } ,
-		thespis_impl :: { * } ,
-		tracing :: { trace, error_span } ,
-		tracing_futures::Instrument,
-		std     :: { marker::PhantomData, error::Error, sync::{ Arc, Mutex, atomic::Ordering::SeqCst }, num::NonZeroUsize } ,
+		futures         :: { future::{ FutureExt }, stream, SinkExt, StreamExt, task::{ Spawn, SpawnExt }, channel::* } ,
+		thespis         :: { * } ,
+		thespis_impl    :: { * } ,
+		tracing         :: { trace, error_span } ,
+		std             :: { marker::PhantomData, error::Error, sync::{ Arc, Mutex, atomic::Ordering::SeqCst }, num::NonZeroUsize } ,
 		async_executors :: { * } ,
+		tracing_futures::Instrument,
 	};
 }
 

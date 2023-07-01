@@ -6,8 +6,8 @@ use common::*;
 //
 async fn main() -> Result< (), DynError >
 {
-	let (sum_in_addr , sum_in_mb) = Addr::builder().bounded( Some(MPSC_BOUNDED) ).build() ;
-	let (mut sum_addr, sum_mb   ) = Addr::builder().bounded( Some(MPSC_BOUNDED) ).build() ;
+	let (sum_in_addr , sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(MPSC_BOUNDED) ).build() ;
+	let (mut sum_addr, sum_mb   ) = Addr::builder( "sum"    ).bounded( Some(MPSC_BOUNDED) ).build() ;
 
 
 	// Create sender threads.

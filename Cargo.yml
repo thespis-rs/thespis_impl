@@ -25,10 +25,9 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.2.1
+  version       : 0.3.0
   name          : thespis_impl
-  edition       : '2018'
-  resolver      : '2'
+  edition       : '2021'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Reference implementation for the thespis actor model
   license       : Unlicense
@@ -75,7 +74,7 @@ dependencies:
   #
   async_executors    : { version: ^0.6 }
   futures            : { version: ^0.3, features: [ std, compat ], default-features: false }
-  thespis            : { version: ^0.1 }
+  thespis            : { version: ^0.2 }
   tracing            : ^0.1
 
   # private dependencies.
@@ -93,6 +92,8 @@ dev-dependencies:
   async-std         : { version: ^1, features: [ attributes ] }
   # tracing-test      : { version: ^0.1, path: ../../RUST/tracing-test/tracing-test }
   futures-timer     : ^3
+  async_progress    : ^0.2
+
 
 target:
 
@@ -112,16 +113,17 @@ target:
     dev-dependencies:
 
       async_executors   : { version: ^0.6, features: [localpool, threadpool, async_std, tokio_ct, tokio_tp, tracing] }
-      async_chanx       : { version: ^0.1.0-alpha }
+      async_chanx       : { version: ^0.1.0-alpha, features: [tokio] }
       stream_throttle   : { version: ^0.4, default-features: false, features: [timer-futures-timer] }
+      tokio-stream      : { version: ^0.1 }
+      tokio-util        : { version: ^0.7 }
 
       # for benchmarks
       #
       actix-rt          : ^2
       actix             : ^0.13
-      criterion         : { version: ^0.3, features: [] }
+      criterion         : { version: ^0.4, features: [] }
       tokio             : { version: ^1, features: [ sync, macros ] }
-      tokio-stream      : { version: ^0.1 }
 
 
 build-dependencies:
@@ -198,10 +200,6 @@ example:
     path              : examples/concurrent_nursery.rs
     required-features : [ not_wasm ]
 
-  - name              : deadlock_prio
-    path              : examples/deadlock_prio.rs
-    required-features : [ not_wasm ]
-
   - name              : desugar
     path              : examples/desugar.rs
     required-features : [ not_wasm ]
@@ -238,6 +236,11 @@ example:
     path              : examples/throttle.rs
     required-features : [ not_wasm ]
 
+  - name              : tokio_channel
+    path              : examples/tokio_channel.rs
+    required-features : [ not_wasm ]
+
   - name              : tracing
     path              : examples/tracing.rs
     required-features : [ not_wasm ]
+

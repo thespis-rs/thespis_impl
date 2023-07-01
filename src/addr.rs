@@ -18,7 +18,7 @@ impl< A: Actor > Clone for Addr<A>
 	fn clone( &self ) -> Self
 	{
 		let _s = self.info().span().entered();
-		trace!( "CREATE (clone) Addr" );
+		trace!( "CREATE (clone) Addr id:{}", self.info().id() );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).increment();
 
@@ -48,10 +48,10 @@ impl<A: Actor> fmt::Debug for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		let name = match &self.name()
+		let name = match self.name().is_empty()
 		{
-			Some( s ) => format!( ", {}", s ) ,
-			None      => String::new()        ,
+			true  => String::new(),
+			false => format!( ", {}", self.name() )
 		};
 
 		write!
@@ -71,14 +71,13 @@ impl<A: Actor> fmt::Display for Addr<A>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		match &self.name()
+		match self.name().is_empty()
 		{
-			Some(n) => write!( f, "{} ({}, {})", self.inner.type_name(), self.id(), n ) ,
-			None    => write!( f, "{} ({})"    , self.inner.type_name(), self.id()    ) ,
+			true  => write!( f, "{} ({})"    , self.inner.type_name(), self.id()              ) ,
+			false => write!( f, "{} ({}, {})", self.inner.type_name(), self.id(), self.name() ) ,
 		}
 	}
 }
-
 
 
 
@@ -98,7 +97,7 @@ impl<A> Addr<A> where A: Actor
 		let inner = AddrInner::new( tx, info, strong );
 
 		let _s = inner.span().entered();
-		trace!( "CREATE Addr" );
+		trace!( "CREATE Addr id:{}", inner.id() );
 
 		Self{ inner }
 	}
@@ -106,9 +105,9 @@ impl<A> Addr<A> where A: Actor
 
 	/// Produces a builder for convenient creation of both [`Addr`] and [`Mailbox`](crate::Mailbox).
 	//
-	pub fn builder() -> ActorBuilder<A>
+	pub fn builder( name: impl AsRef<str> ) -> ActorBuilder<A>
 	{
-		Default::default()
+		ActorBuilder::new( name )
 	}
 
 
@@ -135,7 +134,7 @@ impl<A: Actor> Drop for Addr<A>
 	fn drop( &mut self )
 	{
 		let _s = self.info().span().entered();
-		trace!( "DROP Addr" );
+		trace!( "DROP Addr id:{}", self.info().id() );
 
 		self.inner.strong.lock().expect( "Mutex<StrongCount> poisoned" ).decrement();
 	}
@@ -179,7 +178,7 @@ impl<A> Identify for Addr<A>
 		self.inner.id()
 	}
 
-	fn name( &self ) -> Option< Arc<str> >
+	fn name( &self ) -> Arc<str>
 	{
 		self.inner.name()
 	}

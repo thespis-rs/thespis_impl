@@ -1,7 +1,7 @@
 # thespis_impl
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![Build Status](https://api.travis-ci.org/najamelan/thespis_impl.svg?branch=release)](https://travis-ci.org/najamelan/thespis_impl)
+[![Build Status](https://github.com/thespis-rs/thespis_impl/actions/workflows/ci.yml/badge.svg?branch=release&event=push)](https://github.com/thespis-rs/thespis_impl/actions/workflows/ci.yml)
 [![Docs](https://docs.rs/thespis_impl/badge.svg)](https://docs.rs/thespis_impl)
 [![crates.io](https://img.shields.io/crates/v/thespis_impl.svg)](https://crates.io/crates/thespis_impl)
 
@@ -34,14 +34,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  thespis_impl: ^0.2
+  thespis_impl: ^0.3
 ```
 
 In Cargo.toml:
 ```toml
 [dependencies]
 
-  thespis_impl = "0.2"
+  thespis_impl = "0.3"
 ```
 
 ### Upgrade

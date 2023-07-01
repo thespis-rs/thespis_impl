@@ -1,4 +1,4 @@
-use crate::import::*;
+use crate::{ import::*, BoxEnvelope };
 
 
 /// Wrapper for a message that is generic over actor instead of over message type.
@@ -140,3 +140,11 @@ impl<A, M> Envelope<A> for CallEnvelope<M>
 	}
 }
 
+
+impl<A> fmt::Debug for BoxEnvelope<A>
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		write!( f, "BoxEnvelope<{}>", std::any::type_name::<A>() )
+	}
+}

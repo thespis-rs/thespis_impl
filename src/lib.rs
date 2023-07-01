@@ -67,6 +67,8 @@ pub type BoxEnvelope<A> = Box< dyn envelope::Envelope<A> + Send >;
 pub type DynError = Box< dyn std::error::Error + Send + Sync >;
 
 /// Type of boxed channel sender for Addr.
+/// Can be created conveniently with [`CloneSinkExt::dyned`], but that is rarely
+/// needed as you can use the [`ActorBuilder`](ActorBuilder::channel) to override default channels.
 //
 pub type ChanSender<A> = Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >;
 
@@ -75,9 +77,11 @@ pub type ChanSender<A> = Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >
 pub type ChanReceiver<A> = Box< dyn futures::Stream<Item=BoxEnvelope<A>> + Send + Unpin >;
 
 
-/// Interface for T: Sink + Clone
+/// Interface for `T: Sink + Clone + Unpin + Send`.
+/// This is object safe, so you can clone on a boxed trait. In _thespis_impl_ it is used
+/// for the channel sender that goes in the [actor address](Addr).
 //
-pub trait CloneSink<'a, Item, E>: Sink<Item, Error=E> + Unpin + Send
+pub trait CloneSink<'a, Item, E>: Sink<Item, Error=E> + Unpin + Send + 'a
 {
 	/// Clone this sink.
 	//
@@ -96,6 +100,44 @@ impl<'a, T, Item, E> CloneSink<'a, Item, E> for T
 	}
 }
 
+
+/// Helper trait to smoothen API for converting a `T: `[`CloneSink`] into [`ChanSender`],
+/// which is `Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >`.
+///
+/// Blanket implemented.
+//
+pub trait CloneSinkExt<A: thespis::Actor, E>
+{
+	/// Convert a `T: CloneSink` into `ChanSender`, which is
+	/// `Box< dyn CloneSink<'static, BoxEnvelope<A>, DynError> >`.
+	//
+	fn dyned( self ) -> ChanSender<A>
+
+		where Self: CloneSink<'static, BoxEnvelope<A>, E> + Clone + Sized,
+		      E: std::error::Error + Sync + Send + 'static
+	{
+		let closure = |e| -> DynError { Box::new(e) };
+
+		Box::new( self.sink_map_err( closure ) )
+	}
+}
+
+impl<T, A: thespis::Actor, E> CloneSinkExt<A, E> for T
+
+		where T: Sink<BoxEnvelope<A>, Error=E> + Clone + Unpin + Send + 'static,
+		      E: std::error::Error + Sync + Send + 'static
+{}
+
+
+/// Turn into a boxed error
+//
+pub fn dyn_err<'a, T, Item, E>( sink: T ) -> impl CloneSink<'a, Item, DynError>
+
+	where T: 'a + Sink<Item, Error=E> + Clone + Unpin + Send + ?Sized,
+	      E: std::error::Error + Sync + Send + 'static
+{
+	sink.sink_map_err( |e| -> DynError { Box::new(e) } )
+}
 
 
 // Import module. Avoid * imports here. These are all the foreign names that exist throughout

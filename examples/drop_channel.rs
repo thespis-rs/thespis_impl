@@ -63,23 +63,24 @@ async fn main() -> Result< (), Box<dyn Error> >
 	let tx = tx.sink_map_err( |_|
 	{
 		// The error from ring_channel is not Sync, because it contains the message.
-		// This is a problem because we don't require messages to be Sync. That would
-		// imply making thespis unsafe by addin a Sync impl to our wrapper for messages
-		// on the channel.
+		// This is a problem because we don't require messages to be `Sync`, however
+		// we do want our error type to be `Send` + `Sync`, so it can't have the message.
+		// If we would not require `Sync` on the error type, it couldn't be send across
+		// threads unless it was `Clone`, but we don't require the user's messages to
+		// be clone either...
 		//
-		// Alternatively, we just don't count on recovering the message and construct a
+		// We don't count on recovering the message and construct a
 		// simple io error here. Note that we could have wanted to use ThesErr::MailboxClosed,
 		// but that requires ActorInfo and as we haven't spawned our actor yet, we don't really
 		// know our ActorInfo. You can still do it by not using the builder and first creating
 		// the Mailbox manually, however I don't think it's worth it.
 		//
-		let error = std::io::Error::from(std::io::ErrorKind::NotConnected);
-		Box::new(error) as DynError
+		std::io::Error::from(std::io::ErrorKind::NotConnected)
 	});
 
-	let (mut accu_addr , accu_mb) = Addr::builder()
+	let (mut accu_addr , accu_mb) = Addr::builder( "accu" )
 
-		.channel( Box::new(tx), Box::new(rx) )
+		.channel( tx, rx )
 		.build() ;
 
 

@@ -4,7 +4,7 @@
 use
 {
 	thespis         :: { Return, Actor, Message, Handler, Address } ,
-	thespis_impl    :: { DynError, Mailbox, MailboxEnd           } ,
+	thespis_impl    :: { DynError, Mailbox, MailboxEnd            } ,
 	async_executors :: { AsyncStd, SpawnHandleExt                 } ,
 	std             :: { error::Error                             } ,
 	futures         :: { channel::mpsc, FutureExt, SinkExt        } ,
@@ -49,7 +49,7 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// Manually create a mailbox, with a name for the actor and the receiver of
 	// our channel.
 	//
-	let mb = Mailbox::new( Some("HelloWorld"), Box::new(rx) );
+	let mb = Mailbox::new( "HelloWorld", Box::new(rx) );
 
 	// The mailbox gives us the address.
 	//

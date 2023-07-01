@@ -43,8 +43,8 @@ async fn main() -> Result< (), Box<dyn Error> >
 	// As you can see, the addresses are generic over the actor type.
 	// So we can't just store them in a collection.
 	//
-	let addr1: Addr<Actor1> = Addr::builder().spawn( Actor1, &AsyncStd )?;
-	let addr2: Addr<Actor2> = Addr::builder().spawn( Actor2, &AsyncStd )?;
+	let addr1: Addr<Actor1> = Addr::builder( "actor 1" ).spawn( Actor1, &AsyncStd )?;
+	let addr2: Addr<Actor2> = Addr::builder( "actor 2" ).spawn( Actor2, &AsyncStd )?;
 
 	// pub type BoxAddress<M, E> = Box< dyn Address<M, Error=E> + Send + Unpin >;
 	// Type can be elided here. It's just there for illustrative purposes.

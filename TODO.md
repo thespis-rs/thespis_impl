@@ -1,14 +1,19 @@
 ## TODO
 
+- Document the limitation of futures channels of not waking up the sender, as discovered in the deadlock test. What is the consequence for other actors?
+- align all repo's and update the super repo.
+
 fix code coverage, currently still on travis.
 
 - verify log spans.
    - see tests/tracing.rs See: https://github.com/dbrgn/tracing-test/issues/4
    - neither wasm-logger, nor tracing-wasm show the current span atm. See: https://github.com/storyai/tracing-wasm/issues/17
+   - log where addr are created and dropped for easier debugging when we have an addr that we forgot to drop.
 
 ### Tests
 
 - flesh out tests.
+- deadlock still happening
 
 # Perf
 

@@ -32,7 +32,7 @@ impl Handler< Count > for MyActor
 async fn main() -> Result< (), Box<dyn Error> >
 {
 	let     a      = MyActor { count: 0 };
-	let mut addr   = Addr::builder().spawn( a, &AsyncStd )?;
+	let mut addr   = Addr::builder( "My actor" ).spawn( a, &AsyncStd )?;
 
 	// Create an ad hoc stream.
 	//

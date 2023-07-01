@@ -176,9 +176,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let sum                      = Sum{ total: 5, inner: sum_in_addr }              ;
-					let (sum_addr, sum_mb)       = Addr::builder().bounded( Some(BOUNDED) ).build() ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (sum_addr, sum_mb)       = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
+					let sum                      = Sum{ total: 5, inner: sum_in_addr }                        ;
 
 					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
@@ -201,7 +201,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 						drop( sum_addr );
 
 						drop( sum_handle  .await );
@@ -240,7 +240,7 @@ fn seq( c: &mut Criterion )
 
 		// 				let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-		// 				assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+		// 				assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 		// 				actix_rt::System::current().stop();
 		// 			});
@@ -257,9 +257,9 @@ fn seq( c: &mut Criterion )
 			(
 				move || // setup
 				{
-					let (sum_in_addr, sum_in_mb) = Addr::builder().bounded( Some(BOUNDED) ).build() ;
-					let sum      = Sum{ total: 5, inner: sum_in_addr }                              ;
-					let (sum_addr, sum_mb) = Addr::builder().bounded( Some(BOUNDED) ).build()       ;
+					let (sum_in_addr, sum_in_mb) = Addr::builder( "sum_in" ).bounded( Some(BOUNDED) ).build() ;
+					let (sum_addr   , sum_mb   ) = Addr::builder( "sum"    ).bounded( Some(BOUNDED) ).build() ;
+					let sum                      = Sum{ total: 5, inner: sum_in_addr }                        ;
 
 					let exec = TokioCtBuilder::new().build().expect( "build runtime" );
 					let sumin = SumIn{ count: 0 };
@@ -282,7 +282,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.call( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 						drop( sum_addr );
 
@@ -319,7 +319,7 @@ fn seq( c: &mut Criterion )
 
 						let res = sum_addr.send( Show{} ).await.expect( "Call failed" );
 
-						assert_eq!( *msgs as u64 *10 + 5 + termial( *msgs as u64 ), res );
+						assert_eq!( *msgs *10 + 5 + termial( *msgs ), res );
 
 						actix_rt::System::current().stop();
 					});

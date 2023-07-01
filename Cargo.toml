@@ -39,7 +39,7 @@ version = "^0.3"
 version = "^0.1"
 
 [dependencies.thespis]
-version = "^0.1"
+version = "^0.2"
 
 [dependencies.tracing-futures]
 features = ["futures-03"]
@@ -47,6 +47,7 @@ version = "^0.2"
 
 [dev-dependencies]
 async_nursery = "^0.5"
+async_progress = "^0.2"
 futures-timer = "^3"
 ring-channel = "^0.11"
 
@@ -130,11 +131,6 @@ path = "examples/concurrent_nursery.rs"
 required-features = ["not_wasm"]
 
 [[example]]
-name = "deadlock_prio"
-path = "examples/deadlock_prio.rs"
-required-features = ["not_wasm"]
-
-[[example]]
 name = "desugar"
 path = "examples/desugar.rs"
 required-features = ["not_wasm"]
@@ -180,6 +176,11 @@ path = "examples/throttle.rs"
 required-features = ["not_wasm"]
 
 [[example]]
+name = "tokio_channel"
+path = "examples/tokio_channel.rs"
+required-features = ["not_wasm"]
+
+[[example]]
 name = "tracing"
 path = "examples/tracing.rs"
 required-features = ["not_wasm"]
@@ -196,15 +197,14 @@ authors = ["Naja Melan <najamelan@autistici.org>"]
 categories = ["asynchronous", "concurrency"]
 description = "Reference implementation for the thespis actor model"
 documentation = "https://docs.rs/thespis_impl"
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/thespis-rs/thespis_impl"
 keywords = ["async", "futures", "actor", "thespis"]
 license = "Unlicense"
 name = "thespis_impl"
 readme = "README.md"
 repository = "https://github.com/thespis-rs/thespis_impl"
-resolver = "2"
-version = "0.2.1"
+version = "0.3.0"
 
 [package.metadata]
 [package.metadata.docs]
@@ -219,6 +219,7 @@ actix = "^0.13"
 actix-rt = "^2"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_chanx]
+features = ["tokio"]
 version = "^0.1.0-alpha"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.async_executors]
@@ -227,7 +228,7 @@ version = "^0.6"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.criterion]
 features = []
-version = "^0.3"
+version = "^0.4"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.stream_throttle]
 default-features = false
@@ -240,6 +241,9 @@ version = "^1"
 
 [target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.tokio-stream]
 version = "^0.1"
+
+[target."cfg(not(target_arch = \"wasm32\"))".dev-dependencies.tokio-util]
+version = "^0.7"
 
 [target."cfg(target_arch = \"wasm32\")"]
 [target."cfg(target_arch = \"wasm32\")".dev-dependencies]

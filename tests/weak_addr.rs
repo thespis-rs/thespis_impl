@@ -24,7 +24,7 @@ use
 //
 async fn weak_basic_use() -> Result<(), DynError >
 {
-	let     addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let     addr = Addr::builder( "weak_basic_use" ).spawn( Sum(5), &AsyncStd )?;
 	let mut weak = addr.weak();
 
 	weak.send( Add( 10 ) ).await?;
@@ -39,7 +39,7 @@ async fn weak_basic_use() -> Result<(), DynError >
 //
 async fn weak_plenty() -> Result<(), DynError >
 {
-	let     addr  = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let     addr  = Addr::builder( "weak_plenty" ).spawn( Sum(5), &AsyncStd )?;
 	let mut weak  = addr.weak();
 	let     weak2 = addr.weak();
 	let    _weak3 = addr.weak();
@@ -69,7 +69,7 @@ async fn weak_plenty() -> Result<(), DynError >
 //
 async fn weak_refuse() -> Result<(), DynError >
 {
-	let     addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let     addr = Addr::builder( "weak_refuse" ).spawn( Sum(5), &AsyncStd )?;
 	let mut weak = addr.weak();
 
 	let addr2 = weak.strong()?;
@@ -91,7 +91,7 @@ async fn weak_refuse() -> Result<(), DynError >
 //
 async fn weak_upgrade() -> Result<(), DynError >
 {
-	let     addr    = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let     addr    = Addr::builder( "weak_upgrade" ).spawn( Sum(5), &AsyncStd )?;
 	let     weak    = addr.weak();
 	let mut upgrade = weak.strong()?;
 
@@ -107,7 +107,7 @@ async fn weak_upgrade() -> Result<(), DynError >
 //
 async fn weak_upgrade_refuse() -> Result<(), DynError >
 {
-	let addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let addr = Addr::builder( "weak_upgrade_refuse" ).spawn( Sum(5), &AsyncStd )?;
 	let weak = addr.weak();
 
 	drop(addr);
@@ -128,7 +128,7 @@ async fn weak_upgrade_refuse() -> Result<(), DynError >
 //
 async fn strong_drop_close_mailbox() -> Result<(), DynError >
 {
-	let (addr, mb_handle) = Addr::builder().spawn_handle( Sum(5), &AsyncStd )?;
+	let (addr, mb_handle) = Addr::builder( "strong_drop_close_mailbox" ).spawn_handle( Sum(5), &AsyncStd )?;
 	let _weak = addr.weak();
 
 	drop(addr);
@@ -146,7 +146,7 @@ async fn strong_drop_close_mailbox() -> Result<(), DynError >
 //
 async fn weak_drop_dont_close_mailbox() -> Result<(), DynError >
 {
-	let mut addr = Addr::builder().spawn( Sum(5), &AsyncStd )?;
+	let mut addr = Addr::builder( "weak_drop_dont_close_mailbox" ).spawn( Sum(5), &AsyncStd )?;
 	let     weak = addr.weak();
 
 	drop(weak);
@@ -184,7 +184,7 @@ async fn drop_strong_while_mb_pending() -> Result<(), DynError >
 	let shared  = Arc::new(Mutex::new( () ));
 	let shared2 = shared.clone();
 
-	let     (addr, mb) = Addr::builder().bounded( Some(1) ).build();
+	let     (addr, mb) = Addr::builder( "drop_strong_while_mb_pending" ).bounded( Some(1) ).build();
 	let mut weak   = addr.weak();
 
 
