@@ -5,7 +5,7 @@
 [Unreleased]: https://github.com/najamelan/async_executors/compare/release...dev
 
 
-## [0.3.0] - 2022-11-13
+## [0.3.0] - 2022-07-01
 
 [0.3.0]: https://github.com/najamelan/async_executors/compare/0.2.1...0.3.0
 
@@ -18,6 +18,11 @@
 ### Changed
 
   - __BREAKING__: Names have become mandatory on `Mailbox` and `ActorBuilder`.
+  - __BREAKING__: Improved ergonomics of using custom channels.
+  - switch to edition 2021
+
+### Added
+  - more examples and tests
 
 
 ## [0.2.1] - 2022-05-26

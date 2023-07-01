@@ -28,7 +28,6 @@ package:
   version       : 0.3.0
   name          : thespis_impl
   edition       : '2021'
-  resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Reference implementation for the thespis actor model
   license       : Unlicense

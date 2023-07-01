@@ -13,6 +13,7 @@ fix code coverage, currently still on travis.
 ### Tests
 
 - flesh out tests.
+- deadlock still happening
 
 # Perf
 
