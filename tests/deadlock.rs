@@ -1,3 +1,7 @@
+//! TODO: this test is still broken. It's still deadlocking. Unfortunately adding
+//! log statementes makes the deadlock go away.
+//! It will need further debugging.
+
 //! Test for the gateway type deadlock. Verify that by using a priority channel
 //! we can avoid it.
 //!
